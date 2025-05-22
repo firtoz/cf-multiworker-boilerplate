@@ -1,0 +1,17 @@
+{
+	"extends": "./tsconfig.json",
+	"include": ["workers/**/*", "worker-configuration.d.ts"],
+	"compilerOptions": {
+		"composite": true,
+		"strict": true,
+		"lib": ["ES2022"],
+		"types": ["vite/client"],
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"baseUrl": ".",
+		"rootDirs": ["."],
+		"esModuleInterop": true,
+		"resolveJsonModule": true
+	}
+}

@@ -1,0 +1,16 @@
+# Example development environment variables
+# Copy this file to .dev.vars and fill in your development values
+# Command: cp .dev.vars.example .dev.vars
+
+# Session management
+SESSION_SECRET=your_session_secret_here
+
+# Application variables
+VALUE_FROM_CLOUDFLARE=Hello from Cloudflare Development Environment
+
+# Database configuration
+# These are automatically set by Wrangler when using D1
+# DB=your_d1_database_binding
+
+# API Keys (if needed)
+# API_KEY=your_api_key_here

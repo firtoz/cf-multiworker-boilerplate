@@ -1,0 +1,13 @@
+{
+	"name": "example-do",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"cf-typegen": "bunx wrangler types",
+		"typecheck": "tsc -b",
+		"lint": "biome check --write .",
+		"lint:format": "biome format --write .",
+		"deploy": "bun ../../scripts/wrangler.ts deploy"
+	},
+	"packageManager": "bun@1.2.14"
+}

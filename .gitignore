@@ -1,0 +1,15 @@
+.DS_Store
+node_modules/
+*.tsbuildinfo
+
+# Cloudflare
+.mf
+.wrangler
+.dev.vars*
+!.dev.vars.example
+
+# Turbo
+.turbo
+
+# Environment
+.env.local

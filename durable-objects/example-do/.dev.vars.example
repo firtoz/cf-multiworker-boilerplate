@@ -1,0 +1,8 @@
+# Example development environment variables for Durable Object
+# Copy this file to .dev.vars and fill in your development values
+# Command: cp .dev.vars.example .dev.vars
+
+# Application variables
+VALUE_FROM_CLOUDFLARE=Hello from Durable Object Development Environment
+
+# Add any other environment variables needed for the Durable Object

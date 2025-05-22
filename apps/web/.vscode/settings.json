@@ -1,0 +1,8 @@
+{
+	"files.associations": {
+		"wrangler.json": "jsonc",
+		"*.css": "tailwindcss"
+	},
+	"editor.formatOnSave": true,
+	"biome.enabled": true
+}

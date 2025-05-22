@@ -1,0 +1,25 @@
+{
+  "name": "cf-multiworker-boilerplate",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "durable-objects/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "deploy": "bun --env-file ./.env.local turbo deploy"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.14",
+    "jsonc-parser": "^3.3.1",
+    "turbo": "^2.5.3"
+  },
+  "packageManager": "bun@1.2.14",
+  "dependencies": {
+    "uuid": "^11.1.0"
+  }
+}

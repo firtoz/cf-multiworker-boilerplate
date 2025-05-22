@@ -1,0 +1,66 @@
+{
+	"$schema": "https://turborepo.com/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"db:generate": {
+			"inputs": ["db/**/*.ts", "drizzle.config.ts"],
+			"outputs": ["drizzle/**/*"]
+		},
+		"db:migrate:local": {
+			"dependsOn": ["db:generate"],
+			"inputs": ["drizzle/**/*", "drizzle.config.ts"]
+		},
+		"lint": {
+			"dependsOn": ["typecheck"],
+			"inputs": ["app/**/*.{ts,tsx}", "workers/**/*.{ts,tsx}", "db/**/*"],
+			"outputs": []
+		},
+		"typecheck": {
+			"dependsOn": ["cf-typegen", "rr-typegen"],
+			"inputs": [
+				"app/**/*.{ts,tsx}",
+				"workers/**/*.{ts,tsx}",
+				"db/**/*",
+				"tsconfig.json",
+				"tsconfig.node.json",
+				"tsconfig.cloudflare.json"
+			],
+			"outputs": []
+		},
+		"pre-typegen": {
+			"inputs": ["wrangler.jsonc"],
+			"outputs": ["wrangler.temp.json", "wrangler.dev.json"]
+		},
+		"cf-typegen": {
+			"dependsOn": ["pre-typegen"],
+			"inputs": ["wrangler.jsonc", "wrangler.temp.json", ".dev.vars"],
+			"outputs": []
+		},
+		"rr-typegen": {
+			"inputs": ["app/routes.ts", "app/routes/**/*.{ts,tsx}"],
+			"outputs": []
+		},
+		"dev": {
+			"dependsOn": ["cf-typegen", "db:migrate:local"],
+			"persistent": true,
+			"cache": false
+		},
+		"build": {
+			"dependsOn": ["typecheck"],
+			"inputs": [
+				"app/**/*.{ts,tsx}",
+				"workers/**/*.{ts,tsx}",
+				"db/**/*",
+				"vite.config.ts",
+				"react-router.config.ts",
+				"wrangler.jsonc"
+			],
+			"outputs": ["build/**/*"]
+		},
+		"deploy": {
+			"dependsOn": ["build", "test-do#deploy"],
+			"inputs": ["build/**/*", "wrangler.jsonc"],
+			"outputs": []
+		}
+	}
+}

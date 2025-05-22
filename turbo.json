@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": [".env"],
+  "tasks": {
+    "build": {
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+    }
+  },
+  "globalEnv": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
+}
