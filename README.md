@@ -128,10 +128,68 @@ This will start all the necessary services for development.
 
 ## Deployment
 
-Deploy all services to Cloudflare:
+### Configuration
+
+Before deploying, you need to configure your wrangler.jsonc files with your Cloudflare account details:
+
+#### 1. Configure D1 Database (apps/web/wrangler.jsonc)
+
+Create a D1 database in your Cloudflare dashboard and update the database_id in `apps/web/wrangler.jsonc`:
+
+```bash
+# Create a new D1 database
+cd apps/web
+bun wrangler d1 create cf-web-app-db
+```
+
+You'll receive a database ID in the output. Update the `database_id` field in `apps/web/wrangler.jsonc`:
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "DB",
+    "database_name": "cf-web-app-db",
+    "database_id": "YOUR_DATABASE_ID", // Replace with your actual database ID
+    "migrations_dir": "./drizzle/migrations"
+  }
+]
+```
+
+#### 2. Configure Durable Objects
+
+The Durable Objects are already configured in the wrangler files, but you need to ensure that the `script_name` in the web app matches the name of your Durable Object worker:
+
+- In `apps/web/wrangler.jsonc`, make sure the `script_name` in the Durable Object binding matches your Durable Object worker name:
+
+```jsonc
+"durable_objects": {
+  "bindings": [
+    {
+      "name": "TestDo",
+      "class_name": "TestDo",
+      "script_name": "cf-example-do" // This should match the name in durable-objects/example-do/wrangler.jsonc
+    }
+  ]
+}
+```
+
+### Deploying
+
+Once configured, deploy all services to Cloudflare:
 
 ```bash
 bun run deploy
+```
+
+This will deploy both the web application and the Durable Object to your Cloudflare account.
+
+### Applying Migrations
+
+After deployment, you need to apply the database migrations:
+
+```bash
+cd apps/web
+bun wrangler d1 migrations apply cf-web-app-db
 ```
 
 ## Customizing the Boilerplate
