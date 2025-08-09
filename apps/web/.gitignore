@@ -10,6 +10,8 @@
 .wrangler
 .dev.vars*
 !.dev.vars.example
+wrangler.temp.json
+wrangler.dev.json
 
 # Turbo
 .turbo
