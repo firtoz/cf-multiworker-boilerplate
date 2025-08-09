@@ -14,11 +14,11 @@
     "deploy": "bun --env-file ./.env.local turbo deploy"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.14",
+    "@types/bun": "^1.2.19",
     "jsonc-parser": "^3.3.1",
-    "turbo": "^2.5.3"
+    "turbo": "^2.5.5"
   },
-  "packageManager": "bun@1.2.14",
+  "packageManager": "bun@1.2.19",
   "dependencies": {
     "uuid": "^11.1.0"
   }

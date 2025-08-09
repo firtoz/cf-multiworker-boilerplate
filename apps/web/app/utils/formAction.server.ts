@@ -1,8 +1,8 @@
+import { type DefiniteError, fail, type MaybeError } from "@firtoz/maybe-error";
 import { type ActionFunctionArgs, data } from "react-router";
-import type { z } from "zod";
+import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { fromError } from "zod-validation-error";
-import { type DefiniteError, type MaybeError, fail } from "./MaybeError";
 
 export const formAction = <
 	TSchema extends z.ZodTypeAny,
@@ -15,13 +15,10 @@ export const formAction = <
 	handler,
 }: {
 	schema: TSchema;
-	validate?: (args: ActionArgs) => Promise<MaybeError<undefined, boolean, DefiniteError<TError>>>;
-	handler: (
-		args: ActionArgs,
-		data: z.infer<TSchema>,
-	) => Promise<MaybeError<TResult, boolean, TError>>;
+	validate?: (args: ActionArgs) => Promise<MaybeError<undefined, DefiniteError<TError>>>;
+	handler: (args: ActionArgs, data: z.infer<TSchema>) => Promise<MaybeError<TResult, TError>>;
 }) => {
-	return async (args: ActionArgs): Promise<MaybeError<TResult, boolean, TError>> => {
+	return async (args: ActionArgs): Promise<MaybeError<TResult, TError>> => {
 		if (validate) {
 			const validationResult = await validate(args);
 			if (!validationResult.success) {
@@ -46,11 +43,12 @@ export const formAction = <
 										? fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
 										: String(fieldName);
 
-								if (issue.code === "invalid_type" && issue.received === "undefined") {
-									return `"${capitalizedField}" is required`;
-								}
-
 								if (issue.code === "invalid_type") {
+									// After narrowing by code, TypeScript knows this has expected property
+									if (issue.message.includes("received undefined")) {
+										return `"${capitalizedField}" is required`;
+									}
+									
 									return `"${capitalizedField}" must be a ${issue.expected}`;
 								}
 
@@ -61,7 +59,7 @@ export const formAction = <
 				});
 
 				console.log("error", error, rawFormData);
-				throw data(fail(error.message) as unknown as MaybeError<TResult, boolean, TError>, {
+				throw data(fail(error.message) as unknown as MaybeError<TResult, TError>, {
 					status: 400,
 				});
 			}
@@ -73,7 +71,7 @@ export const formAction = <
 			}
 
 			console.error(error);
-			throw data(fail("Invalid form data") as unknown as MaybeError<TResult, boolean, TError>, {
+			throw data(fail("Invalid form data") as unknown as MaybeError<TResult, TError>, {
 				status: 400,
 			});
 		}

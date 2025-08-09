@@ -1,6 +1,6 @@
-import type { z } from "zod";
+import { fail, type MaybeError, success } from "@firtoz/maybe-error";
+import { z } from "zod";
 import { fromError } from "zod-validation-error";
-import { type MaybeError, fail, success } from "./MaybeError";
 
 /**
  * Creates a FormData object from validated data using a Zod schema
@@ -11,7 +11,7 @@ import { type MaybeError, fail, success } from "./MaybeError";
 export const createFormData = <TSchema extends z.ZodTypeAny>(
 	schema: TSchema,
 	inputData: z.infer<TSchema>,
-): MaybeError<FormData, boolean, string> => {
+): MaybeError<FormData, string> => {
 	try {
 		// Validate the input data against the schema
 		const result = schema.safeParse(inputData);
@@ -29,11 +29,12 @@ export const createFormData = <TSchema extends z.ZodTypeAny>(
 									? fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
 									: String(fieldName);
 
-							if (issue.code === "invalid_type" && issue.received === "undefined") {
-								return `"${capitalizedField}" is required`;
-							}
-
 							if (issue.code === "invalid_type") {
+								// After narrowing by code, TypeScript knows this has expected property
+								if (issue.message.includes("received undefined")) {
+									return `"${capitalizedField}" is required`;
+								}
+								
 								return `"${capitalizedField}" must be a ${issue.expected}`;
 							}
 
