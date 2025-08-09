@@ -17,7 +17,7 @@ export function Welcome({ message, doResponse }: { message: string; doResponse?:
 						<div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
 							<p className="text-blue-800 dark:text-blue-200">
 								This is a generic boilerplate for Cloudflare multi-worker applications. It includes
-								a web app with React, a Durable Object, and a database schema.
+								a web app with React and a Durable Object.
 							</p>
 						</div>
 						<ul className="space-y-2">
@@ -97,19 +97,7 @@ const resources = [
 			/>
 		),
 	},
-	{
-		href: "https://orm.drizzle.team/",
-		text: "Drizzle ORM",
-		icon: (
-			<img
-				src="/icons/drizzle-orm.svg"
-				alt="Drizzle ORM Documentation"
-				width="24"
-				height="24"
-				className="group-hover:opacity-80"
-			/>
-		),
-	},
+
 	// Monorepo Tools
 	{
 		href: "https://turborepo.com/",

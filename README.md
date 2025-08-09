@@ -9,7 +9,7 @@ A modern, production-ready boilerplate for building full-stack applications with
 - 📦 TypeScript support across all packages
 - 🔄 Pre-configured scripts for typegen and deployment
 - 🔒 Environment variable management
-- 🌐 D1 Database integration with Drizzle ORM
+
 - 🧩 Durable Objects for stateful applications
 - 🔍 Zod for schema validation
 - 🎨 TailwindCSS for styling
@@ -20,7 +20,7 @@ A modern, production-ready boilerplate for building full-stack applications with
 
 - **[Cloudflare Workers](https://developers.cloudflare.com/workers/)**: Serverless JavaScript runtime at the edge
 - **[Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/)**: Stateful serverless objects for coordination and persistence
-- **[Cloudflare D1](https://developers.cloudflare.com/d1/)**: Serverless SQL database built on SQLite
+
 
 ### Frontend
 
@@ -28,9 +28,8 @@ A modern, production-ready boilerplate for building full-stack applications with
 - **[React Router](https://reactrouter.com/)**: Declarative routing for React applications
 - **[TailwindCSS](https://tailwindcss.com/)**: Utility-first CSS framework
 
-### Database & Validation
+### Validation
 
-- **[Drizzle ORM](https://orm.drizzle.team/)**: Lightweight TypeScript ORM with type safety
 - **[Zod](https://zod.dev/)**: TypeScript-first schema validation
 
 ### Monorepo Management
@@ -45,7 +44,7 @@ cf-multiworker-boilerplate/
 ├── apps/                  # Web applications
 │   └── web/               # Main web application (React Router)
 │       ├── app/           # React application code
-│       ├── db/            # Database schema and utilities
+
 │       └── workers/       # Worker entry points
 ├── durable-objects/       # Durable Objects
 │   └── example-do/        # Example Durable Object
@@ -70,17 +69,6 @@ This script automatically prepares the Wrangler configuration for different envi
 - Configured in `turbo.json` as a dependency for `cf-typegen` and `dev` tasks
 
 This approach ensures consistent configuration across development and production environments.
-
-## Database Schema
-
-The boilerplate includes a generic database schema with the following tables:
-
-- **Users**: Store application users with email and name
-- **Items**: Generic items that can be customized for your application
-- **Tags**: Categorization tags for items
-- **Comments**: User comments on items
-
-The schema is defined using Drizzle ORM and includes Zod validation schemas for type safety.
 
 ## Getting Started
 
@@ -113,7 +101,7 @@ For the web application, copy the example environment variables:
 
 ```bash
 cd apps/web
-cp .dev.vars.example .dev.vars
+cp .env.example .env
 ```
 
 ### Development
@@ -132,30 +120,7 @@ This will start all the necessary services for development.
 
 Before deploying, you need to configure your wrangler.jsonc files with your Cloudflare account details:
 
-#### 1. Configure D1 Database (apps/web/wrangler.jsonc)
-
-Create a D1 database in your Cloudflare dashboard and update the database_id in `apps/web/wrangler.jsonc`:
-
-```bash
-# Create a new D1 database
-cd apps/web
-bun wrangler d1 create cf-web-app-db
-```
-
-You'll receive a database ID in the output. Update the `database_id` field in `apps/web/wrangler.jsonc`:
-
-```jsonc
-"d1_databases": [
-  {
-    "binding": "DB",
-    "database_name": "cf-web-app-db",
-    "database_id": "YOUR_DATABASE_ID", // Replace with your actual database ID
-    "migrations_dir": "./drizzle/migrations"
-  }
-]
-```
-
-#### 2. Configure Durable Objects
+#### 1. Configure Durable Objects
 
 The Durable Objects are already configured in the wrangler files, but you need to ensure that the `script_name` in the web app matches the name of your Durable Object worker:
 
@@ -182,15 +147,6 @@ bun run deploy
 ```
 
 This will deploy both the web application and the Durable Object to your Cloudflare account.
-
-### Applying Migrations
-
-After deployment, you need to apply the database migrations:
-
-```bash
-cd apps/web
-bun wrangler d1 migrations apply cf-web-app-db
-```
 
 ## Customizing the Boilerplate
 

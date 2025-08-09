@@ -6,7 +6,9 @@
 	"$schema": "../../node_modules/wrangler/config-schema.json",
 	"name": "cf-example-do",
 	"compatibility_date": "2025-04-04",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "./workers/app.ts",
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
@@ -33,7 +35,9 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": ["TestDo"]
+			"new_sqlite_classes": [
+				"TestDo"
+			]
 		}
 	]
 	/**
@@ -51,7 +55,6 @@
 	// 		"binding": "DB",
 	// 		"database_name": "cf-example-db",
 	// 		"database_id": "5cdfe7d4-c380-427c-91cb-09c745d6608d",
-	// 		"migrations_dir": "./drizzle/migrations"
 	// 	}
 	// ]
 	/**

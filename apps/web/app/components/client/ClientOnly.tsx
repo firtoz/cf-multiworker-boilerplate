@@ -17,5 +17,5 @@ export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
 		setIsClient(true);
 	}, []);
 
-	return isClient ? <>{children}</> : <>{fallback}</>;
+	return isClient ? children : fallback;
 }

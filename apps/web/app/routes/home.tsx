@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { Welcome } from "../welcome/welcome";
 import type { Route } from "./+types/home";
 
@@ -8,14 +9,14 @@ export function meta(_args: Route.MetaArgs) {
 	];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader(_args: Route.LoaderArgs) {
 	// Example of using a Durable Object
-	const testDoNamespace = context.cloudflare.env.TestDo;
+	const testDoNamespace = env.TestDo;
 	const testDo = testDoNamespace.get(testDoNamespace.idFromName("example"));
 	const response = await testDo.fetch("https://example.com");
 
 	return {
-		message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE,
+		message: env.VALUE_FROM_CLOUDFLARE,
 		response: await response.text(),
 	};
 }

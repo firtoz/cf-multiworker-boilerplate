@@ -15,8 +15,7 @@
 			"!**/.cache",
 			"!**/*.css",
 			"!**/*.scss",
-			"!**/worker-configuration.d.ts",
-			"!**/drizzle/**/*"
+			"!**/worker-configuration.d.ts"
 		]
 	},
 	"formatter": {
@@ -25,7 +24,13 @@
 		"indentWidth": 2,
 		"lineWidth": 100
 	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {

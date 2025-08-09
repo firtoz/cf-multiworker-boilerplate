@@ -1,26 +1,27 @@
 {
 	"$schema": "https://turborepo.com/schema.json",
-	"extends": ["//"],
+	"extends": [
+		"//"
+	],
 	"tasks": {
-		"db:generate": {
-			"inputs": ["db/**/*.ts", "drizzle.config.ts"],
-			"outputs": ["drizzle/**/*"]
-		},
-		"db:migrate:local": {
-			"dependsOn": ["db:generate"],
-			"inputs": ["drizzle/**/*", "drizzle.config.ts"]
-		},
 		"lint": {
-			"dependsOn": ["typecheck"],
-			"inputs": ["app/**/*.{ts,tsx}", "workers/**/*.{ts,tsx}", "db/**/*"],
+			"dependsOn": [
+				"typecheck"
+			],
+			"inputs": [
+				"app/**/*.{ts,tsx}",
+				"workers/**/*.{ts,tsx}"
+			],
 			"outputs": []
 		},
 		"typecheck": {
-			"dependsOn": ["cf-typegen", "rr-typegen"],
+			"dependsOn": [
+				"cf-typegen",
+				"rr-typegen"
+			],
 			"inputs": [
 				"app/**/*.{ts,tsx}",
 				"workers/**/*.{ts,tsx}",
-				"db/**/*",
 				"tsconfig.json",
 				"tsconfig.node.json",
 				"tsconfig.cloudflare.json"
@@ -28,38 +29,63 @@
 			"outputs": []
 		},
 		"pre-typegen": {
-			"inputs": ["wrangler.jsonc"],
-			"outputs": ["wrangler.temp.json", "wrangler.dev.json"]
+			"inputs": [
+				"wrangler.jsonc"
+			],
+			"outputs": [
+				"wrangler.temp.json",
+				"wrangler.dev.json"
+			]
 		},
 		"cf-typegen": {
-			"dependsOn": ["pre-typegen"],
-			"inputs": ["wrangler.jsonc", "wrangler.temp.json", ".dev.vars"],
+			"dependsOn": [
+				"pre-typegen"
+			],
+			"inputs": [
+				"wrangler.jsonc",
+				"wrangler.temp.json",
+				".env"
+			],
 			"outputs": []
 		},
 		"rr-typegen": {
-			"inputs": ["app/routes.ts", "app/routes/**/*.{ts,tsx}"],
+			"inputs": [
+				"app/routes.ts",
+				"app/routes/**/*.{ts,tsx}"
+			],
 			"outputs": []
 		},
 		"dev": {
-			"dependsOn": ["cf-typegen", "db:migrate:local"],
+			"dependsOn": [
+				"cf-typegen"
+			],
 			"persistent": true,
 			"cache": false
 		},
 		"build": {
-			"dependsOn": ["typecheck"],
+			"dependsOn": [
+				"typecheck"
+			],
 			"inputs": [
 				"app/**/*.{ts,tsx}",
 				"workers/**/*.{ts,tsx}",
-				"db/**/*",
 				"vite.config.ts",
 				"react-router.config.ts",
 				"wrangler.jsonc"
 			],
-			"outputs": ["build/**/*"]
+			"outputs": [
+				"build/**/*"
+			]
 		},
 		"deploy": {
-			"dependsOn": ["build", "test-do#deploy"],
-			"inputs": ["build/**/*", "wrangler.jsonc"],
+			"dependsOn": [
+				"build",
+				"test-do#deploy"
+			],
+			"inputs": [
+				"build/**/*",
+				"wrangler.jsonc"
+			],
 			"outputs": []
 		}
 	}

@@ -9,8 +9,8 @@ const CWD = process.cwd();
 const WRANGLER_CONFIG_PATH = path.join(CWD, 'wrangler.jsonc');
 const WRANGLER_TEMP_PATH = path.join(CWD, 'wrangler.temp.json');
 const WRANGLER_DEV_PATH = path.join(CWD, 'wrangler.dev.json');
-const DEV_VARS_PATH = path.join(CWD, '.dev.vars');
-const DEV_VARS_EXAMPLE_PATH = path.join(CWD, '.dev.vars.example');
+const ENV_PATH = path.join(CWD, '.env');
+const ENV_EXAMPLE_PATH = path.join(CWD, '.env.example');
 
 // Check if the wrangler config file exists
 if (!fs.existsSync(WRANGLER_CONFIG_PATH)) {
@@ -44,30 +44,30 @@ function createTypegenConfig() {
   console.log(`Typegen configuration written to ${path.relative(CWD, WRANGLER_TEMP_PATH)}`);
 }
 
-// Function to create or ensure .dev.vars file exists
-function createDevVarsFile() {
-  console.log('Checking .dev.vars file...');
+// Function to create or ensure .env file exists
+function createEnvFile() {
+  console.log('Checking .env file...');
 
-  // If .dev.vars already exists, skip creation
-  if (fs.existsSync(DEV_VARS_PATH)) {
-    console.log('.dev.vars file already exists, skipping creation');
+  // If .env already exists, skip creation
+  if (fs.existsSync(ENV_PATH)) {
+    console.log('.env file already exists, skipping creation');
     return;
   }
 
-  let devVarsContent = '';
+  let envContent = '';
 
-  // Check if .dev.vars.example exists
-  if (fs.existsSync(DEV_VARS_EXAMPLE_PATH)) {
-    console.log('Found .dev.vars.example, using example values');
-    devVarsContent = fs.readFileSync(DEV_VARS_EXAMPLE_PATH, 'utf8');
+  // Check if .env.example exists
+  if (fs.existsSync(ENV_EXAMPLE_PATH)) {
+    console.log('Found .env.example, using example values');
+    envContent = fs.readFileSync(ENV_EXAMPLE_PATH, 'utf8');
   } else {
-    console.log('No .dev.vars.example found, creating empty .dev.vars');
-    devVarsContent = '# Environment variables for local development\n# Add your variables here\n';
+    console.log('No .env.example found, creating empty .env');
+    envContent = '# Environment variables for local development\n# Add your variables here\n';
   }
 
-  // Create the .dev.vars file
-  fs.writeFileSync(DEV_VARS_PATH, devVarsContent);
-  console.log(`Created ${path.relative(CWD, DEV_VARS_PATH)}`);
+  // Create the .env file
+  fs.writeFileSync(ENV_PATH, envContent);
+  console.log(`Created ${path.relative(CWD, ENV_PATH)}`);
 }
 
 // Function to create the dev file for development
@@ -104,9 +104,9 @@ function createDevConfig() {
   console.log(`Dev configuration written to ${path.relative(CWD, WRANGLER_DEV_PATH)}`);
 }
 
-// Create configurations and .dev.vars file
+// Create configurations and .env file
 createTypegenConfig();
 createDevConfig();
-createDevVarsFile();
+createEnvFile();
 
 console.log('Pre-typegen script completed successfully.');

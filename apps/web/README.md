@@ -27,10 +27,10 @@ bun install
 Copy the example environment variables file to create your local development variables:
 
 ```bash
-cp .dev.vars.example .dev.vars
+cp .env.example .env
 ```
 
-Then edit `.dev.vars` to add your development API keys and other environment variables.
+Then edit `.env` to add your development API keys and other environment variables.
 
 ### Development
 
@@ -62,7 +62,7 @@ bun run build
 
 ### Local Development
 
-For local development, environment variables are stored in the `.dev.vars` file, which is not committed to the repository. This file is loaded automatically when running `bun run dev`.
+For local development, environment variables are stored in the `.env` file, which is not committed to the repository. This file is loaded automatically when running `bun run dev`.
 
 ### Production Deployment
 
