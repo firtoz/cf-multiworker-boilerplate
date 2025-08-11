@@ -63,8 +63,8 @@ The project includes custom scripts to streamline development and deployment:
 
 This script automatically prepares the Wrangler configuration for different environments:
 
-- Creates `wrangler.temp.json` for typegen by removing `script_name` from Durable Object bindings
-- Creates `wrangler.dev.json` for development by adding migrations with Durable Object class names
+- Creates `wrangler.temp.jsonc` for typegen by removing `script_name` from Durable Object bindings
+- Creates `wrangler.dev.jsonc` for development by adding migrations with Durable Object class names
 - Uses `jsonc-parser` for proper JSONC handling
 - Configured in `turbo.json` as a dependency for `cf-typegen` and `dev` tasks
 
@@ -130,8 +130,8 @@ The Durable Objects are already configured in the wrangler files, but you need t
 "durable_objects": {
   "bindings": [
     {
-      "name": "TestDo",
-      "class_name": "TestDo",
+      "name": "ExampleDo",
+      "class_name": "ExampleDo",
       "script_name": "cf-example-do" // This should match the name in durable-objects/example-do/wrangler.jsonc
     }
   ]
@@ -167,8 +167,8 @@ This will deploy both the web application and the Durable Object to your Cloudfl
 ## Scripts
 
 - `pre-typegen.ts`: Modifies wrangler configuration for different environments
-  - Creates wrangler.temp.json for typegen (removes script_name from durable object bindings)
-  - Creates wrangler.dev.json for development (adds migrations with durable object class names)
+  - Creates wrangler.temp.jsonc for typegen (removes script_name from durable object bindings)
+  - Creates wrangler.dev.jsonc for development (adds migrations with durable object class names)
 
 - `wrangler.ts`: A wrapper around the Wrangler CLI for easier command execution
 

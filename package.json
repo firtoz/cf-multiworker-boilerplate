@@ -19,7 +19,7 @@
     "jsonc-parser": "^3.3.1",
     "turbo": "^2.5.5"
   },
-  "packageManager": "bun@1.2.19",
+  "packageManager": "bun@1.2.20",
   "dependencies": {
     "uuid": "^11.1.0"
   }

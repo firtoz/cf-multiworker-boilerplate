@@ -11,9 +11,9 @@ export function meta(_args: Route.MetaArgs) {
 
 export async function loader(_args: Route.LoaderArgs) {
 	// Example of using a Durable Object
-	const testDoNamespace = env.TestDo;
-	const testDo = testDoNamespace.get(testDoNamespace.idFromName("example"));
-	const response = await testDo.fetch("https://example.com");
+	const ExampleDoNamespace = env.ExampleDo;
+	const ExampleDo = ExampleDoNamespace.get(ExampleDoNamespace.idFromName("example"));
+	const response = await ExampleDo.fetch("https://example.com");
 
 	return {
 		message: env.VALUE_FROM_CLOUDFLARE,

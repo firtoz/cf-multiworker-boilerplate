@@ -40,7 +40,7 @@ console.log("auxiliaryWorkerConfigs", auxiliaryWorkerConfigs);
 export default defineConfig({
 	plugins: [
 		cloudflare({
-			configPath: "./wrangler.dev.json",
+			configPath: "./wrangler.dev.jsonc",
 			viteEnvironment: { name: "ssr" },
 			auxiliaryWorkers: auxiliaryWorkerConfigs,
 		}),

@@ -1,56 +1,56 @@
 {
-"$schema": "https://biomejs.dev/schemas/2.1.4/schema.json",
-"vcs": {
-"enabled": true,
-"clientKind": "git",
-"useIgnoreFile": true
-},
-"files": {
-"ignoreUnknown": true,
-"includes": [
-"**",
-"!**/node_modules",
-"!**/dist",
-"!**/.wrangler",
-"!**/.cache",
-"!**/*.css",
-"!**/*.scss"
-]
-},
-"formatter": {
-"enabled": true,
-"indentStyle": "tab",
-"indentWidth": 2,
-"lineWidth": 100
-},
-"assist": {
-"actions": {
-"source": {
-"organizeImports": "on"
-}
-}
-},
-"linter": {
-"enabled": true,
-"rules": {
-"recommended": true,
-"correctness": {
-"noUnusedVariables": "error"
-},
-"suspicious": {
-"noExplicitAny": "error"
-},
-"style": {
-"useConst": "error",
-"useTemplate": "error"
-}
-}
-},
-"javascript": {
-"formatter": {
-"quoteStyle": "double",
-"trailingCommas": "all",
-"semicolons": "always"
-}
-}
+    "$schema": "https://biomejs.dev/schemas/2.1.4/schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": false
+    },
+    "files": {
+        "ignoreUnknown": true,
+        "includes": [
+            "**",
+            "!**/node_modules",
+            "!**/dist",
+            "!**/.wrangler",
+            "!**/.cache",
+            "!**/*.css",
+            "!**/*.scss"
+        ]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "tab",
+        "indentWidth": 2,
+        "lineWidth": 100
+    },
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "correctness": {
+                "noUnusedVariables": "error"
+            },
+            "suspicious": {
+                "noExplicitAny": "error"
+            },
+            "style": {
+                "useConst": "error",
+                "useTemplate": "error"
+            }
+        }
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double",
+            "trailingCommas": "all",
+            "semicolons": "always"
+        }
+    }
 }

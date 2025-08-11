@@ -1,4 +1,7 @@
 {
     "biome.enabled": true,
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "[handlebars]": {
+        "editor.formatOnSave": false
+    }
 }

@@ -9,5 +9,5 @@
 		"lint:format": "biome format --write .",
 		"deploy": "bun ../../scripts/wrangler.ts deploy"
 	},
-	"packageManager": "bun@1.2.19"
+	"packageManager": "bun@1.2.17"
 }

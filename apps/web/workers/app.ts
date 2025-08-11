@@ -1,4 +1,4 @@
-import { TestDo } from "example-do/workers/app";
+import { ExampleDo } from "example-do/workers/app";
 import { createRequestHandler } from "react-router";
 
 /**
@@ -27,6 +27,6 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
-// Re-export the TestDo class to make it available to Cloudflare Workers
+// Re-export the ExampleDo class to make it available to Cloudflare Workers
 // This is necessary for proper binding between workers
-export { TestDo };
+export { ExampleDo };

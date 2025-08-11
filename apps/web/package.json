@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "react-router build",
 		"pre-typegen": "bun ../../scripts/pre-typegen.ts",
-		"cf-typegen": "bunx wrangler types -c wrangler.temp.json",
+		"cf-typegen": "bunx wrangler types -c wrangler.temp.jsonc",
 		"rr-typegen": "react-router typegen",
 		"deploy": "bun ../../scripts/wrangler.ts deploy",
 		"dev": "react-router dev",
@@ -45,5 +45,5 @@
 		"vite-tsconfig-paths": "^5.1.4",
 		"wrangler": "^4.28.1"
 	},
-	"packageManager": "bun@1.2.19"
+	"packageManager": "bun@1.2.20"
 }

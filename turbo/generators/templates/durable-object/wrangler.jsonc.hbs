@@ -6,7 +6,9 @@
 	"$schema": "../../node_modules/wrangler/config-schema.json",
 	"name": "cf-{{ kebabCase name }}",
 	"compatibility_date": "2025-04-04",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "./workers/app.ts",
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
@@ -32,7 +34,9 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": ["{{ pascalCase name }}"]
+			"new_sqlite_classes": [
+				"{{ pascalCase name }}"
+			]
 		}
 	]
 	/**

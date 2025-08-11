@@ -32,8 +32,8 @@
 	"durable_objects": {
 		"bindings": [
 			{
-				"name": "TestDo",
-				"class_name": "TestDo",
+				"name": "ExampleDo",
+				"class_name": "ExampleDo",
 				"script_name": "cf-example-do"
 			}
 		]

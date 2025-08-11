@@ -1,10 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
 
 /**
- * Example Durable Object implementation
- * This is a simple example that demonstrates the basic structure of a Durable Object
+ * A new Durable Object implementation
+ * This is a Durable Object implementation for example-do
  */
-export class TestDo extends DurableObject<Env> {
+export class ExampleDo extends DurableObject<Env> {
 	/**
 	 * Handle HTTP requests to this Durable Object
 	 */
@@ -13,7 +13,7 @@ export class TestDo extends DurableObject<Env> {
 		_request: Request,
 	): Response | Promise<Response> {
 		// Example of a simple response
-		return new Response("Hello World from TestDo!");
+		return new Response("Hello World from ExampleDo!");
 
 		// TODO: Implement your Durable Object logic here
 		// - Parse request data
@@ -23,5 +23,5 @@ export class TestDo extends DurableObject<Env> {
 }
 
 export default {
-	fetch: () => new Response("Hello World!"),
+	fetch: () => new Response("Hello World from example-do!"),
 };
