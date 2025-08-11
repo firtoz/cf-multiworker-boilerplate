@@ -1,0 +1,25 @@
+{
+	"$schema": "https://turborepo.com/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"lint": {
+			"dependsOn": ["typecheck"],
+			"inputs": ["workers/**/*.{ts,tsx}", "tsconfig.json", "tsconfig.cloudflare.json"],
+			"outputs": []
+		},
+		"typecheck": {
+			"dependsOn": ["cf-typegen"],
+			"inputs": ["workers/**/*.{ts,tsx}", "tsconfig.json", "tsconfig.cloudflare.json"],
+			"outputs": []
+		},
+		"cf-typegen": {
+			"inputs": ["wrangler.jsonc"],
+			"outputs": []
+		},
+		"deploy": {
+			"dependsOn": ["typecheck"],
+			"inputs": ["workers/**/*.{ts,tsx}", "wrangler.jsonc"],
+			"outputs": []
+		}
+	}
+}

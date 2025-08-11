@@ -1,112 +1,187 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { v7 as uuidv7 } from 'uuid';
-import { parse as parseJsonc } from 'jsonc-parser';
-import process from 'node:process';
+import fs from "node:fs";
+import path from "node:path";
+import { v7 as uuidv7 } from "uuid";
+import { parseTree, modify, applyEdits, findNodeAtLocation, getNodeValue, type Node } from "jsonc-parser";
+import process from "node:process";
 
 // Use the current working directory instead of relative paths
 const CWD = process.cwd();
-const WRANGLER_CONFIG_PATH = path.join(CWD, 'wrangler.jsonc');
-const WRANGLER_TEMP_PATH = path.join(CWD, 'wrangler.temp.json');
-const WRANGLER_DEV_PATH = path.join(CWD, 'wrangler.dev.json');
-const ENV_PATH = path.join(CWD, '.env');
-const ENV_EXAMPLE_PATH = path.join(CWD, '.env.example');
+const WRANGLER_CONFIG_PATH = path.join(CWD, "wrangler.jsonc");
+const WRANGLER_TEMP_PATH = path.join(CWD, "wrangler.temp.jsonc");
+const WRANGLER_DEV_PATH = path.join(CWD, "wrangler.dev.jsonc");
+const ENV_PATH = path.join(CWD, ".env");
+const ENV_EXAMPLE_PATH = path.join(CWD, ".env.example");
 
 // Check if the wrangler config file exists
 if (!fs.existsSync(WRANGLER_CONFIG_PATH)) {
-  console.error(`Error: Configuration file not found at ${WRANGLER_CONFIG_PATH}`);
-  console.error(`Make sure you're running this script from a directory containing a wrangler.jsonc file.`);
+  console.error(
+    `Error: Configuration file not found at ${WRANGLER_CONFIG_PATH}`,
+  );
+  console.error(
+    `Make sure you're running this script from a directory containing a wrangler.jsonc file.`,
+  );
   process.exit(1);
 }
 
 // Read the original wrangler.jsonc file
-const wranglerConfigRaw = fs.readFileSync(WRANGLER_CONFIG_PATH, 'utf8');
-const wranglerConfig = parseJsonc(wranglerConfigRaw);
+const wranglerConfigRaw = fs.readFileSync(WRANGLER_CONFIG_PATH, "utf8");
 
-// Function to create the temp file for typegen (without script_name)
-function createTypegenConfig() {
-  console.log('Creating typegen configuration...');
+// Function to get all durable object class names
+function getDurableObjectClassNames(configText: string): string[] {
+  const tree = parseTree(configText);
+  if (!tree) return [];
 
-  // Create a deep copy of the original config
-  const typegenConfig = JSON.parse(JSON.stringify(wranglerConfig));
+  const durableObjectsNode = findNodeAtLocation(tree, ['durable_objects']);
+  if (!durableObjectsNode) return [];
 
-  // Remove script_name from durable object bindings if they exist
-  if (typegenConfig.durable_objects?.bindings) {
-    typegenConfig.durable_objects.bindings = typegenConfig.durable_objects.bindings.map(binding => {
-      // Create a new binding without the script_name property
-      const { script_name, ...newBinding } = binding;
-      return newBinding;
-    });
+  const bindingsNode = findNodeAtLocation(durableObjectsNode, ['bindings']);
+  if (!bindingsNode || !bindingsNode.children) return [];
+
+  const classNames: string[] = [];
+
+  // Traverse the bindings array
+  for (let i = 0; i < bindingsNode.children.length; i++) {
+    const bindingItem = bindingsNode.children[i];
+
+    if (bindingItem.type === 'object' && bindingItem.children) {
+      for (const prop of bindingItem.children) {
+        if (prop.type === 'property' && prop.children) {
+          const key = prop.children[0];
+          const value = prop.children[1];
+
+          if (key && value &&
+            key.type === 'string' &&
+            key.value === 'class_name' &&
+            value.type === 'string' &&
+            value.value) {
+            classNames.push(value.value);
+          }
+        }
+      }
+    }
   }
 
-  // Write the modified config to the temp file
-  fs.writeFileSync(WRANGLER_TEMP_PATH, JSON.stringify(typegenConfig, null, 2));
-  console.log(`Typegen configuration written to ${path.relative(CWD, WRANGLER_TEMP_PATH)}`);
+  return classNames;
 }
 
-// Function to create or ensure .env file exists
-function createEnvFile() {
-  console.log('Checking .env file...');
+// Function to ensure .env exists
+function ensureEnvExists() {
+  console.log("Checking .env file...");
 
-  // If .env already exists, skip creation
+  // Check if .env already exists
   if (fs.existsSync(ENV_PATH)) {
-    console.log('.env file already exists, skipping creation');
+    console.log(".env already exists");
     return;
   }
 
-  let envContent = '';
-
   // Check if .env.example exists
-  if (fs.existsSync(ENV_EXAMPLE_PATH)) {
-    console.log('Found .env.example, using example values');
-    envContent = fs.readFileSync(ENV_EXAMPLE_PATH, 'utf8');
-  } else {
-    console.log('No .env.example found, creating empty .env');
-    envContent = '# Environment variables for local development\n# Add your variables here\n';
+  if (!fs.existsSync(ENV_EXAMPLE_PATH)) {
+    console.error(
+      `Error: .env.example not found at ${ENV_EXAMPLE_PATH}`,
+    );
+    console.error(
+      "Cannot create .env without .env.example template",
+    );
+    process.exit(1);
   }
 
-  // Create the .env file
-  fs.writeFileSync(ENV_PATH, envContent);
-  console.log(`Created ${path.relative(CWD, ENV_PATH)}`);
+  // Copy .env.example to .env
+  fs.copyFileSync(ENV_EXAMPLE_PATH, ENV_PATH);
+  console.log(
+    `Copied ${path.relative(CWD, ENV_EXAMPLE_PATH)} to ${path.relative(CWD, ENV_PATH)}`,
+  );
+}
+
+// Function to create the temp file for typegen (without script_name)
+function createTypegenConfig() {
+  console.log("Creating typegen configuration...");
+
+  let result = wranglerConfigRaw;
+
+  // Get the number of bindings to process
+  const tree = parseTree(wranglerConfigRaw);
+  if (!tree) {
+    console.error("Failed to parse wrangler.jsonc");
+    process.exit(1);
+  }
+
+  const durableObjectsNode = findNodeAtLocation(tree, ['durable_objects']);
+  if (durableObjectsNode) {
+    const bindingsNode = findNodeAtLocation(durableObjectsNode, ['bindings']);
+    if (bindingsNode && bindingsNode.children) {
+      // Remove script_name from each binding
+      for (let i = 0; i < bindingsNode.children.length; i++) {
+        const edits = modify(result, ['durable_objects', 'bindings', i, 'script_name'], undefined, {
+          formattingOptions: {
+            insertSpaces: false,
+            tabSize: 1,
+            eol: '\n'
+          }
+        });
+        result = applyEdits(result, edits);
+      }
+    }
+  }
+
+  // Write the result
+  fs.writeFileSync(WRANGLER_TEMP_PATH, result);
+  console.log(
+    `Typegen configuration written to ${path.relative(CWD, WRANGLER_TEMP_PATH)}`,
+  );
 }
 
 // Function to create the dev file for development
 function createDevConfig() {
-  console.log('Creating dev configuration...');
+  console.log("Creating dev configuration...");
 
-  // Create a deep copy of the original config
-  const devConfig = JSON.parse(JSON.stringify(wranglerConfig));
+  const durableObjectClasses = getDurableObjectClassNames(wranglerConfigRaw);
 
-  // Extract all durable object class names
-  const durableObjectClasses: string[] = devConfig.durable_objects?.bindings
-    ? devConfig.durable_objects.bindings.map(binding => binding.class_name)
-    : [];
+  const newMigration = {
+    tag: uuidv7(),
+    new_sqlite_classes: durableObjectClasses,
+  };
 
   // Check if migrations already exist
-  if (!devConfig.migrations) {
-    // If no migrations exist, create a new one
-    devConfig.migrations = [
-      {
-        tag: "v1",
-        new_sqlite_classes: durableObjectClasses
-      }
-    ];
-  } else {
-    // If migrations exist, append a new one with a random UUID
-    devConfig.migrations.push({
-      tag: uuidv7(),
-      new_sqlite_classes: durableObjectClasses
-    });
+  const tree = parseTree(wranglerConfigRaw);
+  if (!tree) {
+    console.error("Failed to parse wrangler.jsonc for dev config");
+    process.exit(1);
   }
 
-  // Write the modified config to the dev file
-  fs.writeFileSync(WRANGLER_DEV_PATH, JSON.stringify(devConfig, null, 2));
-  console.log(`Dev configuration written to ${path.relative(CWD, WRANGLER_DEV_PATH)}`);
+  const existingMigrationsNode = findNodeAtLocation(tree, ['migrations']);
+  let migrationsArray: any[] = [];
+
+  if (existingMigrationsNode && existingMigrationsNode.type === 'array') {
+    // Use getNodeValue to directly convert AST node to JavaScript array
+    migrationsArray = getNodeValue(existingMigrationsNode) || [];
+  }
+
+  // Append the new migration
+  migrationsArray.push(newMigration);
+
+  // Add/update migrations in the config
+  const edits = modify(wranglerConfigRaw, ['migrations'], migrationsArray, {
+    formattingOptions: {
+      insertSpaces: false,
+      tabSize: 1,
+      eol: '\n'
+    }
+  });
+
+  const result = applyEdits(wranglerConfigRaw, edits);
+
+  // Write the result
+  fs.writeFileSync(WRANGLER_DEV_PATH, result);
+  console.log(
+    `Dev configuration written to ${path.relative(CWD, WRANGLER_DEV_PATH)}`,
+  );
 }
 
-// Create configurations and .env file
+// Ensure .env exists before creating configurations
+ensureEnvExists();
+
+// Create both configurations
 createTypegenConfig();
 createDevConfig();
-createEnvFile();
 
-console.log('Pre-typegen script completed successfully.');
+console.log("Pre-typegen script completed successfully.");
