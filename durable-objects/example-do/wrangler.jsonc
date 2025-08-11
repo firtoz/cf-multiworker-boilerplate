@@ -6,9 +6,7 @@
 	"$schema": "../../node_modules/wrangler/config-schema.json",
 	"name": "cf-example-do",
 	"compatibility_date": "2025-04-04",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"main": "./workers/app.ts",
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
@@ -34,9 +32,7 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": [
-				"ExampleDo"
-			]
+			"new_sqlite_classes": ["ExampleDo"]
 		}
 	]
 	/**

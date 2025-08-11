@@ -6,7 +6,7 @@ node_modules/
 .mf
 .wrangler
 .env*
-!.env.example
+!.env.example*
 
 # Turbo
 .turbo

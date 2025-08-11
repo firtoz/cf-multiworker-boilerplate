@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import type { PlopTypes } from "@turbo/gen";
 
 export default function generator(plop: PlopTypes.NodePlopAPI): void {
@@ -37,6 +39,27 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 				stripExtensions: ["hbs"],
 				globOptions: { dot: true },
 				verbose: true,
+			},
+			// Custom action to rename .gitignore.hbs to .gitignore since stripExtensions doesn't work with this dotfile
+			(answers, _config, _plopfileApi) => {
+				const data = answers as { name: string; description: string };
+				const kebabName = plop.getHelper("kebabCase")(data.name);
+
+				const srcPath = path.join("durable-objects", kebabName, ".gitignore.hbs");
+				const destPath = path.join("durable-objects", kebabName, ".gitignore");
+
+				try {
+					if (fs.existsSync(srcPath)) {
+						fs.renameSync(srcPath, destPath);
+						return `Renamed .gitignore.hbs to .gitignore for ${kebabName}`;
+					}
+					return `No .gitignore.hbs file found to rename for ${kebabName}`;
+				} catch (error) {
+					if (error instanceof Error) {
+						return `Failed to rename .gitignore.hbs: ${error.message}`;
+					}
+					return `Failed to rename .gitignore.hbs: ${error}`;
+				}
 			},
 			(answers, _config, _plopfileApi) => {
 				const data = answers as { name: string; description: string };

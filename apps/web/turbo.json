@@ -1,24 +1,14 @@
 {
 	"$schema": "https://turborepo.com/schema.json",
-	"extends": [
-		"//"
-	],
+	"extends": ["//"],
 	"tasks": {
 		"lint": {
-			"dependsOn": [
-				"typecheck"
-			],
-			"inputs": [
-				"app/**/*.{ts,tsx}",
-				"workers/**/*.{ts,tsx}"
-			],
+			"dependsOn": ["typecheck"],
+			"inputs": ["app/**/*.{ts,tsx}", "workers/**/*.{ts,tsx}"],
 			"outputs": []
 		},
 		"typecheck": {
-			"dependsOn": [
-				"cf-typegen",
-				"rr-typegen"
-			],
+			"dependsOn": ["cf-typegen", "rr-typegen"],
 			"inputs": [
 				"app/**/*.{ts,tsx}",
 				"workers/**/*.{ts,tsx}",
@@ -29,43 +19,25 @@
 			"outputs": []
 		},
 		"pre-typegen": {
-			"inputs": [
-				"wrangler.jsonc"
-			],
-			"outputs": [
-				"wrangler.temp.jsonc",
-				"wrangler.dev.jsonc"
-			]
+			"inputs": ["wrangler.jsonc"],
+			"outputs": ["wrangler.temp.jsonc", "wrangler.dev.jsonc"]
 		},
 		"cf-typegen": {
-			"dependsOn": [
-				"pre-typegen"
-			],
-			"inputs": [
-				"wrangler.jsonc",
-				"wrangler.temp.json",
-				".env"
-			],
+			"dependsOn": ["pre-typegen"],
+			"inputs": ["wrangler.jsonc", "wrangler.temp.json", ".env"],
 			"outputs": []
 		},
 		"rr-typegen": {
-			"inputs": [
-				"app/routes.ts",
-				"app/routes/**/*.{ts,tsx}"
-			],
+			"inputs": ["app/routes.ts", "app/routes/**/*.{ts,tsx}"],
 			"outputs": []
 		},
 		"dev": {
-			"dependsOn": [
-				"cf-typegen"
-			],
+			"dependsOn": ["cf-typegen"],
 			"persistent": true,
 			"cache": false
 		},
 		"build": {
-			"dependsOn": [
-				"typecheck"
-			],
+			"dependsOn": ["typecheck"],
 			"inputs": [
 				"app/**/*.{ts,tsx}",
 				"workers/**/*.{ts,tsx}",
@@ -73,19 +45,11 @@
 				"react-router.config.ts",
 				"wrangler.jsonc"
 			],
-			"outputs": [
-				"build/**/*"
-			]
+			"outputs": ["build/**/*"]
 		},
 		"deploy": {
-			"dependsOn": [
-				"build",
-				"test-do#deploy"
-			],
-			"inputs": [
-				"build/**/*",
-				"wrangler.jsonc"
-			],
+			"dependsOn": ["build", "test-do#deploy"],
+			"inputs": ["build/**/*", "wrangler.jsonc"],
 			"outputs": []
 		}
 	}
