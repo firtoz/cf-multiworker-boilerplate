@@ -78,6 +78,17 @@ This approach ensures consistent configuration across development and production
 - [Node.js](https://nodejs.org/) (>= 18)
 - [Cloudflare Account](https://dash.cloudflare.com/sign-up)
 
+### Creating a New Project from This Template
+
+To create a new project based on this template using the GitHub CLI:
+
+```bash
+gh repo create [repo_name_here] --template frtn/cf-multiworker-boilerplate [--private]
+cd [repo_name_here]
+```
+
+Replace `[repo_name_here]` with your desired repository name. The repository will be public by default; add `--private` if you want it to be private.
+
 ### Installation
 
 Install the dependencies:
