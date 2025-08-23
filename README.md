@@ -83,7 +83,7 @@ This approach ensures consistent configuration across development and production
 To create a new project based on this template using the GitHub CLI:
 
 ```bash
-gh repo create [repo_name_here] --template frtn/cf-multiworker-boilerplate [--private]
+gh repo create [repo_name_here] --template firtoz/cf-multiworker-boilerplate [--private]
 cd [repo_name_here]
 ```
 
