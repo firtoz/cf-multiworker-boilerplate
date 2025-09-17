@@ -44,11 +44,12 @@ cf-multiworker-boilerplate/
 ├── apps/                  # Web applications
 │   └── web/               # Main web application (React Router)
 │       ├── app/           # React application code
-
+│       │   ├── components/# React components
+│       │   ├── routes/    # Route components
+│       │   └── welcome/   # Welcome page assets
 │       └── workers/       # Worker entry points
 ├── durable-objects/       # Durable Objects
 │   └── example-do/        # Example Durable Object
-├── packages/              # Shared packages
 ├── scripts/               # Utility scripts
 │   ├── pre-typegen.ts     # Script for wrangler configuration
 │   └── wrangler.ts        # Wrangler CLI wrapper
@@ -66,7 +67,7 @@ This script automatically prepares the Wrangler configuration for different envi
 - Creates `wrangler.temp.jsonc` for typegen by removing `script_name` from Durable Object bindings
 - Creates `wrangler.dev.jsonc` for development by adding migrations with Durable Object class names
 - Uses `jsonc-parser` for proper JSONC handling
-- Configured in `turbo.json` as a dependency for `cf-typegen` and `dev` tasks
+- Configured in individual app `turbo.json` files as a dependency for `cf-typegen` and `dev` tasks
 
 This approach ensures consistent configuration across development and production environments.
 
@@ -74,7 +75,7 @@ This approach ensures consistent configuration across development and production
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) (>= 1.2.14)
+- [Bun](https://bun.sh/) (>= 1.2.20)
 - [Node.js](https://nodejs.org/) (>= 18)
 - [Cloudflare Account](https://dash.cloudflare.com/sign-up)
 

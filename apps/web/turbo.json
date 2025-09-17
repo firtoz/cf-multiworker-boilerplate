@@ -48,7 +48,7 @@
 			"outputs": ["build/**/*"]
 		},
 		"deploy": {
-			"dependsOn": ["build", "test-do#deploy"],
+			"dependsOn": ["build", "example-do#deploy"],
 			"inputs": ["build/**/*", "wrangler.jsonc"],
 			"outputs": []
 		}
