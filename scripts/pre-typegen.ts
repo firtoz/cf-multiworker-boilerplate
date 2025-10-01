@@ -4,17 +4,14 @@ import process from "node:process";
 import {
 	applyEdits,
 	findNodeAtLocation,
-	getNodeValue,
 	modify,
 	parseTree,
 } from "jsonc-parser";
-import { v7 as uuidv7 } from "uuid";
 
 // Use the current working directory instead of relative paths
 const CWD = process.cwd();
 const WRANGLER_CONFIG_PATH = path.join(CWD, "wrangler.jsonc");
 const WRANGLER_TEMP_PATH = path.join(CWD, "wrangler.temp.jsonc");
-const WRANGLER_DEV_PATH = path.join(CWD, "wrangler.dev.jsonc");
 const ENV_PATH = path.join(CWD, ".env");
 const ENV_EXAMPLE_PATH = path.join(CWD, ".env.example");
 
@@ -140,61 +137,9 @@ function createTypegenConfig() {
 	);
 }
 
-// Function to create the dev file for development
-function createDevConfig() {
-	console.log("Creating dev configuration...");
-
-	const durableObjectClasses = getDurableObjectClassNames(wranglerConfigRaw);
-
-	const newMigration = {
-		tag: uuidv7(),
-		new_sqlite_classes: durableObjectClasses,
-	};
-
-	// Check if migrations already exist
-	const tree = parseTree(wranglerConfigRaw);
-	if (!tree) {
-		console.error("Failed to parse wrangler.jsonc for dev config");
-		process.exit(1);
-	}
-
-	const existingMigrationsNode = findNodeAtLocation(tree, ["migrations"]);
-	let migrationsArray: Array<{
-		tag: string;
-		new_sqlite_classes?: string[];
-	}> = [];
-
-	if (existingMigrationsNode?.type === "array") {
-		// Use getNodeValue to directly convert AST node to JavaScript array
-		migrationsArray = getNodeValue(existingMigrationsNode) || [];
-	}
-
-	// Append the new migration
-	migrationsArray.push(newMigration);
-
-	// Add/update migrations in the config
-	const edits = modify(wranglerConfigRaw, ["migrations"], migrationsArray, {
-		formattingOptions: {
-			insertSpaces: false,
-			tabSize: 1,
-			eol: "\n",
-		},
-	});
-
-	const result = applyEdits(wranglerConfigRaw, edits);
-
-	// Write the result
-	fs.writeFileSync(WRANGLER_DEV_PATH, result);
-	console.log(
-		`Dev configuration written to ${path.relative(CWD, WRANGLER_DEV_PATH)}`,
-	);
-}
-
 // Ensure .env exists before creating configurations
 ensureEnvExists();
 
-// Create both configurations
 createTypegenConfig();
-createDevConfig();
 
 console.log("Pre-typegen script completed successfully.");
