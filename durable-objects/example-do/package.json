@@ -7,7 +7,7 @@
 		"typecheck": "tsc -b",
 		"lint": "biome check --write .",
 		"lint:format": "biome format --write .",
-		"deploy": "bun ../../scripts/wrangler.ts deploy"
+		"deploy": "bunx wrangler deploy"
 	},
 	"packageManager": "bun@1.2.23"
 }

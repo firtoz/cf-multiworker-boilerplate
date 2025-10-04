@@ -29,47 +29,6 @@ if (!fs.existsSync(WRANGLER_CONFIG_PATH)) {
 // Read the original wrangler.jsonc file
 const wranglerConfigRaw = fs.readFileSync(WRANGLER_CONFIG_PATH, "utf8");
 
-// Function to get all durable object class names
-function getDurableObjectClassNames(configText: string): string[] {
-	const tree = parseTree(configText);
-	if (!tree) return [];
-
-	const durableObjectsNode = findNodeAtLocation(tree, ["durable_objects"]);
-	if (!durableObjectsNode) return [];
-
-	const bindingsNode = findNodeAtLocation(durableObjectsNode, ["bindings"]);
-	if (!bindingsNode || !bindingsNode.children) return [];
-
-	const classNames: string[] = [];
-
-	// Traverse the bindings array
-	for (let i = 0; i < bindingsNode.children.length; i++) {
-		const bindingItem = bindingsNode.children[i];
-
-		if (bindingItem.type === "object" && bindingItem.children) {
-			for (const prop of bindingItem.children) {
-				if (prop.type === "property" && prop.children) {
-					const key = prop.children[0];
-					const value = prop.children[1];
-
-					if (
-						key &&
-						value &&
-						key.type === "string" &&
-						key.value === "class_name" &&
-						value.type === "string" &&
-						value.value
-					) {
-						classNames.push(value.value);
-					}
-				}
-			}
-		}
-	}
-
-	return classNames;
-}
-
 // Function to ensure .env exists
 function ensureEnvExists() {
 	console.log("Checking .env file...");

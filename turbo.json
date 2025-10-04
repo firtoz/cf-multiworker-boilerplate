@@ -1,15 +1,30 @@
 {
-  "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": [".env"],
-  "tasks": {
-    "build": {
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {
-    }
-  },
-  "globalEnv": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
+	"$schema": "https://turborepo.com/schema.json",
+	"globalDependencies": [".env", "tsconfig.json"],
+	"ui": "tui",
+	"tasks": {
+		"build": {
+			"outputLogs": "new-only"
+		},
+		"typecheck": {
+			"outputLogs": "new-only"
+		},
+		"cf-typegen": {
+			"outputLogs": "new-only"
+		},
+		"pre-typegen": {
+			"outputLogs": "new-only"
+		},
+		"rr-typegen": {
+			"outputLogs": "new-only"
+		},
+		"dev": {
+			"cache": false,
+			"persistent": true,
+			"outputLogs": "new-only"
+		},
+		"lint": {
+			"outputLogs": "new-only"
+		}
+	}
 }

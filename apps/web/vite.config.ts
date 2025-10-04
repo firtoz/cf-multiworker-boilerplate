@@ -7,12 +7,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-type AuxiliaryWorkerConfig = Exclude<
-	PluginConfig["auxiliaryWorkers"],
-	undefined
->[number];
+type AuxiliaryWorkerConfig = Exclude<PluginConfig["auxiliaryWorkers"], undefined>[number];
 
-// Find all wrangler.jsonc files in the durable-objects directory
+// Find all wrangler.jsonc files in the durable-objects directory.
 const durableObjectsDir = path.resolve(__dirname, "../../durable-objects");
 const findWranglerConfigs = (): AuxiliaryWorkerConfig[] => {
 	if (!fs.existsSync(durableObjectsDir)) {
@@ -28,16 +25,8 @@ const findWranglerConfigs = (): AuxiliaryWorkerConfig[] => {
 	// Check each subdirectory for a wrangler.jsonc file
 	return subdirs
 		.map((subdir): AuxiliaryWorkerConfig | null => {
-			const configPath = path.join(
-				"../../durable-objects",
-				subdir,
-				"wrangler.jsonc",
-			);
-			const fullPath = path.resolve(
-				durableObjectsDir,
-				subdir,
-				"wrangler.jsonc",
-			);
+			const configPath = path.join("../../durable-objects", subdir, "wrangler.jsonc");
+			const fullPath = path.resolve(durableObjectsDir, subdir, "wrangler.jsonc");
 
 			return fs.existsSync(fullPath) ? { configPath } : null;
 		})

@@ -4,7 +4,14 @@
 	"tasks": {
 		"lint": {
 			"dependsOn": ["typecheck"],
-			"inputs": ["app/**/*.{ts,tsx}", "workers/**/*.{ts,tsx}", "biome.json"],
+			"inputs": [
+				"app/**/*.{ts,tsx}",
+				"workers/**/*.{ts,tsx}",
+				"biome.json",
+				"vite.config.ts",
+				"react-router.config.ts",
+				"wrangler.jsonc"
+			],
 			"outputs": []
 		},
 		"typecheck": {
