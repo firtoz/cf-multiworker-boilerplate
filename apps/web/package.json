@@ -7,7 +7,7 @@
 		"pre-typegen": "bun ../../scripts/pre-typegen.ts",
 		"cf-typegen": "bunx wrangler types -c wrangler.temp.jsonc",
 		"rr-typegen": "react-router typegen",
-		"deploy": "bun ../../scripts/wrangler.ts deploy",
+		"deploy": "bunx wrangler deploy",
 		"dev": "react-router dev",
 		"preview": "bun run build && vite preview",
 		"typecheck": "tsc -b",

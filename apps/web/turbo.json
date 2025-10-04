@@ -4,7 +4,7 @@
 	"tasks": {
 		"lint": {
 			"dependsOn": ["typecheck"],
-			"inputs": ["app/**/*.{ts,tsx}", "workers/**/*.{ts,tsx}"],
+			"inputs": ["app/**/*.{ts,tsx}", "workers/**/*.{ts,tsx}", "biome.json"],
 			"outputs": []
 		},
 		"typecheck": {
@@ -50,7 +50,8 @@
 		"deploy": {
 			"dependsOn": ["build", "example-do#deploy"],
 			"inputs": ["build/**/*", "wrangler.jsonc"],
-			"outputs": []
+			"outputs": [],
+			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
 		}
 	}
 }
