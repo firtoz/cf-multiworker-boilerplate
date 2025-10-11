@@ -35,8 +35,6 @@ const findWranglerConfigs = (): AuxiliaryWorkerConfig[] => {
 
 const auxiliaryWorkerConfigs = findWranglerConfigs();
 
-console.log("auxiliaryWorkerConfigs:", auxiliaryWorkerConfigs);
-
 export default defineConfig({
 	plugins: [
 		cloudflare({
