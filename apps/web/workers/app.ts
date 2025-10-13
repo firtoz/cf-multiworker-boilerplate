@@ -26,6 +26,3 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
-// Re-export the ExampleDo class to make it available to Cloudflare Workers
-// This is necessary for proper binding between workers
-export { ExampleDo } from "example-do/workers/app";

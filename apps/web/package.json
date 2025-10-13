@@ -4,8 +4,8 @@
 	"type": "module",
 	"scripts": {
 		"build": "react-router build",
-		"pre-typegen": "bun ../../scripts/pre-typegen.ts",
-		"cf-typegen": "bunx wrangler types -c wrangler.temp.jsonc",
+		"cf-typegen": "bunx wrangler types -c wrangler.jsonc && bun run post-typegen",
+		"post-typegen": "bun ../../scripts/post-typegen.ts",
 		"rr-typegen": "react-router typegen",
 		"deploy": "bunx wrangler deploy",
 		"dev": "react-router dev",

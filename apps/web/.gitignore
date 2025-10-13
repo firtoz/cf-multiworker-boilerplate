@@ -10,8 +10,6 @@
 .wrangler
 .env*
 !.env.example
-wrangler.temp.jsonc
-wrangler.dev.jsonc
 
 # Turbo
 .turbo

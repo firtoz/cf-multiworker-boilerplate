@@ -25,14 +25,18 @@
 			],
 			"outputs": []
 		},
-		"pre-typegen": {
-			"inputs": ["wrangler.jsonc", "../../scripts/pre-typegen.ts"],
-			"outputs": ["wrangler.temp.jsonc", "wrangler.dev.jsonc"]
+		"post-typegen": {
+			"inputs": ["wrangler.jsonc", "../../scripts/post-typegen.ts"],
+			"outputs": ["worker-configuration.d.ts"]
 		},
 		"cf-typegen": {
-			"dependsOn": ["pre-typegen"],
-			"inputs": ["wrangler.jsonc", "wrangler.temp.json", ".env"],
-			"outputs": []
+			"inputs": [
+				"workers/**/*.{ts,tsx}",
+				"wrangler.jsonc",
+				".env",
+				"../../scripts/post-typegen.ts"
+			],
+			"outputs": ["worker-configuration.d.ts"]
 		},
 		"rr-typegen": {
 			"inputs": ["app/routes.ts", "app/routes/**/*.{ts,tsx}"],

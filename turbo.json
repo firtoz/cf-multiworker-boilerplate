@@ -12,7 +12,7 @@
 		"cf-typegen": {
 			"outputLogs": "new-only"
 		},
-		"pre-typegen": {
+		"post-typegen": {
 			"outputLogs": "new-only"
 		},
 		"rr-typegen": {
