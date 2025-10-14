@@ -1,24 +1,35 @@
+import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
 import { DurableObject } from "cloudflare:workers";
+import { Hono } from "hono";
 
 /**
  * {{ description }}
- * This is a Durable Object implementation for {{ name }}
+ * {{ pascalCase name }} Durable Object with Hono routing
  */
-export class {{ pascalCase name }} extends DurableObject<Env> {
+export class {{ pascalCase name }} extends DurableObject<Env> implements DOWithHonoApp {
+	app = new Hono<{ Bindings: Env }>()
+		// Health check
+		.get("/", (c) => c.json({ 
+			status: "{{ pascalCase name }} ready",
+			message: "Hello World from {{ pascalCase name }}!"
+		}));
+		// TODO: Add your routes here
+		// Example:
+		// .get("/data", async (c) => {
+		//   const data = await this.ctx.storage.get("key");
+		//   return c.json({ data });
+		// })
+		// .post("/data", async (c) => {
+		//   const body = await c.req.json();
+		//   await this.ctx.storage.put("key", body);
+		//   return c.json({ success: true });
+		// });
+
 	/**
 	 * Handle HTTP requests to this Durable Object
 	 */
-	fetch(
-		/** The incoming request */
-		_request: Request,
-	): Response | Promise<Response> {
-		// Example of a simple response
-		return new Response("Hello World from {{ pascalCase name }}!");
-
-		// TODO: Implement your Durable Object logic here
-		// - Parse request data
-		// - Access Durable Object state with this.state
-		// - Return appropriate response
+	fetch(request: Request): Response | Promise<Response> {
+		return this.app.fetch(request, this.env);
 	}
 }
 

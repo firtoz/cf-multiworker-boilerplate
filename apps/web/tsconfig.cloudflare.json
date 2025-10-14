@@ -2,13 +2,17 @@
 	"extends": "./tsconfig.json",
 	"include": [
 		".react-router/types/**/*",
-		"app/**/*",
-		"app/**/.server/**/*",
-		"app/**/.client/**/*",
-		"workers/**/*",
+		"app/**/*.ts",
+		"app/**/*.tsx",
+		"app/**/.server/**/*.ts",
+		"app/**/.server/**/*.tsx",
+		"app/**/.client/**/*.ts",
+		"app/**/.client/**/*.tsx",
+		"workers/**/*.ts",
 		"db/**/*",
 		"worker-configuration.d.ts"
 	],
+	"exclude": ["../../durable-objects/**/*"],
 	"compilerOptions": {
 		"composite": true,
 		"strict": true,

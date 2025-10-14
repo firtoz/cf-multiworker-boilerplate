@@ -33,6 +33,11 @@
 				"name": "ExampleDo",
 				"class_name": "ExampleDo",
 				"script_name": "cf-example-do"
+			},
+			{
+				"name": "CoordinatorDo",
+				"class_name": "CoordinatorDo",
+				"script_name": "cf-coordinator-do"
 			}
 		]
 	}

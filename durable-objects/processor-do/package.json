@@ -1,5 +1,5 @@
 {
-	"name": "example-do",
+	"name": "processor-do",
 	"private": true,
 	"type": "module",
 	"scripts": {

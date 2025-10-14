@@ -143,7 +143,7 @@ function fixTypeDefinitions() {
 		// Remove .ts extension if present (TypeScript import convention)
 		relativePath = relativePath.replace(/\.ts$/, "");
 
-		// Create the replacement
+		// Create the replacement using type-only import
 		const replacement = `${bindingName}: DurableObjectNamespace<import("${relativePath}").${doInfo.className}>`;
 
 		// Apply the replacement

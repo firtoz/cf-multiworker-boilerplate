@@ -9,9 +9,12 @@ A modern, production-ready boilerplate for building full-stack applications with
 - 📦 TypeScript support across all packages
 - 🔄 Pre-configured scripts for typegen and deployment
 - 🔒 Environment variable management
-
+- 🔗 Multi-worker communication patterns (DO-to-DO)
 - 🧩 Durable Objects for stateful applications
+- 🎯 Type-safe APIs with Hono and hono-fetcher
+- ✨ Enhanced React Router utilities with router-toolkit
 - 🔍 Zod for schema validation
+- 🛡️ Type-safe error handling with maybe-error
 - 🎨 TailwindCSS for styling
 
 ## Technologies
@@ -28,9 +31,12 @@ A modern, production-ready boilerplate for building full-stack applications with
 - **[React Router](https://reactrouter.com/)**: Declarative routing for React applications
 - **[TailwindCSS](https://tailwindcss.com/)**: Utility-first CSS framework
 
-### Validation
+### Validation & Utilities
 
 - **[Zod](https://zod.dev/)**: TypeScript-first schema validation
+- **[@firtoz/router-toolkit](https://www.npmjs.com/package/@firtoz/router-toolkit)**: Enhanced React Router utilities
+- **[@firtoz/hono-fetcher](https://www.npmjs.com/package/@firtoz/hono-fetcher)**: Type-safe Hono API client
+- **[@firtoz/maybe-error](https://www.npmjs.com/package/@firtoz/maybe-error)**: Type-safe error handling
 
 ### Monorepo Management
 
@@ -49,7 +55,9 @@ cf-multiworker-boilerplate/
 │       │   └── welcome/   # Welcome page assets
 │       └── workers/       # Worker entry points
 ├── durable-objects/       # Durable Objects
-│   └── example-do/        # Example Durable Object
+│   ├── example-do/        # Example Durable Object
+│   ├── coordinator-do/    # Orchestrates work across DOs
+│   └── processor-do/      # Processes delegated work
 ├── scripts/               # Utility scripts
 │   ├── post-typegen.ts    # Script to fix Durable Object type imports
 │   └── predeploy.ts       # Pre-deployment script
@@ -71,6 +79,111 @@ This script automatically fixes Durable Object type definitions after Wrangler g
 - Uses `jsonc-parser` for proper JSONC handling
 
 This approach ensures you get full TypeScript type safety for cross-worker Durable Object bindings without needing to manually re-export classes.
+
+## Multi-Worker Communication Pattern
+
+This boilerplate includes a demonstration of Durable Objects communicating with each other:
+
+### Architecture
+
+```
+Web Worker → CoordinatorDo → ProcessorDo
+```
+
+1. **Web Worker** (`apps/web`): Entry point for HTTP requests
+2. **CoordinatorDo** (`durable-objects/coordinator-do`): Orchestrates work across multiple DOs
+3. **ProcessorDo** (`durable-objects/processor-do`): Processes delegated work
+
+### Example Flow
+
+```typescript
+// In your web worker route (apps/web/app/routes/api.multi-worker.ts)
+const coordinator = env.CoordinatorDo.getByName("coordinator-1");
+const response = await coordinator.fetch("https://fake-host/orchestrate", {
+  method: "POST",
+  body: JSON.stringify(payload),
+});
+
+// Inside CoordinatorDo (durable-objects/coordinator-do/workers/app.ts)
+const processor = this.env.ProcessorDo.getByName("processor-1");
+const result = await processor.fetch("https://fake-host/process", {
+  method: "POST",
+  body: JSON.stringify(data),
+});
+```
+
+### Testing the Pattern
+
+```bash
+# Start dev server
+bun run dev
+
+# In another terminal, test the multi-worker flow
+curl -X POST http://localhost:8788/api/multi-worker \
+  -H "Content-Type: application/json" \
+  -d '{"message": "test"}'
+```
+
+### Work Queue Demo
+
+A complete work queue implementation is included at `/queue`:
+
+**Features:**
+- Submit work items to a queue
+- CoordinatorDo manages queue state and delegates to processors
+- ProcessorDo executes work with simulated delay
+- Real-time status updates (pending → processing → completed/failed)
+- Each work item gets its own ProcessorDo instance
+
+**Implementation:**
+```typescript
+// DOs use Hono with chained routing pattern
+import { Hono } from "hono";
+import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
+
+class CoordinatorDo extends DurableObject implements DOWithHonoApp {
+  app = new Hono()
+    .get("/", (c) => c.json({ status: "ready" }))
+    .get("/queue", async (c) => {
+      const queue = await this.ctx.storage.get("queue") || [];
+      return c.json({ queue });
+    })
+    .post("/queue", async (c) => {
+      const payload = await c.req.json();
+      // ... process work
+      return c.json({ workItem });
+    });
+}
+
+// Web routes use hono-fetcher for type-safe API calls
+import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
+
+const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
+const response = await api.get({ url: "/queue" });
+const data = await response.json(); // Fully typed!
+```
+
+**Type Safety Features:**
+- ✅ Route paths are type-checked at compile time
+- ✅ Request/response types are fully inferred from Hono app
+- ✅ Path parameters are automatically validated
+- ✅ Form validation with Zod schemas
+- ✅ Zero runtime overhead - all type checking happens at compile time
+- ✅ Full IDE autocomplete for routes and parameters
+
+**Try it:**
+1. Start dev: `bun run dev`
+2. Visit http://localhost:5173/queue
+3. Add work items and watch them process!
+
+### Customizing
+
+The provided implementation is intentionally minimal with clear TODOs. Replace the placeholder logic with your own:
+
+- Add your orchestration logic in `CoordinatorDo`
+- Implement processing logic in `ProcessorDo`
+- Access durable storage with `this.ctx.storage`
+- Add more DOs and bindings as needed
 
 ## Getting Started
 
@@ -165,10 +278,22 @@ This will deploy both the web application and the Durable Object to your Cloudfl
 
 ### Adding a New Durable Object
 
-1. Create a new directory in `durable-objects/`
-2. Copy the structure from `example-do/`
-3. Update the package.json and wrangler.jsonc files
-4. Implement your Durable Object logic in `workers/app.ts`
+Use the built-in Turborepo generator:
+
+```bash
+bunx turbo gen durable-object
+```
+
+This will:
+- Prompt you for a name and description
+- Generate all necessary files (package.json, wrangler.jsonc, tsconfig, etc.)
+- Run `wrangler types` to generate TypeScript definitions
+- Install dependencies automatically
+
+Then:
+1. Implement your Durable Object logic in `workers/app.ts`
+2. Add bindings in other workers' `wrangler.jsonc` to use it
+3. Run `bun run cf-typegen` in the root to update types
 
 ### Adding a New Web Application
 

@@ -59,7 +59,7 @@
 			"outputs": ["build/**/*"]
 		},
 		"deploy": {
-			"dependsOn": ["build", "example-do#deploy"],
+			"dependsOn": ["build", "example-do#deploy", "coordinator-do#deploy", "processor-do#deploy"],
 			"inputs": ["build/**/*", "wrangler.jsonc"],
 			"outputs": [],
 			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]

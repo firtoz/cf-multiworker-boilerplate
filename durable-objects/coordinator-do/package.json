@@ -1,5 +1,5 @@
 {
-	"name": "example-do",
+	"name": "coordinator-do",
 	"private": true,
 	"type": "module",
 	"scripts": {

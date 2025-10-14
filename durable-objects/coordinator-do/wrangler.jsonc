@@ -3,8 +3,8 @@
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
-	"$schema": "./node_modules/wrangler/config-schema.json",
-	"name": "cf-example-do",
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "cf-coordinator-do",
 	"compatibility_date": "2025-04-04",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "./workers/app.ts",
@@ -24,15 +24,20 @@
 	"durable_objects": {
 		"bindings": [
 			{
-				"name": "ExampleDo",
-				"class_name": "ExampleDo"
+				"name": "CoordinatorDo",
+				"class_name": "CoordinatorDo"
+			},
+			{
+				"name": "ProcessorDo",
+				"class_name": "ProcessorDo",
+				"script_name": "cf-processor-do"
 			}
 		]
 	},
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": ["ExampleDo"]
+			"new_sqlite_classes": ["CoordinatorDo"]
 		}
 	]
 	/**
@@ -48,7 +53,7 @@
 	// "d1_databases": [
 	// 	{
 	// 		"binding": "DB",
-	// 		"database_name": "cf-example-do-db",
+	// 		"database_name": "cf-coordinator-do-db",
 	// 		"database_id": "your-database-id-here",
 	// 		"migrations_dir": "./drizzle/migrations"
 	// 	}

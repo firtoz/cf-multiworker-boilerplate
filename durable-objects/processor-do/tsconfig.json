@@ -1,0 +1,16 @@
+{
+	"files": [],
+	"references": [
+		{
+			"path": "./tsconfig.cloudflare.json"
+		}
+	],
+	"compilerOptions": {
+		"checkJs": true,
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"noEmit": true,
+		"types": []
+	}
+}
