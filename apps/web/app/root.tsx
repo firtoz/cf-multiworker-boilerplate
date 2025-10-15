@@ -48,6 +48,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
+				{/* 
+					Critical CSS for dark mode FOUC prevention - industry standard practice
+					Prevents white flash on page load for users with dark mode preference
+					See: https://web.dev/articles/prefers-color-scheme#dark-mode-but-add-an-opt-out
+				*/}
+				<style
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: We need to set the color scheme of the html tag to light dark
+					dangerouslySetInnerHTML={{
+						__html: `
+							html { color-scheme: light dark; }
+							html, body { 
+								background-color: #fff; 
+								color: #111; 
+							}
+							@media (prefers-color-scheme: dark) {
+								html, body { 
+									background-color: #030712; 
+									color: #f3f4f6; 
+								}
+							}
+						`,
+					}}
+				/>
 				<Meta />
 				<Links />
 				{/*
