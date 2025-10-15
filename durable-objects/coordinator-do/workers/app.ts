@@ -1,11 +1,17 @@
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
-import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
+import { zValidator } from "@hono/zod-validator";
+import {
+	type QueueMessage,
+	type WorkPayload,
+	workPayloadSchema,
+	workResultSchema,
+} from "do-common";
 import { Hono } from "hono";
 
 type WorkItem = {
 	id: string;
-	payload: unknown;
+	payload: WorkPayload;
 	status: "pending" | "processing" | "completed" | "failed";
 	createdAt: number;
 	updatedAt: number;
@@ -26,9 +32,9 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 			const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
 			return c.json({ queue });
 		})
-		// Add work to queue
-		.post("/queue", async (c) => {
-			const payload = await c.req.json().catch(() => ({}));
+		// Add work to queue (with validation)
+		.post("/queue", zValidator("json", workPayloadSchema), async (c) => {
+			const payload = c.req.valid("json");
 
 			const workItem: WorkItem = {
 				id: crypto.randomUUID(),
@@ -40,6 +46,12 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 
 			const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
 			queue.push(workItem);
+
+			// Keep only the most recent 10 items
+			if (queue.length > 10) {
+				queue.splice(0, queue.length - 10);
+			}
+
 			await this.ctx.storage.put("queue", queue);
 
 			// Process asynchronously (don't await)
@@ -52,6 +64,13 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 			const workId = c.req.param("workId");
 			await this.processWork(workId);
 			return c.json({ success: true });
+		})
+		// Update work result (called by ProcessorDo) - with validation
+		.post("/result/:workId", zValidator("json", workResultSchema), async (c) => {
+			const workId = c.req.param("workId");
+			const body = c.req.valid("json");
+			await this.updateWorkResult(workId, body.result, body.error);
+			return c.json({ success: true });
 		});
 
 	/**
@@ -62,7 +81,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 	}
 
 	/**
-	 * Process a work item by delegating to ProcessorDo
+	 * Process a work item by sending to queue
 	 */
 	private async processWork(workId: string) {
 		const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
@@ -78,30 +97,56 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 		await this.ctx.storage.put("queue", queue);
 
 		try {
-			// Delegate to ProcessorDo using type-safe fetcher
-			const processorApi = honoDoFetcherWithName(this.env.ProcessorDo, `processor-${workId}`);
-			const response = await processorApi.post({
-				url: "/process",
-				body: workItem.payload,
-			});
-
-			const result = await response.json();
-
-			// Update with result
-			workItem.status = "completed";
-			workItem.result = result;
-			workItem.updatedAt = Date.now();
+			// Send to Cloudflare Queue for processing
+			await this.env.WORK_QUEUE.send({
+				workId: workItem.id,
+				payload: workItem.payload,
+				coordinatorId: "main-coordinator", // Allow processor to send results back
+			} satisfies QueueMessage);
 		} catch (error) {
-			// Update with error
+			// Update with error if queue send fails
 			workItem.status = "failed";
 			workItem.error = error instanceof Error ? error.message : String(error);
 			workItem.updatedAt = Date.now();
+			await this.ctx.storage.put("queue", queue);
+		}
+	}
+
+	/**
+	 * Endpoint for ProcessorDo to report results back
+	 */
+	async updateWorkResult(workId: string, result: unknown, error?: string) {
+		const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
+		const workItem = queue.find((item) => item.id === workId);
+
+		if (!workItem) {
+			return;
 		}
 
+		if (error) {
+			workItem.status = "failed";
+			workItem.error = error;
+		} else {
+			workItem.status = "completed";
+			workItem.result = result;
+		}
+
+		workItem.updatedAt = Date.now();
 		await this.ctx.storage.put("queue", queue);
 	}
 }
 
-export default {
-	fetch: () => new Response("Hello World from coordinator-do!"),
-};
+/**
+ * Worker Entrypoint
+ * Handles incoming HTTP requests
+ */
+export default class CoordinatorWorker extends WorkerEntrypoint<Env> {
+	/**
+	 * Handle HTTP requests to the worker
+	 */
+	async fetch(_request: Request): Promise<Response> {
+		return new Response("Hello World from coordinator-do!", {
+			headers: { "Content-Type": "text/plain" },
+		});
+	}
+}

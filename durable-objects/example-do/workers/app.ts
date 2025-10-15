@@ -1,4 +1,4 @@
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
 import { Hono } from "hono";
 
@@ -35,6 +35,17 @@ export class ExampleDo extends DurableObject implements DOWithHonoApp {
 	}
 }
 
-export default {
-	fetch: () => new Response("Hello World from example-do!"),
-};
+/**
+ * Worker Entrypoint
+ * Handles incoming requests and events
+ */
+export default class ExampleWorker extends WorkerEntrypoint<Env> {
+	/**
+	 * Handle HTTP requests to the worker
+	 */
+	async fetch(_request: Request): Promise<Response> {
+		return new Response("Hello World from example-do!", {
+			headers: { "Content-Type": "text/plain" },
+		});
+	}
+}

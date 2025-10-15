@@ -1,3 +1,4 @@
+import { WorkerEntrypoint } from "cloudflare:workers";
 import { createRequestHandler } from "react-router";
 
 /**
@@ -18,10 +19,14 @@ const requestHandler = createRequestHandler(
 	import.meta.env.MODE,
 );
 
-export default {
-	async fetch(request, env, ctx) {
+/**
+ * Web Application Worker Entrypoint
+ * Handles React Router SSR requests
+ */
+export default class WebAppWorker extends WorkerEntrypoint<Env> {
+	async fetch(request: Request): Promise<Response> {
 		return requestHandler(request, {
-			cloudflare: { env, ctx },
+			cloudflare: { env: this.env, ctx: this.ctx },
 		});
-	},
-} satisfies ExportedHandler<Env>;
+	}
+}

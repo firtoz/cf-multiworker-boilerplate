@@ -26,6 +26,11 @@
 			{
 				"name": "ProcessorDo",
 				"class_name": "ProcessorDo"
+			},
+			{
+				"name": "CoordinatorDo",
+				"class_name": "CoordinatorDo",
+				"script_name": "cf-coordinator-do"
 			}
 		]
 	},
@@ -34,13 +39,27 @@
 			"tag": "v1",
 			"new_sqlite_classes": ["ProcessorDo"]
 		}
-	]
+	],
 	/**
 	 * Bindings
 	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
 	 * databases, object storage, AI inference, real-time communication and more.
 	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
 	 */
+	/**
+	 * Queues
+	 * Consumer binding - processes messages from the queue
+	 * https://developers.cloudflare.com/queues/
+	 */
+	"queues": {
+		"consumers": [
+			{
+				"queue": "work-queue",
+				"max_batch_size": 10,
+				"max_batch_timeout": 5
+			}
+		]
+	}
 	// /**
 	//  * D1 Database
 	//  * https://developers.cloudflare.com/d1/

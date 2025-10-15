@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"composite": true,
+		"strict": true,
+		"lib": ["ES2022"],
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"types": []
+	},
+	"include": ["./*.ts"]
+}

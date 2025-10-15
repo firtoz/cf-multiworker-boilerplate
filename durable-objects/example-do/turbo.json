@@ -4,17 +4,12 @@
 	"tasks": {
 		"lint": {
 			"dependsOn": ["typecheck"],
-			"inputs": [
-				"workers/**/*.{ts,tsx}",
-				"tsconfig.json",
-				"tsconfig.cloudflare.json",
-				"biome.json"
-			],
+			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
 			"outputs": []
 		},
 		"typecheck": {
 			"dependsOn": ["cf-typegen"],
-			"inputs": ["workers/**/*.{ts,tsx}", "tsconfig.json", "tsconfig.cloudflare.json"],
+			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json"],
 			"outputs": []
 		},
 		"cf-typegen": {
@@ -23,7 +18,7 @@
 		},
 		"deploy": {
 			"dependsOn": ["typecheck"],
-			"inputs": ["workers/**/*.{ts,tsx}", "wrangler.jsonc"],
+			"inputs": ["workers/**/*.ts", "wrangler.jsonc"],
 			"outputs": [],
 			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
 		}

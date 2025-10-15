@@ -7,19 +7,21 @@ import {
 	success,
 	useDynamicSubmitter,
 } from "@firtoz/router-toolkit";
-import { useCallback, useId } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { href, Link, useRevalidator } from "react-router";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { cn } from "~/lib/cn";
 import type { Route } from "./+types/queue";
 
 // Export route for type safety
 export const route: RoutePath<"/queue"> = "/queue";
 
-// Zod schema for form validation
-export const formSchema = z.object({
-	message: z.string().min(1, "Message is required"),
-	delay: z.coerce.number().min(100).max(5000),
+// Form schema - defines what the web app sends to the coordinator
+// zfd handles coercion from FormData strings to proper types
+export const formSchema = zfd.formData({
+	message: zfd.text(z.string().min(1, "Message is required")),
+	delay: zfd.numeric(z.number().min(100).max(5000)),
 });
 
 export function meta() {
@@ -39,6 +41,7 @@ export async function loader() {
 export const action = formAction({
 	schema: formSchema,
 	handler: async (_args, data) => {
+		// data type is automatically inferred from formSchema (which is workPayloadSchema)
 		const { message, delay } = data;
 
 		try {
@@ -69,6 +72,58 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 	const messageId = useId();
 	const delayId = useId();
 
+	// Track which fields have been modified since the error was displayed
+	const [modifiedFields, setModifiedFields] = useState<Set<string>>(new Set());
+
+	useEffect(() => {
+		console.log("[Queue] submitter.data", submitter.data);
+		// Reset modified fields when form is submitted
+		if (submitter.state === "submitting") {
+			setModifiedFields(new Set());
+		}
+	}, [submitter.data, submitter.state]);
+
+	// Clear error for a specific field when it's modified
+	const handleFieldChange = useCallback((fieldName: string) => {
+		setModifiedFields((prev) => new Set(prev).add(fieldName));
+	}, []);
+
+	// Compute field errors once - returns mapped object of field -> errors[]
+	const fieldErrors = useMemo(() => {
+		const errors: Record<keyof z.infer<typeof formSchema>, string[]> = {
+			message: [],
+			delay: [],
+		};
+
+		if (submitter.state !== "idle") {
+			return errors;
+		}
+
+		if (
+			submitter.data &&
+			!submitter.data.success &&
+			submitter.data.error.type === "validation" &&
+			submitter.data.error.error.properties
+		) {
+			const properties = submitter.data.error.error.properties;
+			for (const [fieldName, fieldError] of Object.entries(properties) as [
+				[
+					keyof z.infer<typeof formSchema>,
+					{
+						errors: string[];
+					},
+				],
+			]) {
+				// Only include errors for fields that haven't been modified
+				if (!modifiedFields.has(fieldName)) {
+					errors[fieldName] = fieldError?.errors || [];
+				}
+			}
+		}
+
+		return errors;
+	}, [modifiedFields, submitter.data, submitter.state]);
+
 	return (
 		<div className="container mx-auto p-8 max-w-6xl">
 			<div className="mb-6">
@@ -86,10 +141,21 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 					Architecture
 				</h2>
 				<p className="text-gray-700 dark:text-gray-300 mb-2">
-					This demonstrates multi-worker communication:
+					This demonstrates queue-based multi-worker communication using Cloudflare Queues:
 				</p>
 				<div className="font-mono text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded border border-gray-200 dark:border-gray-700">
-					Web App → CoordinatorDo (queue management) → ProcessorDo (work execution)
+					Web App → CoordinatorDo → Cloudflare Queue → ProcessorDo → Results back to Coordinator
+				</div>
+				<div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+					<p className="mb-1">
+						<strong>Benefits:</strong>
+					</p>
+					<ul className="list-disc ml-5 space-y-1">
+						<li>Decoupled: Workers don't need direct knowledge of each other</li>
+						<li>Reliable: Built-in retries and guaranteed delivery</li>
+						<li>Scalable: Multiple processors can consume from the same queue</li>
+						<li>Batch Processing: Messages can be processed in batches for efficiency</li>
+					</ul>
 				</div>
 			</div>
 
@@ -101,16 +167,10 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 				</div>
 			)}
 
-			{submitter.data && !submitter.data.success && (
+			{submitter.data && !submitter.data.success && submitter.data.error.type === "handler" && (
 				<div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
-					<p className="font-semibold text-red-800 dark:text-red-200">
-						✗ Error:{" "}
-						{submitter.data.error.type === "validation"
-							? "Please check your form inputs"
-							: submitter.data.error.type === "handler"
-								? submitter.data.error.error
-								: "An unexpected error occurred"}
-					</p>
+					<p className="font-semibold text-red-800 dark:text-red-200 mb-2">✗ Error:</p>
+					<p className="text-red-700 dark:text-red-300">{submitter.data.error.error}</p>
 				</div>
 			)}
 
@@ -132,15 +192,24 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 								type="text"
 								name="message"
 								id={messageId}
-								required
 								disabled={submitter.state === "submitting"}
+								onChange={() => handleFieldChange("message")}
 								className={cn(
-									"w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500",
-									{ "opacity-50": submitter.state === "submitting" },
+									"w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500",
+									{
+										"opacity-50": submitter.state === "submitting",
+										"border-red-500 dark:border-red-500": fieldErrors.message?.length > 0,
+										"border-gray-300 dark:border-gray-600": !fieldErrors.message?.length,
+									},
 								)}
 								placeholder="Enter work message..."
 								defaultValue="Process this data"
 							/>
+							{fieldErrors.message?.map((error, i) => (
+								<p key={i.toString()} className="mt-1 text-sm text-red-600 dark:text-red-400">
+									{error}
+								</p>
+							))}
 						</div>
 						<div>
 							<label
@@ -153,19 +222,29 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 								type="number"
 								name="delay"
 								id={delayId}
-								min="100"
-								max="5000"
-								step="100"
 								disabled={submitter.state === "submitting"}
+								onChange={() => handleFieldChange("delay")}
 								className={cn(
-									"w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500",
-									{ "opacity-50": submitter.state === "submitting" },
+									"w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500",
+									{
+										"opacity-50": submitter.state === "submitting",
+										"border-red-500 dark:border-red-500": fieldErrors.delay?.length > 0,
+										"border-gray-300 dark:border-gray-600": !fieldErrors.delay?.length,
+									},
 								)}
 								defaultValue="1000"
 							/>
-							<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-								Simulates work processing time (100-5000ms)
-							</p>
+							{fieldErrors.delay?.length ? (
+								fieldErrors.delay.map((error, i) => (
+									<p key={i.toString()} className="mt-1 text-sm text-red-600 dark:text-red-400">
+										{error}
+									</p>
+								))
+							) : (
+								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+									Simulates work processing time (100-5000ms)
+								</p>
+							)}
 						</div>
 						<button
 							type="submit"

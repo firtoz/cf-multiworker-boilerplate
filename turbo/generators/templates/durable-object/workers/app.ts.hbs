@@ -1,5 +1,5 @@
 import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import { Hono } from "hono";
 
 /**
@@ -9,21 +9,21 @@ import { Hono } from "hono";
 export class {{ pascalCase name }} extends DurableObject<Env> implements DOWithHonoApp {
 	app = new Hono<{ Bindings: Env }>()
 		// Health check
-		.get("/", (c) => c.json({ 
+		.get("/", (c) => c.json({
 			status: "{{ pascalCase name }} ready",
 			message: "Hello World from {{ pascalCase name }}!"
 		}));
-		// TODO: Add your routes here
-		// Example:
-		// .get("/data", async (c) => {
-		//   const data = await this.ctx.storage.get("key");
-		//   return c.json({ data });
-		// })
-		// .post("/data", async (c) => {
-		//   const body = await c.req.json();
-		//   await this.ctx.storage.put("key", body);
-		//   return c.json({ success: true });
-		// });
+	// TODO: Add your routes here
+	// Example:
+	// .get("/data", async (c) => {
+	//   const data = await this.ctx.storage.get("key");
+	//   return c.json({ data });
+	// })
+	// .post("/data", async (c) => {
+	//   const body = await c.req.json();
+	//   await this.ctx.storage.put("key", body);
+	//   return c.json({ success: true });
+	// });
 
 	/**
 	 * Handle HTTP requests to this Durable Object
@@ -33,6 +33,25 @@ export class {{ pascalCase name }} extends DurableObject<Env> implements DOWithH
 	}
 }
 
-export default {
-	fetch: () => new Response("Hello World from {{ name }}!"),
-};
+/**
+ * Worker Entrypoint
+ * Handles incoming requests and events
+ */
+export default class {{ pascalCase name }}Worker extends WorkerEntrypoint<Env> {
+	/**
+	 * Handle HTTP requests to the worker
+	 */
+	async fetch(request: Request): Promise<Response> {
+		return new Response("Hello World from {{ name }}!", {
+			headers: { "Content-Type": "text/plain" },
+		});
+	}
+
+	// TODO: Add queue consumer if needed
+	// async queue(batch: MessageBatch): Promise<void> {
+	//   for (const message of batch.messages) {
+	//     // Process message
+	//     message.ack();
+	//   }
+	// }
+}

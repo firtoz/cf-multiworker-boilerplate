@@ -5,8 +5,10 @@
 		"lint": {
 			"dependsOn": ["typecheck"],
 			"inputs": [
-				"app/**/*.{ts,tsx}",
-				"workers/**/*.{ts,tsx}",
+				"app/**/*.ts",
+				"app/**/*.tsx",
+				"workers/**/*.ts",
+				"workers/**/*.tsx",
 				"biome.json",
 				"vite.config.ts",
 				"react-router.config.ts",
@@ -17,8 +19,10 @@
 		"typecheck": {
 			"dependsOn": ["cf-typegen", "rr-typegen"],
 			"inputs": [
-				"app/**/*.{ts,tsx}",
-				"workers/**/*.{ts,tsx}",
+				"app/**/*.ts",
+				"app/**/*.tsx",
+				"workers/**/*.ts",
+				"workers/**/*.tsx",
 				"tsconfig.json",
 				"tsconfig.node.json",
 				"tsconfig.cloudflare.json"
@@ -31,7 +35,8 @@
 		},
 		"cf-typegen": {
 			"inputs": [
-				"workers/**/*.{ts,tsx}",
+				"workers/**/*.ts",
+				"workers/**/*.tsx",
 				"wrangler.jsonc",
 				".env",
 				"../../scripts/post-typegen.ts"
@@ -39,7 +44,7 @@
 			"outputs": ["worker-configuration.d.ts"]
 		},
 		"rr-typegen": {
-			"inputs": ["app/routes.ts", "app/routes/**/*.{ts,tsx}"],
+			"inputs": ["app/routes.ts", "app/routes/**/*.ts", "app/routes/**/*.tsx"],
 			"outputs": []
 		},
 		"dev": {
@@ -50,8 +55,10 @@
 		"build": {
 			"dependsOn": ["typecheck"],
 			"inputs": [
-				"app/**/*.{ts,tsx}",
-				"workers/**/*.{ts,tsx}",
+				"app/**/*.ts",
+				"app/**/*.tsx",
+				"workers/**/*.ts",
+				"workers/**/*.tsx",
 				"vite.config.ts",
 				"react-router.config.ts",
 				"wrangler.jsonc"
