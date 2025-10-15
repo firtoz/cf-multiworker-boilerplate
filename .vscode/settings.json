@@ -3,5 +3,17 @@
 	"editor.formatOnSave": true,
 	"[handlebars]": {
 		"editor.formatOnSave": false
-	}
+	},
+	"tailwindCSS.includeLanguages": {
+		"typescript": "javascript",
+		"typescriptreact": "javascript",
+		"typescript.tsx": "javascript"
+	},
+	"files.associations": {
+		"*.css": "tailwindcss"
+	},
+	"editor.quickSuggestions": {
+		"strings": "on"
+	},
+	"tailwindCSS.classFunctions": ["cn"]
 }

@@ -14,7 +14,14 @@ const FONT_URL = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;60
 
 export function headers(_args: Route.HeadersArgs) {
 	return {
+		// Security header that prevents MIME type sniffing attacks. Forces browsers to respect
+		// the declared Content-Type instead of guessing, preventing malicious files disguised
+		// as safe types (e.g., executable code masked as an image) from being executed.
+		// See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
 		"X-Content-Type-Options": "nosniff",
+		// HTTP Link headers for early connection hints - allows browser to start DNS/TCP/TLS
+		// handshakes before HTML parsing, reducing font loading latency by ~100-200ms.
+		// See: https://web.dev/articles/preconnect-and-dns-prefetch
 		Link: [
 			"<https://fonts.googleapis.com>; rel=preconnect",
 			"<https://fonts.gstatic.com>; rel=preconnect; crossorigin",
@@ -23,6 +30,9 @@ export function headers(_args: Route.HeadersArgs) {
 }
 
 export const links: Route.LinksFunction = () => [
+	// Preconnect to Google Fonts domains - establishes early connections to reduce latency.
+	// fonts.googleapis.com serves the CSS, fonts.gstatic.com serves the actual font files.
+	// crossOrigin needed for fonts.gstatic.com because font files are fetched as CORS requests.
 	{ rel: "preconnect", href: "https://fonts.googleapis.com" },
 	{
 		rel: "preconnect",
@@ -65,7 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 							@media (prefers-color-scheme: dark) {
 								html, body { 
 									background-color: #030712; 
-									color: #f3f4f6; 
+									color: #f6f3f4; 
 								}
 							}
 						`,
