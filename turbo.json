@@ -23,6 +23,10 @@
 		},
 		"lint": {
 			"inputs": ["biome.json"]
+		},
+		"deploy": {
+			"outputLogs": "new-only"
 		}
-	}
+	},
+	"globalEnv": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
 }

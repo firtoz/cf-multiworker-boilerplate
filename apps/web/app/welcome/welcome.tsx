@@ -1,4 +1,13 @@
-export function Welcome({ message, doResponse }: { message: string; doResponse?: string }) {
+import { Suspense } from "react";
+import { Await } from "react-router";
+
+export function Welcome({
+	message,
+	doResponsePromise,
+}: {
+	message: string;
+	doResponsePromise?: Promise<string>;
+}) {
 	return (
 		<main className="flex items-center justify-center pt-16 pb-4">
 			<div className="flex-1 flex flex-col items-center gap-16 min-h-0">
@@ -37,15 +46,30 @@ export function Welcome({ message, doResponse }: { message: string; doResponse?:
 							<li className="self-stretch p-3 leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
 								<span className="font-semibold">Environment value:</span> {message}
 							</li>
-							{doResponse && (
-								<li className="self-stretch p-3 leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
-									<div>
-										<span className="font-semibold">Durable Object Response:</span>
-										<pre className="mt-2 p-3 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-sm overflow-auto">
-											{doResponse}
-										</pre>
-									</div>
-								</li>
+							{doResponsePromise && (
+								<Suspense
+									fallback={
+										<li className="self-stretch p-3 leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
+											<div className="animate-pulse">
+												<span className="font-semibold">Durable Object Response:</span>
+												<div className="mt-2 p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 h-20" />
+											</div>
+										</li>
+									}
+								>
+									<Await resolve={doResponsePromise}>
+										{(doResponse) => (
+											<li className="self-stretch p-3 leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
+												<div>
+													<span className="font-semibold">Durable Object Response:</span>
+													<pre className="mt-2 p-3 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-sm overflow-auto">
+														{doResponse}
+													</pre>
+												</div>
+											</li>
+										)}
+									</Await>
+								</Suspense>
 							)}
 						</ul>
 					</nav>

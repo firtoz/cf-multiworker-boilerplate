@@ -37,8 +37,11 @@ export default async function handleRequest(
 	}
 
 	responseHeaders.set("Content-Type", "text/html");
+
 	return new Response(body, {
 		headers: responseHeaders,
 		status: responseStatusCode,
 	});
 }
+
+export const streamTimeout = 10_000;

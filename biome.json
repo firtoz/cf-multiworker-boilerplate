@@ -44,6 +44,9 @@
 			"style": {
 				"useConst": "error",
 				"useTemplate": "error"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "warn"
 			}
 		}
 	},

@@ -5,6 +5,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
+import devtoolsJson from "vite-plugin-devtools-json";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 type AuxiliaryWorkerConfig = Exclude<PluginConfig["auxiliaryWorkers"], undefined>[number];
@@ -37,6 +38,7 @@ const auxiliaryWorkerConfigs = findWranglerConfigs();
 
 export default defineConfig({
 	plugins: [
+		devtoolsJson(),
 		cloudflare({
 			configPath: "./wrangler.jsonc",
 			viteEnvironment: { name: "ssr" },
@@ -46,4 +48,22 @@ export default defineConfig({
 		reactRouter(),
 		tsconfigPaths(),
 	],
+	build: {
+		cssCodeSplit: true,
+		minify: "esbuild",
+		target: "esnext",
+		rollupOptions: {
+			output: {
+				manualChunks: (id) => {
+					// Vendor chunking for better caching
+					if (id.includes("node_modules")) {
+						if (id.includes("react") || id.includes("react-dom") || id.includes("react-router")) {
+							return "vendor-react";
+						}
+						return "vendor";
+					}
+				},
+			},
+		},
+	},
 });

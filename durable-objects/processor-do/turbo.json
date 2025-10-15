@@ -17,9 +17,10 @@
 			"outputs": []
 		},
 		"deploy": {
-			"dependsOn": ["typecheck"],
+			"dependsOn": ["typecheck", "coordinator-do#deploy"],
 			"inputs": ["workers/**/*.ts", "wrangler.jsonc"],
-			"outputs": []
+			"outputs": [],
+			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
 		}
 	}
 }

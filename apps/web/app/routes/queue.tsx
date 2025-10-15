@@ -7,8 +7,8 @@ import {
 	success,
 	useDynamicSubmitter,
 } from "@firtoz/router-toolkit";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { href, Link, useRevalidator } from "react-router";
+import { Suspense, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { Await, href, Link, useRevalidator } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { cn } from "~/lib/cn";
@@ -29,12 +29,16 @@ export function meta() {
 }
 
 export async function loader() {
-	const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
-	const response = await api.get({ url: "/queue" });
-	const data = await response.json();
+	// Return promise for streaming
+	const queueDataPromise = (async () => {
+		const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
+		const response = await api.get({ url: "/queue" });
+		const data = await response.json();
+		return data.queue;
+	})();
 
 	return {
-		queue: data.queue,
+		queue: queueDataPromise,
 	};
 }
 
@@ -126,6 +130,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 
 	return (
 		<div className="container mx-auto p-8 max-w-6xl">
+			{/* Static content - shows immediately */}
 			<div className="mb-6">
 				<Link
 					to={href("/")}
@@ -136,6 +141,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 			</div>
 			<h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">Work Queue Demo</h1>
 
+			{/* Architecture section - static, shows immediately */}
 			<div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/30 border border-gray-200 dark:border-gray-700 rounded-lg">
 				<h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
 					Architecture
@@ -159,6 +165,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 				</div>
 			</div>
 
+			{/* Success/error messages - static, based on form submission */}
 			{submitter.data?.success && submitter.data.result.workItem && (
 				<div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
 					<p className="font-semibold text-green-800 dark:text-green-200">
@@ -175,7 +182,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 			)}
 
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-				{/* Add Work Form */}
+				{/* Add Work Form - static, shows immediately */}
 				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
 					<h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
 						Add Work to Queue
@@ -259,7 +266,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 					</submitter.Form>
 				</div>
 
-				{/* Queue Status */}
+				{/* Queue Status - only this streams */}
 				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
 					<div className="flex items-center justify-between mb-4">
 						<h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
@@ -277,82 +284,112 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 							{revalidator.state === "loading" ? "🔄 Refreshing..." : "🔄 Refresh"}
 						</button>
 					</div>
-					<div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-						Total items: {loaderData.queue.length}
-					</div>
+					<Suspense
+						fallback={
+							<div className="text-sm text-gray-600 dark:text-gray-400 mb-4 animate-pulse">
+								Loading queue data...
+							</div>
+						}
+					>
+						<Await resolve={loaderData.queue}>
+							{(queue) => (
+								<div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+									Total items: {queue.length}
+								</div>
+							)}
+						</Await>
+					</Suspense>
 				</div>
 			</div>
 
-			{/* Work Items */}
+			{/* Work Items - streams independently */}
 			<div className="mt-8">
 				<h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Work Items</h2>
-				{loaderData.queue.length === 0 ? (
-					<div className="bg-gray-50 dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700">
-						No work items in queue. Add one above!
-					</div>
-				) : (
-					<div className="space-y-4">
-						{loaderData.queue
-							.slice()
-							.reverse()
-							.map((item) => (
-								<div
-									key={item.id}
-									className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
-								>
-									<div className="flex items-start justify-between mb-2">
-										<div>
-											<span className="font-mono text-sm text-gray-500 dark:text-gray-400">
-												{item.id.slice(0, 8)}
-											</span>
-										</div>
-										<span
-											className={cn("px-3 py-1 rounded-full text-xs font-semibold border", {
-												"bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700":
-													item.status === "pending",
-												"bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700":
-													item.status === "processing",
-												"bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700":
-													item.status === "completed",
-												"bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700":
-													item.status === "failed",
-											})}
-										>
-											{item.status.toUpperCase()}
-										</span>
-									</div>
-									<div className="mb-2">
-										<span className="font-semibold text-gray-900 dark:text-gray-100">Payload:</span>
-										<pre className="mt-1 p-2 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded text-sm overflow-auto border border-gray-200 dark:border-gray-700">
-											{JSON.stringify(item.payload, null, 2)}
-										</pre>
-									</div>
-									{item.result && (
-										<div className="mb-2">
-											<span className="font-semibold text-green-700 dark:text-green-400">
-												Result:
-											</span>
-											<pre className="mt-1 p-2 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-200 rounded text-sm overflow-auto border border-green-200 dark:border-green-700">
-												{JSON.stringify(item.result, null, 2)}
-											</pre>
-										</div>
-									)}
-									{item.error && (
-										<div className="mb-2">
-											<span className="font-semibold text-red-700 dark:text-red-400">Error:</span>
-											<div className="mt-1 p-2 bg-red-50 dark:bg-red-900/30 rounded text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700">
-												{item.error}
-											</div>
-										</div>
-									)}
-									<div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
-										<span>Created: {formatTime(item.createdAt)}</span>
-										<span>Updated: {formatTime(item.updatedAt)}</span>
-									</div>
+				<Suspense
+					fallback={
+						<div className="bg-gray-50 dark:bg-gray-800 p-8 text-center rounded-lg border border-gray-200 dark:border-gray-700">
+							<div className="animate-pulse text-gray-500 dark:text-gray-400">
+								Loading work items...
+							</div>
+						</div>
+					}
+				>
+					<Await resolve={loaderData.queue}>
+						{(queue) =>
+							queue.length === 0 ? (
+								<div className="bg-gray-50 dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700">
+									No work items in queue. Add one above!
 								</div>
-							))}
-					</div>
-				)}
+							) : (
+								<div className="space-y-4">
+									{queue
+										.slice()
+										.reverse()
+										.map((item) => (
+											<div
+												key={item.id}
+												className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+											>
+												<div className="flex items-start justify-between mb-2">
+													<div>
+														<span className="font-mono text-sm text-gray-500 dark:text-gray-400">
+															{item.id.slice(0, 8)}
+														</span>
+													</div>
+													<span
+														className={cn("px-3 py-1 rounded-full text-xs font-semibold border", {
+															"bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700":
+																item.status === "pending",
+															"bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700":
+																item.status === "processing",
+															"bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700":
+																item.status === "completed",
+															"bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700":
+																item.status === "failed",
+														})}
+													>
+														{item.status.toUpperCase()}
+													</span>
+												</div>
+												<div className="mb-2">
+													<span className="font-semibold text-gray-900 dark:text-gray-100">
+														Payload:
+													</span>
+													<pre className="mt-1 p-2 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded text-sm overflow-auto border border-gray-200 dark:border-gray-700">
+														{JSON.stringify(item.payload, null, 2)}
+													</pre>
+												</div>
+												{item.result && (
+													<div className="mb-2">
+														<span className="font-semibold text-green-700 dark:text-green-400">
+															Result:
+														</span>
+														<pre className="mt-1 p-2 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-200 rounded text-sm overflow-auto border border-green-200 dark:border-green-700">
+															{JSON.stringify(item.result, null, 2)}
+														</pre>
+													</div>
+												)}
+												{item.error && (
+													<div className="mb-2">
+														<span className="font-semibold text-red-700 dark:text-red-400">
+															Error:
+														</span>
+														<div className="mt-1 p-2 bg-red-50 dark:bg-red-900/30 rounded text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700">
+															{item.error}
+														</div>
+													</div>
+												)}
+												<div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
+													<span>Created: {formatTime(item.createdAt)}</span>
+													<span>Updated: {formatTime(item.updatedAt)}</span>
+												</div>
+											</div>
+										))}
+								</div>
+							)
+						}
+					</Await>
+				</Suspense>
 			</div>
 		</div>
 	);
