@@ -47,8 +47,6 @@ export const links: Route.LinksFunction = () => [
 	{
 		rel: "stylesheet",
 		href: FONT_URL,
-		media: "print",
-		onLoad: "this.media='all'",
 	},
 ];
 
@@ -83,21 +81,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				/>
 				<Meta />
 				<Links />
-				{/*
-					Async font loading using the "media print trick" - prevents Google Fonts from blocking render.
-					The stylesheet is loaded with media="print" so it doesn't block, then this script immediately
-					switches it to media="all" once parsed. This eliminates the 230ms render-blocking delay.
-					See: https://www.filamentgroup.com/lab/load-css-simpler/
-				*/}
-				<script
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: Safe inline script for async font loading performance optimization
-					dangerouslySetInnerHTML={{
-						__html: `(function(){var l=document.querySelector('link[media="print"]');if(l){l.media='all';}})();`,
-					}}
-				/>
-				<noscript>
-					<link rel="stylesheet" href={FONT_URL} />
-				</noscript>
 			</head>
 			<body>
 				{children}

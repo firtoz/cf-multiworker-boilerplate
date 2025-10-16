@@ -8,6 +8,7 @@ import { defineConfig } from "vite";
 import devtoolsJson from "vite-plugin-devtools-json";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { visualizer } from "rollup-plugin-visualizer";
+import { imagetools } from "vite-imagetools";
 
 type AuxiliaryWorkerConfig = Exclude<PluginConfig["auxiliaryWorkers"], undefined>[number];
 
@@ -48,6 +49,10 @@ export default defineConfig({
 		tailwindcss(),
 		reactRouter(),
 		tsconfigPaths(),
+		imagetools({
+			include: "**/*.{heif,avif,jpeg,jpg,png,tiff,webp,gif,svg}?*",
+			exclude: [],
+		}),
 		visualizer({
 			filename: "build/stats.html",
 			open: false,

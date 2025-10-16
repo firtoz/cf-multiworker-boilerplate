@@ -2,9 +2,15 @@ import { Suspense } from "react";
 import { Await } from "react-router";
 import { cn } from "~/lib/cn";
 
+import cloudflareWorkersIcon from "~/assets/cloudflare-workers.svg?width=24&as=metadata";
+import durableObjectsIcon from "~/assets/durable-objects.svg?width=24&as=metadata";
+import reactRouterIcon from "~/assets/react-router.svg?width=44&as=metadata";
+import turborepoIcon from "~/assets/turborepo.svg?width=18&as=metadata";
+import zodLogoIcon from "~/assets/zod-logo.png?width=18&as=metadata";
+
 // Icon styling constants
 const ICON_CONTAINER_SIZE = 40; // 40px container
-const ICON_SIZE = 24; // 28px icons (40 - 2*6 = 28 for ~6px margin)
+const DEFAULT_ICON_WIDTH = 24;
 
 const iconContainerClassName = cn(
 	"rounded-xl bg-gray-100/50 dark:bg-gray-800/50",
@@ -16,13 +22,19 @@ const iconContainerClassName = cn(
 type ResourceInfo = {
 	href: string;
 	text: string;
-	iconSrc: string;
-	iconAlt: string;
+	icon: OutputMetadata;
 	iconWidth?: number;
 };
 
 // Resource icon component with consistent styling
 function ResourceIcon({ info }: { info: ResourceInfo }) {
+	const iconData = info.icon;
+
+	// Use custom width or default, then calculate height based on aspect ratio
+	const displayWidth = info.iconWidth ?? DEFAULT_ICON_WIDTH;
+	const aspectRatio = iconData.height / iconData.width;
+	const displayHeight = Math.round(displayWidth * aspectRatio);
+
 	return (
 		<li key={info.href}>
 			<a
@@ -35,7 +47,12 @@ function ResourceIcon({ info }: { info: ResourceInfo }) {
 					className={iconContainerClassName}
 					style={{ width: ICON_CONTAINER_SIZE, height: ICON_CONTAINER_SIZE }}
 				>
-					<img src={info.iconSrc} alt={info.iconAlt} width={info.iconWidth ?? ICON_SIZE} />
+					<img
+						src={iconData.src}
+						alt={`${info.text} Documentation`}
+						width={displayWidth}
+						height={displayHeight}
+					/>
 				</div>
 				{info.text}
 			</a>
@@ -116,37 +133,31 @@ const resources: ResourceInfo[] = [
 	{
 		href: "https://developers.cloudflare.com/workers/",
 		text: "Cloudflare Workers",
-		iconSrc: "/icons/cloudflare-workers.svg",
-		iconAlt: "Cloudflare Workers Documentation",
+		icon: cloudflareWorkersIcon,
 	},
 	{
 		href: "https://developers.cloudflare.com/durable-objects/",
 		text: "Durable Objects",
-		iconSrc: "/icons/durable-objects.svg",
-		iconAlt: "Durable Objects Documentation",
+		icon: durableObjectsIcon,
 	},
 	// Framework & Libraries
 	{
 		href: "https://reactrouter.com/",
 		text: "React Router",
-		iconSrc: "/icons/react-router.svg",
-		iconAlt: "React Router Documentation",
+		icon: reactRouterIcon,
 		iconWidth: 44,
 	},
-
 	// Monorepo Tools
 	{
 		href: "https://turborepo.com/",
 		text: "Turborepo",
-		iconSrc: "/icons/turborepo.svg",
-		iconAlt: "Turborepo Documentation",
+		icon: turborepoIcon,
 		iconWidth: 18,
 	},
 	{
 		href: "https://zod.dev/",
 		text: "Zod",
-		iconSrc: "/icons/zod-logo.png",
-		iconAlt: "Zod Documentation",
+		icon: zodLogoIcon,
 		iconWidth: 18,
 	},
 ];
