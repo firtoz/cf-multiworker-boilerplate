@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import devtoolsJson from "vite-plugin-devtools-json";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { visualizer } from "rollup-plugin-visualizer";
 
 type AuxiliaryWorkerConfig = Exclude<PluginConfig["auxiliaryWorkers"], undefined>[number];
 
@@ -47,19 +48,29 @@ export default defineConfig({
 		tailwindcss(),
 		reactRouter(),
 		tsconfigPaths(),
+		visualizer({
+			filename: "build/stats.html",
+			open: false,
+			gzipSize: true,
+			brotliSize: true,
+		}),
 	],
 	build: {
 		cssCodeSplit: true,
 		minify: "esbuild",
 		target: "esnext",
+		sourcemap: false, // Disable source maps in production
 		rollupOptions: {
 			output: {
+				// Removed experimentalMinChunkSize - it was merging chunks into entry.client
 				manualChunks: (id) => {
-					// Vendor chunking for better caching
+					// Aggressive vendor splitting for better caching and parallel loads
 					if (id.includes("node_modules")) {
-						if (id.includes("react") || id.includes("react-dom") || id.includes("react-router")) {
-							return "vendor-react";
-						}
+						// Split out heavy libraries
+						if (id.includes("zod")) return "vendor-zod";
+						if (id.includes("@firtoz/hono-fetcher")) return "vendor-hono";
+						if (id.includes("clsx") || id.includes("tailwind-merge")) return "vendor-utils";
+						// Default vendor chunk
 						return "vendor";
 					}
 				},

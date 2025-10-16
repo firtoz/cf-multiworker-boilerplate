@@ -2,6 +2,7 @@ import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
 import type { AppLoadContext, EntryContext } from "react-router";
 import { ServerRouter } from "react-router";
+import { generateEarlyHintsLinks, getCriticalCssAssets } from "./lib/get-critical-css";
 
 export default async function handleRequest(
 	request: Request,
@@ -10,6 +11,13 @@ export default async function handleRequest(
 	routerContext: EntryContext,
 	_loadContext: AppLoadContext,
 ) {
+	// Add 103 Early Hints for critical CSS
+	// This allows Cloudflare to send the CSS assets before the HTML is fully rendered
+	const criticalCss = getCriticalCssAssets(routerContext);
+	if (criticalCss.length > 0) {
+		const linkHeader = generateEarlyHintsLinks(criticalCss);
+		responseHeaders.append("Link", linkHeader);
+	}
 	let shellRendered = false;
 	const userAgent = request.headers.get("user-agent");
 

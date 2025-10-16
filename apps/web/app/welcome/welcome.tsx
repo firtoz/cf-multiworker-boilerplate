@@ -1,5 +1,47 @@
 import { Suspense } from "react";
 import { Await } from "react-router";
+import { cn } from "~/lib/cn";
+
+// Icon styling constants
+const ICON_CONTAINER_SIZE = 40; // 40px container
+const ICON_SIZE = 24; // 28px icons (40 - 2*6 = 28 for ~6px margin)
+
+const iconContainerClassName = cn(
+	"rounded-xl bg-gray-100/50 dark:bg-gray-800/50",
+	"group-hover:bg-gray-200/70 dark:group-hover:bg-gray-700/70",
+	"transition-colors",
+	"flex items-center justify-center",
+);
+
+type ResourceInfo = {
+	href: string;
+	text: string;
+	iconSrc: string;
+	iconAlt: string;
+	iconWidth?: number;
+};
+
+// Resource icon component with consistent styling
+function ResourceIcon({ info }: { info: ResourceInfo }) {
+	return (
+		<li key={info.href}>
+			<a
+				className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
+				href={info.href}
+				target="_blank"
+				rel="noreferrer"
+			>
+				<div
+					className={iconContainerClassName}
+					style={{ width: ICON_CONTAINER_SIZE, height: ICON_CONTAINER_SIZE }}
+				>
+					<img src={info.iconSrc} alt={info.iconAlt} width={info.iconWidth ?? ICON_SIZE} />
+				</div>
+				{info.text}
+			</a>
+		</li>
+	);
+}
 
 export function Welcome({
 	message,
@@ -30,18 +72,8 @@ export function Welcome({
 							</p>
 						</div>
 						<ul className="space-y-2">
-							{resources.map(({ href, text, icon }) => (
-								<li key={href}>
-									<a
-										className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
-										href={href}
-										target="_blank"
-										rel="noreferrer"
-									>
-										{icon}
-										{text}
-									</a>
-								</li>
+							{resources.map((item) => (
+								<ResourceIcon key={item.href} info={item} />
 							))}
 							<li className="self-stretch p-3 leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
 								<span className="font-semibold">Environment value:</span> {message}
@@ -79,74 +111,42 @@ export function Welcome({
 	);
 }
 
-const resources = [
+const resources: ResourceInfo[] = [
 	// Cloudflare Resources
 	{
 		href: "https://developers.cloudflare.com/workers/",
 		text: "Cloudflare Workers",
-		icon: (
-			<img
-				src="/icons/cloudflare-workers.svg"
-				alt="Cloudflare Workers Documentation"
-				width="24"
-				height="24"
-				className="group-hover:opacity-80"
-			/>
-		),
+		iconSrc: "/icons/cloudflare-workers.svg",
+		iconAlt: "Cloudflare Workers Documentation",
 	},
 	{
 		href: "https://developers.cloudflare.com/durable-objects/",
 		text: "Durable Objects",
-		icon: (
-			<img
-				src="/icons/durable-objects.svg"
-				alt="Durable Objects Documentation"
-				width="24"
-				height="24"
-				className="group-hover:opacity-80"
-			/>
-		),
+		iconSrc: "/icons/durable-objects.svg",
+		iconAlt: "Durable Objects Documentation",
 	},
 	// Framework & Libraries
 	{
 		href: "https://reactrouter.com/",
 		text: "React Router",
-		icon: (
-			<img
-				src="/icons/react-router.svg"
-				alt="React Router Documentation"
-				width="24"
-				height="24"
-				className="group-hover:opacity-80"
-			/>
-		),
+		iconSrc: "/icons/react-router.svg",
+		iconAlt: "React Router Documentation",
+		iconWidth: 44,
 	},
 
 	// Monorepo Tools
 	{
 		href: "https://turborepo.com/",
 		text: "Turborepo",
-		icon: (
-			<img
-				src="/icons/turborepo.svg"
-				alt="Turborepo Documentation"
-				width="24"
-				height="24"
-				className="group-hover:opacity-80"
-			/>
-		),
+		iconSrc: "/icons/turborepo.svg",
+		iconAlt: "Turborepo Documentation",
+		iconWidth: 18,
 	},
 	{
 		href: "https://zod.dev/",
 		text: "Zod",
-		icon: (
-			<img
-				src="/icons/zod-logo.png"
-				alt="Zod Documentation"
-				width="24"
-				height="24"
-				className="group-hover:opacity-80"
-			/>
-		),
+		iconSrc: "/icons/zod-logo.png",
+		iconAlt: "Zod Documentation",
+		iconWidth: 18,
 	},
 ];
