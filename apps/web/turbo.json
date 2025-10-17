@@ -61,7 +61,8 @@
 				"workers/**/*.tsx",
 				"vite.config.ts",
 				"react-router.config.ts",
-				"wrangler.jsonc"
+				"wrangler.jsonc",
+				"node_modules/.cache/imagetools"
 			],
 			"outputs": ["build/**/*"]
 		},
