@@ -7,7 +7,7 @@ import {
 	success,
 	useDynamicSubmitter,
 } from "@firtoz/router-toolkit";
-import { Suspense, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { Await, href, Link, useRevalidator } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -129,62 +129,86 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 	}, [modifiedFields, submitter.data, submitter.state]);
 
 	return (
-		<div className="container mx-auto p-8 max-w-6xl">
+		<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 max-w-6xl">
 			{/* Static content - shows immediately */}
-			<div className="mb-6">
+			<div className="mb-4 sm:mb-6">
 				<Link
 					to={href("/")}
-					className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+					className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm sm:text-base py-2"
 				>
-					← Back to Home
+					⬅️ Back to Home
 				</Link>
 			</div>
-			<h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">Work Queue Demo</h1>
+			<h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-gray-100">
+				Work Queue Demo
+			</h1>
 
 			{/* Architecture section - static, shows immediately */}
-			<div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/30 border border-gray-200 dark:border-gray-700 rounded-lg">
-				<h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+			<div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-blue-50 dark:bg-blue-900/30 border border-gray-200 dark:border-gray-700 rounded-lg">
+				<h2 className="text-lg sm:text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100 hyphens-auto break-words">
 					Architecture
 				</h2>
-				<p className="text-gray-700 dark:text-gray-300 mb-2">
+				<p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-3 hyphens-auto break-words">
 					This demonstrates queue-based multi-worker communication using Cloudflare Queues:
 				</p>
-				<div className="font-mono text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded border border-gray-200 dark:border-gray-700">
-					Web App → CoordinatorDo → Cloudflare Queue → ProcessorDo → Results back to Coordinator
-				</div>
-				<div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-					<p className="mb-1">
-						<strong>Benefits:</strong>
-					</p>
-					<ul className="list-disc ml-5 space-y-1">
-						<li>Decoupled: Workers don't need direct knowledge of each other</li>
-						<li>Reliable: Built-in retries and guaranteed delivery</li>
-						<li>Scalable: Multiple processors can consume from the same queue</li>
-						<li>Batch Processing: Messages can be processed in batches for efficiency</li>
-					</ul>
+				<div className="flex flex-col sm:flex-row lg:flex-col gap-4">
+					<div className="font-mono text-xs sm:text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto flex flex-col lg:flex-row gap-2 justify-center items-center">
+						{[
+							"Web App",
+							"CoordinatorDo",
+							"Cloudflare Queue",
+							"ProcessorDo",
+							"Results back to CoordinatorDo",
+						].map((item, index, list) => {
+							return (
+								<Fragment key={index.toString()}>
+									<div className="items-center text-center">{item}</div>
+									{index < list.length - 1 && (
+										<>
+											<div className="not-lg:hidden">➡️</div>
+											<div className="lg:hidden">⬇️</div>
+										</>
+									)}
+								</Fragment>
+							);
+						})}
+					</div>
+					<div className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+						<p className="mb-1 font-semibold">Benefits:</p>
+						<ul className="list-disc ml-5 space-y-1">
+							<li>Decoupled: Workers don't need direct knowledge of each other</li>
+							<li>Reliable: Built-in retries and guaranteed delivery</li>
+							<li>Scalable: Multiple processors can consume from the same queue</li>
+							<li>Batch Processing: Messages can be processed in batches for efficiency</li>
+						</ul>
+					</div>
 				</div>
 			</div>
 
 			{/* Success/error messages - static, based on form submission */}
 			{submitter.data?.success && submitter.data.result.workItem && (
-				<div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
-					<p className="font-semibold text-green-800 dark:text-green-200">
+				<div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
+					<p className="text-sm sm:text-base font-semibold text-green-800 dark:text-green-200 break-all">
 						✓ Work item added to queue: {submitter.data.result.workItem.id}
 					</p>
 				</div>
 			)}
 
 			{submitter.data && !submitter.data.success && submitter.data.error.type === "handler" && (
-				<div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
-					<p className="font-semibold text-red-800 dark:text-red-200 mb-2">✗ Error:</p>
-					<p className="text-red-700 dark:text-red-300">{submitter.data.error.error}</p>
+				<div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
+					<p className="text-sm sm:text-base font-semibold text-red-800 dark:text-red-200 mb-2">
+						✗ Error:
+					</p>
+					<p className="text-sm sm:text-base text-red-700 dark:text-red-300">
+						{submitter.data.error.error}
+					</p>
 				</div>
 			)}
 
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
 				{/* Add Work Form - static, shows immediately */}
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-					<h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
+				<div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+					<h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-gray-900 dark:text-gray-100">
 						Add Work to Queue
 					</h2>
 					<submitter.Form method="post" className="space-y-4">
@@ -267,9 +291,9 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 				</div>
 
 				{/* Queue Status - only this streams */}
-				<div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-					<div className="flex items-center justify-between mb-4">
-						<h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+				<div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+					<div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+						<h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
 							Queue Status
 						</h2>
 						<button
@@ -277,7 +301,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 							onClick={() => revalidator.revalidate()}
 							disabled={revalidator.state === "loading"}
 							className={cn(
-								"text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1 rounded transition-colors",
+								"text-xs sm:text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 rounded transition-colors whitespace-nowrap flex-shrink-0",
 								{ "opacity-50": revalidator.state === "loading" },
 							)}
 						>
@@ -303,8 +327,10 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 			</div>
 
 			{/* Work Items - streams independently */}
-			<div className="mt-8">
-				<h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Work Items</h2>
+			<div className="mt-6 sm:mt-8">
+				<h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-gray-900 dark:text-gray-100">
+					Work Items
+				</h2>
 				<Suspense
 					fallback={
 						<div className="bg-gray-50 dark:bg-gray-800 p-8 text-center rounded-lg border border-gray-200 dark:border-gray-700">
@@ -317,69 +343,72 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 					<Await resolve={loaderData.queue}>
 						{(queue) =>
 							queue.length === 0 ? (
-								<div className="bg-gray-50 dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700">
+								<div className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 text-center text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700">
 									No work items in queue. Add one above!
 								</div>
 							) : (
-								<div className="space-y-4">
+								<div className="space-y-3 sm:space-y-4">
 									{queue
 										.slice()
 										.reverse()
 										.map((item) => (
 											<div
 												key={item.id}
-												className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+												className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700"
 											>
-												<div className="flex items-start justify-between mb-2">
-													<div>
-														<span className="font-mono text-sm text-gray-500 dark:text-gray-400">
+												<div className="flex items-start justify-between gap-2 mb-2">
+													<div className="min-w-0 flex-1">
+														<span className="font-mono text-xs sm:text-sm text-gray-500 dark:text-gray-400 break-all">
 															{item.id.slice(0, 8)}
 														</span>
 													</div>
 													<span
-														className={cn("px-3 py-1 rounded-full text-xs font-semibold border", {
-															"bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700":
-																item.status === "pending",
-															"bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700":
-																item.status === "processing",
-															"bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700":
-																item.status === "completed",
-															"bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700":
-																item.status === "failed",
-														})}
+														className={cn(
+															"px-2 sm:px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap flex-shrink-0",
+															{
+																"bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700":
+																	item.status === "pending",
+																"bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700":
+																	item.status === "processing",
+																"bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700":
+																	item.status === "completed",
+																"bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700":
+																	item.status === "failed",
+															},
+														)}
 													>
 														{item.status.toUpperCase()}
 													</span>
 												</div>
 												<div className="mb-2">
-													<span className="font-semibold text-gray-900 dark:text-gray-100">
+													<span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
 														Payload:
 													</span>
-													<pre className="mt-1 p-2 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded text-sm overflow-auto border border-gray-200 dark:border-gray-700">
+													<pre className="mt-1 p-2 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded text-xs sm:text-sm overflow-x-auto border border-gray-200 dark:border-gray-700 whitespace-pre-wrap">
 														{JSON.stringify(item.payload, null, 2)}
 													</pre>
 												</div>
 												{item.result && (
 													<div className="mb-2">
-														<span className="font-semibold text-green-700 dark:text-green-400">
+														<span className="text-sm sm:text-base font-semibold text-green-700 dark:text-green-400">
 															Result:
 														</span>
-														<pre className="mt-1 p-2 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-200 rounded text-sm overflow-auto border border-green-200 dark:border-green-700">
+														<pre className="mt-1 p-2 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-200 rounded text-xs sm:text-sm overflow-x-auto border border-green-200 dark:border-green-700 whitespace-pre-wrap">
 															{JSON.stringify(item.result, null, 2)}
 														</pre>
 													</div>
 												)}
 												{item.error && (
 													<div className="mb-2">
-														<span className="font-semibold text-red-700 dark:text-red-400">
+														<span className="text-sm sm:text-base font-semibold text-red-700 dark:text-red-400">
 															Error:
 														</span>
-														<div className="mt-1 p-2 bg-red-50 dark:bg-red-900/30 rounded text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700">
+														<div className="mt-1 p-2 bg-red-50 dark:bg-red-900/30 rounded text-xs sm:text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 break-words hyphens-auto">
 															{item.error}
 														</div>
 													</div>
 												)}
-												<div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4">
+												<div className="text-xs text-gray-500 dark:text-gray-400 flex flex-col sm:flex-row gap-1 sm:gap-4">
 													<span>Created: {formatTime(item.createdAt)}</span>
 													<span>Updated: {formatTime(item.updatedAt)}</span>
 												</div>

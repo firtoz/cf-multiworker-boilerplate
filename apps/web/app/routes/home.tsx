@@ -37,16 +37,18 @@ export async function loader(_args: Route.LoaderArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
 	return (
-		<div className="container mx-auto p-4">
+		<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6">
 			{/* Welcome section with its own streaming for DO response */}
 			<Welcome message={loaderData.message} doResponsePromise={loaderData.doStatus} />
 
 			{/* DO State card - streams independently */}
-			<div className="max-w-[600px] mx-auto mt-8 p-6 bg-green-50 dark:bg-green-900/30 border border-gray-200 dark:border-gray-700 rounded-3xl">
-				<h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
+			<div className="max-w-[600px] mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-green-50 dark:bg-green-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl">
+				<h2 className="text-xl sm:text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
 					📊 Example DO State
 				</h2>
-				<p className="text-gray-700 dark:text-gray-300 mb-2">The ExampleDo has been accessed:</p>
+				<p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-2">
+					The ExampleDo has been accessed:
+				</p>
 				<Suspense
 					fallback={
 						<div className="animate-pulse">
@@ -57,10 +59,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 					<Await resolve={loaderData.doCount}>
 						{(count) => (
 							<>
-								<p className="text-4xl font-bold text-green-600 dark:text-green-400 mb-4">
+								<p className="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400 mb-3 sm:mb-4">
 									{count} times
 								</p>
-								<p className="text-sm text-gray-600 dark:text-gray-400">
+								<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
 									This count is stored in the Durable Object's persistent storage and increments on
 									each page load.
 								</p>
@@ -71,16 +73,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 			</div>
 
 			{/* Static content - shows immediately */}
-			<div className="max-w-[600px] mx-auto mt-8 p-6 bg-blue-50 dark:bg-blue-900/30 border border-gray-200 dark:border-gray-700 rounded-3xl">
-				<h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
+			<div className="max-w-[600px] mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-blue-50 dark:bg-blue-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl">
+				<h2 className="text-xl sm:text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
 					🚀 Multi-Worker Demo
 				</h2>
-				<p className="text-gray-700 dark:text-gray-300 mb-4">
+				<p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-4">
 					See Durable Objects communicating in action with our work queue demo.
 				</p>
 				<Link
 					to={href("/queue")}
-					className="inline-block bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+					className="inline-block w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
 				>
 					View Work Queue Demo →
 				</Link>
