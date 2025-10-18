@@ -1,7 +1,7 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import { type DOWithHonoApp, honoDoFetcherWithName } from "@firtoz/hono-fetcher";
 import { zValidator } from "@hono/zod-validator";
-import { type QueueMessage, workPayloadSchema } from "do-common";
+import { type QueueMessage, type TimestampEntry, workPayloadSchema } from "do-common";
 import { Hono } from "hono";
 
 /**
@@ -21,13 +21,32 @@ export class ProcessorDo extends DurableObject<Env> implements DOWithHonoApp {
 		.post("/process", zValidator("json", workPayloadSchema), async (c) => {
 			const payload = c.req.valid("json");
 
+			const processingStartTime = Date.now();
+
 			// Payload is now validated and fully typed
 			// You get type hinting for payload.message and payload.delay
-			const { delay, message } = payload;
+			const { delay, message, timestamps = [] } = payload;
+
+			// Add processing start timestamp
+			const updatedTimestamps: TimestampEntry[] = [...timestamps];
+			updatedTimestamps.push({
+				tag: `${updatedTimestamps.length + 1}-processingStarted`,
+				time: processingStartTime,
+			});
 
 			// TODO: Replace with your actual processing logic
-			// Simulate some work
-			await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 5000)));
+			// Simulate some work (allow 0 delay for benchmarking)
+			if (delay > 0) {
+				await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 5000)));
+			}
+
+			const processingCompletedTime = Date.now();
+
+			// Add processing completed timestamp
+			updatedTimestamps.push({
+				tag: `${updatedTimestamps.length + 1}-processingCompleted`,
+				time: processingCompletedTime,
+			});
 
 			// Track processing count
 			const processCount = ((await this.ctx.storage.get<number>("processCount")) || 0) + 1;
@@ -39,6 +58,7 @@ export class ProcessorDo extends DurableObject<Env> implements DOWithHonoApp {
 				processedAt: Date.now(),
 				processCount,
 				message: `Processed "${message}" by ProcessorDo (total: ${processCount})`,
+				timestamps: updatedTimestamps,
 			};
 
 			return c.json(result);
@@ -68,48 +88,87 @@ export default class ProcessorWorker extends WorkerEntrypoint<Env> {
 
 	/**
 	 * Queue consumer handler
-	 * Processes messages from the work queue
+	 * Handles both regular queue and dead letter queue messages
 	 */
 	async queue(batch: MessageBatch<QueueMessage>): Promise<void> {
-		for (const message of batch.messages) {
-			try {
-				const { workId, payload, coordinatorId } = message.body;
+		// Handle DLQ messages - these are permanent failures
+		if (batch.queue === "work-queue-dlq") {
+			await Promise.all(
+				batch.messages.map(async (message) => {
+					try {
+						const { workId, coordinatorId, timestamps } = message.body;
 
-				// Use hono-fetcher to call ProcessorDo
-				const processorApi = honoDoFetcherWithName(this.env.ProcessorDo, `processor-${workId}`);
-				const response = await processorApi.post({
-					url: "/process",
-					body: payload,
-				});
-				const result = await response.json();
+						// Add timestamp for when message reached DLQ
+						const dlqTime = Date.now();
+						const finalTimestamps: TimestampEntry[] = [...timestamps];
+						finalTimestamps.push({
+							tag: `${finalTimestamps.length + 1}-reachedDLQ`,
+							time: dlqTime,
+						});
 
-				// Send result back to coordinator using hono-fetcher
-				const coordinatorApi = honoDoFetcherWithName(this.env.CoordinatorDo, coordinatorId);
-				await coordinatorApi.post({
-					url: "/result/:workId",
-					params: { workId },
-					body: { result },
-				});
+						// Report permanent failure to coordinator
+						const coordinatorApi = honoDoFetcherWithName(this.env.CoordinatorDo, coordinatorId);
+						await coordinatorApi.post({
+							url: "/result/:workId",
+							params: { workId },
+							body: {
+								error: "Message failed after all retry attempts",
+								timestamps: finalTimestamps,
+							},
+						});
 
-				// Acknowledge message
-				message.ack();
-			} catch (error) {
-				// Send error back to coordinator
+						// Acknowledge the DLQ message
+						message.ack();
+					} catch (error) {
+						console.error(`Failed to report DLQ message to coordinator:`, error);
+						// Don't retry DLQ messages - just log and move on
+						message.ack();
+					}
+				}),
+			);
+			return;
+		}
+
+		// Handle regular queue messages
+		await Promise.all(
+			batch.messages.map(async (message) => {
 				try {
-					const { workId, coordinatorId } = message.body;
+					const { workId, payload, coordinatorId, timestamps } = message.body;
+
+					// Add timestamp for when consumer picked up the message
+					const consumerPickedUpTime = Date.now();
+					const updatedTimestamps: TimestampEntry[] = [...timestamps];
+					updatedTimestamps.push({
+						tag: `${updatedTimestamps.length + 1}-consumerPickedUp`,
+						time: consumerPickedUpTime,
+					});
+
+					// Use hono-fetcher to call ProcessorDo
+					const processorApi = honoDoFetcherWithName(this.env.ProcessorDo, `processor-${workId}`);
+					const response = await processorApi.post({
+						url: "/process",
+						body: { ...payload, timestamps: updatedTimestamps },
+					});
+					const result = await response.json();
+
+					// Send result back to coordinator using hono-fetcher (result should include timestamps)
 					const coordinatorApi = honoDoFetcherWithName(this.env.CoordinatorDo, coordinatorId);
 					await coordinatorApi.post({
 						url: "/result/:workId",
 						params: { workId },
-						body: { error: error instanceof Error ? error.message : String(error) },
+						body: { result, timestamps: result.timestamps },
 					});
-				} catch (reportError) {
-					console.error("Failed to report error to coordinator:", reportError);
-				}
 
-				// Retry the message
-				message.retry();
-			}
-		}
+					// Acknowledge message
+					message.ack();
+				} catch (error) {
+					// Log error but don't report to coordinator yet
+					// Let the message retry automatically (up to max_retries)
+					// If all retries fail, it will go to the DLQ where we handle permanent failures
+					console.error(`Failed to process message ${message.body.workId}:`, error);
+					message.retry();
+				}
+			}),
+		);
 	}
 }

@@ -68,6 +68,12 @@ function findRequiredQueues(): Set<string> {
 							if (queueNode?.value) {
 								queueNames.add(queueNode.value);
 							}
+
+							// Also check for dead_letter_queue configuration
+							const dlqNode = findNodeAtLocation(consumer, ["dead_letter_queue"]);
+							if (dlqNode?.value) {
+								queueNames.add(dlqNode.value);
+							}
 						}
 					}
 				} catch (err) {

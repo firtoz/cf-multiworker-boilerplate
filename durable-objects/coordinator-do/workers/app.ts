@@ -3,11 +3,23 @@ import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
 import { zValidator } from "@hono/zod-validator";
 import {
 	type QueueMessage,
+	type TimestampEntry,
 	type WorkPayload,
 	workPayloadSchema,
 	workResultSchema,
 } from "do-common";
 import { Hono } from "hono";
+import { z } from "zod";
+
+// Version number for coordinator storage schema
+// If this changes, the DB will be cleared on next access
+const COORDINATOR_VERSION = 1;
+
+// Schema for batch submission
+const batchSubmissionSchema = z.object({
+	messages: z.array(z.string().min(1, "Message is required")).min(1).max(100),
+	delay: z.number().min(0).max(5000),
+});
 
 type WorkItem = {
 	id: string;
@@ -17,6 +29,8 @@ type WorkItem = {
 	updatedAt: number;
 	result?: unknown;
 	error?: string;
+	timestamps: TimestampEntry[];
+	timeTaken?: number; // milliseconds from first timestamp to last
 };
 
 /**
@@ -24,6 +38,15 @@ type WorkItem = {
  * Manages a queue of work items and delegates to processor DOs
  */
 export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
+	constructor(ctx: DurableObjectState, env: Env) {
+		super(ctx, env);
+
+		// Block all incoming requests until migration is complete
+		ctx.blockConcurrencyWhile(async () => {
+			await this.checkAndMigrateVersion();
+		});
+	}
+
 	app = new Hono<{ Bindings: Env }>()
 		// Health check
 		.get("/", (c) => c.json({ status: "CoordinatorDo ready" }))
@@ -36,20 +59,31 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 		.post("/queue", zValidator("json", workPayloadSchema), async (c) => {
 			const payload = c.req.valid("json");
 
+			// Use Date.now() for absolute timestamps - all timing starts here
+			const serverReceivedTime = Date.now();
+
+			// Initialize timestamps array starting from server entry point
+			const timestamps: TimestampEntry[] = [];
+			timestamps.push({
+				tag: "1-serverReceived",
+				time: serverReceivedTime,
+			});
+
 			const workItem: WorkItem = {
 				id: crypto.randomUUID(),
-				payload,
+				payload: { ...payload, timestamps },
 				status: "pending",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
+				timestamps,
 			};
 
 			const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
 			queue.push(workItem);
 
-			// Keep only the most recent 10 items
-			if (queue.length > 10) {
-				queue.splice(0, queue.length - 10);
+			// Keep only the most recent 50 items
+			if (queue.length > 50) {
+				queue.splice(0, queue.length - 50);
 			}
 
 			await this.ctx.storage.put("queue", queue);
@@ -58,6 +92,48 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 			this.ctx.waitUntil(this.processWork(workItem.id));
 
 			return c.json({ workItem });
+		})
+		// Batch add work to queue (with validation)
+		.post("/queue/batch", zValidator("json", batchSubmissionSchema), async (c) => {
+			const { messages, delay } = c.req.valid("json");
+
+			const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
+			const workItems: WorkItem[] = [];
+			const baseTime = Date.now();
+
+			for (let i = 0; i < messages.length; i++) {
+				const timestamps: TimestampEntry[] = [];
+				timestamps.push({
+					tag: "1-serverReceived",
+					time: baseTime, // All received at the same time in batch
+				});
+
+				const workItem: WorkItem = {
+					id: crypto.randomUUID(),
+					payload: { message: messages[i], delay, timestamps },
+					status: "pending",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					timestamps,
+				};
+
+				workItems.push(workItem);
+				queue.push(workItem);
+			}
+
+			// Keep only the most recent 50 items
+			if (queue.length > 50) {
+				queue.splice(0, queue.length - 50);
+			}
+
+			await this.ctx.storage.put("queue", queue);
+
+			// Process all items asynchronously
+			for (const item of workItems) {
+				this.ctx.waitUntil(this.processWork(item.id));
+			}
+
+			return c.json({ workItems, count: workItems.length });
 		})
 		// Process specific work item
 		.post("/process/:workId", async (c) => {
@@ -69,7 +145,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 		.post("/result/:workId", zValidator("json", workResultSchema), async (c) => {
 			const workId = c.req.param("workId");
 			const body = c.req.valid("json");
-			await this.updateWorkResult(workId, body.result, body.error);
+			await this.updateWorkResult(workId, body.result, body.error, body.timestamps);
 			return c.json({ success: true });
 		});
 
@@ -78,6 +154,20 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 	 */
 	async fetch(request: Request): Promise<Response> {
 		return this.app.fetch(request, this.env);
+	}
+
+	/**
+	 * Check if storage version matches current version, clear DB if not
+	 */
+	private async checkAndMigrateVersion() {
+		const storedVersion = await this.ctx.storage.get<number>("version");
+		if (storedVersion !== COORDINATOR_VERSION) {
+			console.log(
+				`Version mismatch (stored: ${storedVersion}, current: ${COORDINATOR_VERSION}). Clearing storage...`,
+			);
+			await this.ctx.storage.deleteAll();
+			await this.ctx.storage.put("version", COORDINATOR_VERSION);
+		}
 	}
 
 	/**
@@ -94,6 +184,14 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 		// Update status to processing
 		workItem.status = "processing";
 		workItem.updatedAt = Date.now();
+
+		// Add timestamp for when we're enqueueing to CF Queue
+		const queueEnqueueTime = Date.now();
+		workItem.timestamps.push({
+			tag: `${workItem.timestamps.length + 1}-queueEnqueued`,
+			time: queueEnqueueTime,
+		});
+
 		await this.ctx.storage.put("queue", queue);
 
 		try {
@@ -102,6 +200,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 				workId: workItem.id,
 				payload: workItem.payload,
 				coordinatorId: "main-coordinator", // Allow processor to send results back
+				timestamps: workItem.timestamps,
 			} satisfies QueueMessage);
 		} catch (error) {
 			// Update with error if queue send fails
@@ -115,12 +214,22 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 	/**
 	 * Endpoint for ProcessorDo to report results back
 	 */
-	async updateWorkResult(workId: string, result: unknown, error?: string) {
+	async updateWorkResult(
+		workId: string,
+		result: unknown,
+		error?: string,
+		timestamps?: TimestampEntry[],
+	) {
 		const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
 		const workItem = queue.find((item) => item.id === workId);
 
 		if (!workItem) {
 			return;
+		}
+
+		// Merge timestamps from processor
+		if (timestamps) {
+			workItem.timestamps = timestamps;
 		}
 
 		if (error) {
@@ -129,6 +238,13 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 		} else {
 			workItem.status = "completed";
 			workItem.result = result;
+		}
+
+		// Calculate timeTaken from first to last timestamp
+		if (workItem.timestamps.length > 1) {
+			const firstTime = workItem.timestamps[0].time;
+			const lastTime = workItem.timestamps[workItem.timestamps.length - 1].time;
+			workItem.timeTaken = lastTime - firstTime;
 		}
 
 		workItem.updatedAt = Date.now();

@@ -7,12 +7,94 @@ import {
 	success,
 	useDynamicSubmitter,
 } from "@firtoz/router-toolkit";
-import { Fragment, Suspense, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useId, useMemo, useState, memo } from "react";
 import { Await, href, Link, useRevalidator } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { cn } from "~/lib/cn";
 import type { Route } from "./+types/queue";
+
+const { repeatable } = zfd;
+
+// Component for individual message input with proper ID
+const MessageInput = memo(
+	({
+		index,
+		value,
+		onChange,
+		onRemove,
+		onAdd,
+		disabled,
+		isLast,
+		canRemove,
+	}: {
+		index: number;
+		value: string;
+		onChange: (value: string) => void;
+		onRemove: () => void;
+		onAdd: () => void;
+		disabled: boolean;
+		isLast: boolean;
+		canRemove: boolean;
+	}) => {
+		const inputId = useId();
+
+		return (
+			<div className="flex lg:flex-row flex-col gap-2 flex-1">
+				<label
+					htmlFor={inputId}
+					className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap items-center content-center"
+				>
+					Message {index + 1}:
+				</label>
+				<div className="flex items-center gap-2 flex-1 min-w-0">
+					<input
+						type="text"
+						name="messages"
+						id={inputId}
+						value={value}
+						onChange={(e) => onChange(e.target.value)}
+						disabled={disabled}
+						className={cn(
+							"flex-1 min-w-0 lg:w-64 xl:w-96 px-3 py-2 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500",
+							{
+								"opacity-50": disabled,
+								"border-gray-300 dark:border-gray-600": true,
+							},
+						)}
+						placeholder={`Enter message ${index + 1}...`}
+					/>
+					{canRemove && (
+						<button
+							type="button"
+							onClick={onRemove}
+							disabled={disabled}
+							className={cn(
+								"px-3 py-2 bg-red-200 hover:bg-red-300 dark:bg-red-900 dark:hover:bg-red-800 text-red-800 dark:text-red-200 rounded-md font-bold transition-colors flex-shrink-0",
+								{ "opacity-50 cursor-not-allowed": disabled },
+							)}
+						>
+							−
+						</button>
+					)}
+					{isLast && (
+						<button
+							type="button"
+							onClick={onAdd}
+							disabled={disabled}
+							className={cn(
+								"px-3 py-2 bg-green-200 hover:bg-green-300 dark:bg-green-900 dark:hover:bg-green-800 text-green-800 dark:text-green-200 rounded-md font-bold transition-colors flex-shrink-0",
+								{ "opacity-50 cursor-not-allowed": disabled },
+							)}
+						>
+							+
+						</button>
+					)}
+				</div>
+			</div>
+		);
+	},
+);
 
 // Export route for type safety
 export const route: RoutePath<"/queue"> = "/queue";
@@ -20,8 +102,8 @@ export const route: RoutePath<"/queue"> = "/queue";
 // Form schema - defines what the web app sends to the coordinator
 // zfd handles coercion from FormData strings to proper types
 export const formSchema = zfd.formData({
-	message: zfd.text(z.string().min(1, "Message is required")),
-	delay: zfd.numeric(z.number().min(100).max(5000)),
+	delay: zfd.numeric(z.number().min(0).max(5000)),
+	messages: repeatable(z.array(zfd.text(z.string().min(1, "Message is required"))).min(1)),
 });
 
 export function meta() {
@@ -45,22 +127,49 @@ export async function loader() {
 export const action = formAction({
 	schema: formSchema,
 	handler: async (_args, data) => {
-		// data type is automatically inferred from formSchema (which is workPayloadSchema)
-		const { message, delay } = data;
+		// data type is automatically inferred from formSchema
+		const { delay, messages } = data;
 
 		try {
 			const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
-			const response = await api.post({
-				url: "/queue",
-				body: { message, delay },
-			});
-			const responseData = await response.json();
 
-			return success({
-				workItem: responseData.workItem,
-			});
-		} catch (_error) {
-			return fail("Failed to add work item to queue");
+			if (messages.length === 1) {
+				// Single submission - timestamps start at coordinator
+				const response = await api.post({
+					url: "/queue",
+					body: { message: messages[0], delay },
+				});
+				const responseData = await response.json();
+
+				return success({
+					count: 1,
+					items: [responseData.workItem],
+				});
+			} else {
+				// Batch submission
+				const response = await api.post({
+					url: "/queue/batch",
+					body: {
+						messages,
+						delay,
+					},
+				});
+				const responseData = await response.json();
+
+				// Check if we got an error response
+				if ("error" in responseData) {
+					return fail(responseData.error as string);
+				}
+
+				return success({
+					count: messages.length,
+					items: responseData.workItems,
+				});
+			}
+		} catch (error) {
+			console.error("Error submitting work:", error);
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			return fail(`Failed to add work item(s) to queue: ${errorMsg}`);
 		}
 	},
 });
@@ -73,11 +182,12 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 		return new Date(timestamp).toLocaleTimeString();
 	}, []);
 
-	const messageId = useId();
 	const delayId = useId();
 
 	// Track which fields have been modified since the error was displayed
 	const [modifiedFields, setModifiedFields] = useState<Set<string>>(new Set());
+	// Track messages for each item
+	const [messages, setMessages] = useState<string[]>(["Process this data"]);
 
 	useEffect(() => {
 		console.log("[Queue] submitter.data", submitter.data);
@@ -92,11 +202,21 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 		setModifiedFields((prev) => new Set(prev).add(fieldName));
 	}, []);
 
+	// Add a new message
+	const addMessage = useCallback(() => {
+		setMessages((prev) => [...prev, `Process this data ${prev.length + 1}`]);
+	}, []);
+
+	// Remove a message at index
+	const removeMessage = useCallback((index: number) => {
+		setMessages((prev) => prev.filter((_, i) => i !== index));
+	}, []);
+
 	// Compute field errors once - returns mapped object of field -> errors[]
 	const fieldErrors = useMemo(() => {
 		const errors: Record<keyof z.infer<typeof formSchema>, string[]> = {
-			message: [],
 			delay: [],
+			messages: [],
 		};
 
 		if (submitter.state !== "idle") {
@@ -186,10 +306,13 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 			</div>
 
 			{/* Success/error messages - static, based on form submission */}
-			{submitter.data?.success && submitter.data.result.workItem && (
+			{submitter.data?.success && submitter.data.result && (
 				<div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
 					<p className="text-sm sm:text-base font-semibold text-green-800 dark:text-green-200 break-all">
-						✓ Work item added to queue: {submitter.data.result.workItem.id}
+						✓{" "}
+						{submitter.data.result.count === 1
+							? `Work item added to queue: ${submitter.data.result.items?.[0]?.id}`
+							: `${submitter.data.result.count} work items added to queue`}
 					</p>
 				</div>
 			)}
@@ -212,34 +335,23 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 						Add Work to Queue
 					</h2>
 					<submitter.Form method="post" className="space-y-4">
-						<div>
-							<label
-								htmlFor="message"
-								className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
-							>
-								Message
-							</label>
-							<input
-								type="text"
-								name="message"
-								id={messageId}
-								disabled={submitter.state === "submitting"}
-								onChange={() => handleFieldChange("message")}
-								className={cn(
-									"w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500",
-									{
-										"opacity-50": submitter.state === "submitting",
-										"border-red-500 dark:border-red-500": fieldErrors.message?.length > 0,
-										"border-gray-300 dark:border-gray-600": !fieldErrors.message?.length,
-									},
-								)}
-								placeholder="Enter work message..."
-								defaultValue="Process this data"
-							/>
-							{fieldErrors.message?.map((error, i) => (
-								<p key={i.toString()} className="mt-1 text-sm text-red-600 dark:text-red-400">
-									{error}
-								</p>
+						<div className="space-y-3">
+							{messages.map((msg, idx) => (
+								<MessageInput
+									key={`message-${idx}-${messages.length}`}
+									index={idx}
+									value={msg}
+									onChange={(value) => {
+										const newMessages = [...messages];
+										newMessages[idx] = value;
+										setMessages(newMessages);
+									}}
+									onRemove={() => removeMessage(idx)}
+									onAdd={addMessage}
+									disabled={submitter.state === "submitting"}
+									isLast={idx === messages.length - 1}
+									canRemove={messages.length > 1}
+								/>
 							))}
 						</div>
 						<div>
@@ -263,7 +375,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 										"border-gray-300 dark:border-gray-600": !fieldErrors.delay?.length,
 									},
 								)}
-								defaultValue="1000"
+								defaultValue="0"
 							/>
 							{fieldErrors.delay?.length ? (
 								fieldErrors.delay.map((error, i) => (
@@ -273,7 +385,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 								))
 							) : (
 								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-									Simulates work processing time (100-5000ms)
+									Simulates work processing time (0-5000ms, use 0 for benchmarking)
 								</p>
 							)}
 						</div>
@@ -405,6 +517,46 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 														</span>
 														<div className="mt-1 p-2 bg-red-50 dark:bg-red-900/30 rounded text-xs sm:text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 break-words hyphens-auto">
 															{item.error}
+														</div>
+													</div>
+												)}
+												{item.timestamps && item.timestamps.length > 0 && (
+													<div className="mb-2">
+														<span className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-400">
+															Timestamps:
+														</span>
+														{item.timeTaken !== undefined && (
+															<span className="ml-2 text-xs sm:text-sm font-mono text-purple-700 dark:text-purple-400">
+																Total Time: {item.timeTaken.toFixed(3)}ms
+															</span>
+														)}
+														<div className="mt-1 p-2 bg-blue-50 dark:bg-blue-900/30 rounded text-xs border border-blue-200 dark:border-blue-700">
+															<div className="space-y-1 font-mono">
+																{item.timestamps.map((ts, idx) => {
+																	const delta =
+																		idx > 0
+																			? (ts.time - item.timestamps[idx - 1].time).toFixed(3)
+																			: null;
+																	return (
+																		<div
+																			key={idx.toString()}
+																			className="flex justify-between items-center text-blue-900 dark:text-blue-200"
+																		>
+																			<span className="font-semibold">{ts.tag}</span>
+																			<div className="ml-4 flex items-center gap-2">
+																				{delta && (
+																					<span className="text-orange-700 dark:text-orange-400">
+																						+{delta}ms
+																					</span>
+																				)}
+																				<span className="text-gray-600 dark:text-gray-400">
+																					@{ts.time.toFixed(3)}ms
+																				</span>
+																			</div>
+																		</div>
+																	);
+																})}
+															</div>
 														</div>
 													</div>
 												)}
