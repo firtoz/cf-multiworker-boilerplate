@@ -86,6 +86,79 @@ function findRequiredQueues(): Set<string> {
 	return queueNames;
 }
 
+// Function to find all queue consumer configurations
+interface QueueConsumerConfig {
+	workerName: string;
+	queueName: string;
+	maxBatchSize: number;
+	maxBatchTimeout: number;
+	maxRetries: number;
+	deadLetterQueue?: string;
+	wranglerPath: string;
+}
+
+function findQueueConsumers(): QueueConsumerConfig[] {
+	const consumers: QueueConsumerConfig[] = [];
+	const WORKSPACE_ROOT = process.cwd();
+
+	const searchDirs = [
+		path.join(WORKSPACE_ROOT, "durable-objects"),
+		path.join(WORKSPACE_ROOT, "apps"),
+	];
+
+	for (const searchDir of searchDirs) {
+		if (!fs.existsSync(searchDir)) continue;
+
+		const items = fs.readdirSync(searchDir);
+		for (const item of items) {
+			const itemPath = path.join(searchDir, item);
+			if (!fs.statSync(itemPath).isDirectory()) continue;
+
+			const wranglerPath = path.join(itemPath, "wrangler.jsonc");
+			if (fs.existsSync(wranglerPath)) {
+				try {
+					const content = fs.readFileSync(wranglerPath, "utf8");
+					const tree = parseTree(content);
+					if (!tree) continue;
+
+					// Get worker name
+					const nameNode = findNodeAtLocation(tree, ["name"]);
+					const workerName = nameNode?.value;
+					if (!workerName) continue;
+
+					// Check for queue consumers
+					const consumersNode = findNodeAtLocation(tree, ["queues", "consumers"]);
+					if (consumersNode?.type === "array") {
+						for (const consumer of consumersNode.children || []) {
+							const queueNode = findNodeAtLocation(consumer, ["queue"]);
+							const batchSizeNode = findNodeAtLocation(consumer, ["max_batch_size"]);
+							const batchTimeoutNode = findNodeAtLocation(consumer, ["max_batch_timeout"]);
+							const retriesNode = findNodeAtLocation(consumer, ["max_retries"]);
+							const dlqNode = findNodeAtLocation(consumer, ["dead_letter_queue"]);
+
+							if (queueNode?.value) {
+								consumers.push({
+									workerName,
+									queueName: queueNode.value,
+									maxBatchSize: batchSizeNode?.value ?? 10,
+									maxBatchTimeout: batchTimeoutNode?.value ?? 0,
+									maxRetries: retriesNode?.value ?? 3,
+									deadLetterQueue: dlqNode?.value,
+									wranglerPath,
+								});
+							}
+						}
+					}
+				} catch (err) {
+					console.warn(`Failed to parse ${wranglerPath}:`, err);
+				}
+			}
+		}
+	}
+
+	return consumers;
+}
+
 // Check and create queues if they don't exist
 console.log("\nScanning wrangler configs for required queues...");
 const requiredQueues = findRequiredQueues();
@@ -113,6 +186,35 @@ if (requiredQueues.size === 0) {
 			process.exit(1);
 		}
 	}
+}
+
+// Verify queue consumer configurations
+console.log("\nVerifying queue consumer configurations...");
+const queueConsumers = findQueueConsumers();
+
+if (queueConsumers.length === 0) {
+	console.log("No queue consumers found in wrangler configs");
+} else {
+	console.log(`Found ${queueConsumers.length} queue consumer(s)`);
+
+	for (const consumer of queueConsumers) {
+		console.log(
+			`  Checking '${consumer.queueName}' in '${consumer.workerName}': batch_timeout=${consumer.maxBatchTimeout}s`,
+		);
+
+		// Cloudflare doesn't accept batch timeout less than 0.001
+		if (consumer.maxBatchTimeout < 0.001) {
+			console.error(
+				`\n✗ Error: batch timeout is ${consumer.maxBatchTimeout} in ${consumer.wranglerPath}`,
+			);
+			console.error(`  Cloudflare requires batch timeout to be at least 0.001 seconds.`);
+			console.error(`  Please change "max_batch_timeout" to 0.001 or greater.`);
+			console.error(`  Wrangler deploy will handle the consumer configuration correctly.`);
+			process.exit(1);
+		}
+	}
+
+	console.log("  ✓ All consumer configurations valid");
 }
 
 console.log("\n✓ Pre-deploy checks passed successfully.");
