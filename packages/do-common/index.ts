@@ -29,10 +29,27 @@ export const workPayloadSchema = z.object({
 });
 
 /**
+ * Schema for processor result
+ */
+export const processorResultSchema = z.object({
+	processed: z.boolean(),
+	input: workPayloadSchema,
+	processedAt: z.number(),
+	processCount: z.number(),
+	message: z.string(),
+	timestamps: z.array(
+		z.object({
+			tag: z.string(),
+			time: z.number(),
+		}),
+	),
+});
+
+/**
  * Schema for work result sent back to coordinator
  */
 export const workResultSchema = z.object({
-	result: z.unknown().optional(),
+	result: processorResultSchema.optional(),
 	error: z.string().optional(),
 	timestamps: z
 		.array(
@@ -49,6 +66,7 @@ export const workResultSchema = z.object({
  */
 export type WorkPayload = z.infer<typeof workPayloadSchema>;
 export type WorkResult = z.infer<typeof workResultSchema>;
+export type ProcessorResult = z.infer<typeof processorResultSchema>;
 
 export type QueueMessage = {
 	workId: string;

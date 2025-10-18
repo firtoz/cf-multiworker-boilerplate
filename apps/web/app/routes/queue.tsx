@@ -104,6 +104,7 @@ export const route: RoutePath<"/queue"> = "/queue";
 export const formSchema = zfd.formData({
 	delay: zfd.numeric(z.number().min(0).max(5000)),
 	messages: repeatable(z.array(zfd.text(z.string().min(1, "Message is required"))).min(1)),
+	directMode: zfd.checkbox(),
 });
 
 export function meta() {
@@ -128,7 +129,8 @@ export const action = formAction({
 	schema: formSchema,
 	handler: async (_args, data) => {
 		// data type is automatically inferred from formSchema
-		const { delay, messages } = data;
+		const { delay, messages, directMode } = data;
+		const mode = directMode ? "direct" : "queue";
 
 		try {
 			const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
@@ -137,7 +139,7 @@ export const action = formAction({
 				// Single submission - timestamps start at coordinator
 				const response = await api.post({
 					url: "/queue",
-					body: { message: messages[0], delay },
+					body: { message: messages[0], delay, mode },
 				});
 				const responseData = await response.json();
 
@@ -152,6 +154,7 @@ export const action = formAction({
 					body: {
 						messages,
 						delay,
+						mode,
 					},
 				});
 				const responseData = await response.json();
@@ -217,6 +220,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 		const errors: Record<keyof z.infer<typeof formSchema>, string[]> = {
 			delay: [],
 			messages: [],
+			directMode: [],
 		};
 
 		if (submitter.state !== "idle") {
@@ -388,6 +392,23 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 									Simulates work processing time (0-5000ms, use 0 for benchmarking)
 								</p>
 							)}
+						</div>
+						<div>
+							<label className="flex items-center gap-3 cursor-pointer">
+								<input
+									type="checkbox"
+									name="directMode"
+									disabled={submitter.state === "submitting"}
+									className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+								/>
+								<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+									Use Direct Messaging (bypass queue)
+								</span>
+							</label>
+							<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								When checked, messages are sent directly to ProcessorDo without using Cloudflare
+								Queues (faster, but less scalable)
+							</p>
 						</div>
 						<button
 							type="submit"

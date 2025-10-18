@@ -26,6 +26,11 @@
 			{
 				"name": "CoordinatorDo",
 				"class_name": "CoordinatorDo"
+			},
+			{
+				"name": "ProcessorDo",
+				"class_name": "ProcessorDo",
+				"script_name": "cf-processor-do"
 			}
 		]
 	},

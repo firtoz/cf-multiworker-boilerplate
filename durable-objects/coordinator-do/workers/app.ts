@@ -1,7 +1,8 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
-import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
+import { honoDoFetcherWithName, type DOWithHonoApp } from "@firtoz/hono-fetcher";
 import { zValidator } from "@hono/zod-validator";
 import {
+	type ProcessorResult,
 	type QueueMessage,
 	type TimestampEntry,
 	type WorkPayload,
@@ -19,6 +20,7 @@ const COORDINATOR_VERSION = 1;
 const batchSubmissionSchema = z.object({
 	messages: z.array(z.string().min(1, "Message is required")).min(1).max(100),
 	delay: z.number().min(0).max(5000),
+	mode: z.enum(["queue", "direct"]).optional().default("queue"),
 });
 
 type WorkItem = {
@@ -27,7 +29,7 @@ type WorkItem = {
 	status: "pending" | "processing" | "completed" | "failed";
 	createdAt: number;
 	updatedAt: number;
-	result?: unknown;
+	result?: ProcessorResult;
 	error?: string;
 	timestamps: TimestampEntry[];
 	timeTaken?: number; // milliseconds from first timestamp to last
@@ -56,46 +58,55 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 			return c.json({ queue });
 		})
 		// Add work to queue (with validation)
-		.post("/queue", zValidator("json", workPayloadSchema), async (c) => {
-			const payload = c.req.valid("json");
+		.post(
+			"/queue",
+			zValidator(
+				"json",
+				workPayloadSchema.extend({
+					mode: z.enum(["queue", "direct"]).optional().default("queue"),
+				}),
+			),
+			async (c) => {
+				const { mode, ...payload } = c.req.valid("json");
 
-			// Use Date.now() for absolute timestamps - all timing starts here
-			const serverReceivedTime = Date.now();
+				// Use Date.now() for absolute timestamps - all timing starts here
+				const serverReceivedTime = Date.now();
 
-			// Initialize timestamps array starting from server entry point
-			const timestamps: TimestampEntry[] = [];
-			timestamps.push({
-				tag: "1-serverReceived",
-				time: serverReceivedTime,
-			});
+				// Initialize timestamps array starting from server entry point
+				const timestamps: TimestampEntry[] = [];
+				timestamps.push({
+					tag: "1-serverReceived",
+					time: serverReceivedTime,
+				});
 
-			const workItem: WorkItem = {
-				id: crypto.randomUUID(),
-				payload: { ...payload, timestamps },
-				status: "pending",
-				createdAt: Date.now(),
-				updatedAt: Date.now(),
-				timestamps,
-			};
+				const workItem: WorkItem = {
+					id: crypto.randomUUID(),
+					payload: { ...payload, timestamps },
+					status: "pending",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+					timestamps,
+				};
 
-			const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
-			queue.push(workItem);
+				const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
+				queue.push(workItem);
 
-			// Keep only the most recent 50 items
-			if (queue.length > 50) {
-				queue.splice(0, queue.length - 50);
-			}
+				// Keep only the most recent 50 items
+				if (queue.length > 50) {
+					queue.splice(0, queue.length - 50);
+				}
 
-			await this.ctx.storage.put("queue", queue);
+				await this.ctx.storage.put("queue", queue);
 
-			// Process asynchronously (don't await)
-			this.ctx.waitUntil(this.processWork(workItem.id));
+				// Process asynchronously (don't await)
+				this.ctx.waitUntil(this.processWork(workItem.id, mode));
 
-			return c.json({ workItem });
-		})
+				return c.json({ workItem });
+			},
+		)
 		// Batch add work to queue (with validation)
 		.post("/queue/batch", zValidator("json", batchSubmissionSchema), async (c) => {
-			const { messages, delay } = c.req.valid("json");
+			const { messages, delay, mode = "queue" } = c.req.valid("json");
 
 			const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
 			const workItems: WorkItem[] = [];
@@ -130,7 +141,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 
 			// Process all items asynchronously
 			for (const item of workItems) {
-				this.ctx.waitUntil(this.processWork(item.id));
+				this.ctx.waitUntil(this.processWork(item.id, mode));
 			}
 
 			return c.json({ workItems, count: workItems.length });
@@ -171,9 +182,9 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 	}
 
 	/**
-	 * Process a work item by sending to queue
+	 * Process a work item by sending to queue or directly to processor
 	 */
-	private async processWork(workId: string) {
+	private async processWork(workId: string, mode: "queue" | "direct" = "queue") {
 		const queue = (await this.ctx.storage.get<WorkItem[]>("queue")) || [];
 		const workItem = queue.find((item) => item.id === workId);
 
@@ -185,29 +196,66 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 		workItem.status = "processing";
 		workItem.updatedAt = Date.now();
 
-		// Add timestamp for when we're enqueueing to CF Queue
-		const queueEnqueueTime = Date.now();
-		workItem.timestamps.push({
-			tag: `${workItem.timestamps.length + 1}-queueEnqueued`,
-			time: queueEnqueueTime,
-		});
+		if (mode === "direct") {
+			// Direct messaging to ProcessorDo
+			const directSendTime = Date.now();
+			workItem.timestamps.push({
+				tag: `${workItem.timestamps.length + 1}-directSend`,
+				time: directSendTime,
+			});
 
-		await this.ctx.storage.put("queue", queue);
-
-		try {
-			// Send to Cloudflare Queue for processing
-			await this.env.WORK_QUEUE.send({
-				workId: workItem.id,
-				payload: workItem.payload,
-				coordinatorId: "main-coordinator", // Allow processor to send results back
-				timestamps: workItem.timestamps,
-			} satisfies QueueMessage);
-		} catch (error) {
-			// Update with error if queue send fails
-			workItem.status = "failed";
-			workItem.error = error instanceof Error ? error.message : String(error);
-			workItem.updatedAt = Date.now();
 			await this.ctx.storage.put("queue", queue);
+
+			try {
+				// Call ProcessorDo directly using hono-fetcher
+				const processorApi = honoDoFetcherWithName(
+					this.env.ProcessorDo,
+					`processor-${workItem.id}`,
+				);
+				const response = await processorApi.post({
+					url: "/process",
+					body: {
+						...workItem.payload,
+						timestamps: workItem.timestamps,
+					},
+				});
+
+				const result = await response.json();
+
+				// Update work result directly - result is the whole response from ProcessorDo
+				await this.updateWorkResult(workItem.id, result, undefined, result?.timestamps);
+			} catch (error) {
+				// Update with error if direct call fails
+				workItem.status = "failed";
+				workItem.error = error instanceof Error ? error.message : String(error);
+				workItem.updatedAt = Date.now();
+				await this.ctx.storage.put("queue", queue);
+			}
+		} else {
+			// Queue mode - send to Cloudflare Queue
+			const queueEnqueueTime = Date.now();
+			workItem.timestamps.push({
+				tag: `${workItem.timestamps.length + 1}-queueEnqueued`,
+				time: queueEnqueueTime,
+			});
+
+			await this.ctx.storage.put("queue", queue);
+
+			try {
+				// Send to Cloudflare Queue for processing
+				await this.env.WORK_QUEUE.send({
+					workId: workItem.id,
+					payload: workItem.payload,
+					coordinatorId: "main-coordinator", // Allow processor to send results back
+					timestamps: workItem.timestamps,
+				} satisfies QueueMessage);
+			} catch (error) {
+				// Update with error if queue send fails
+				workItem.status = "failed";
+				workItem.error = error instanceof Error ? error.message : String(error);
+				workItem.updatedAt = Date.now();
+				await this.ctx.storage.put("queue", queue);
+			}
 		}
 	}
 
@@ -216,7 +264,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 	 */
 	async updateWorkResult(
 		workId: string,
-		result: unknown,
+		result?: ProcessorResult,
 		error?: string,
 		timestamps?: TimestampEntry[],
 	) {
