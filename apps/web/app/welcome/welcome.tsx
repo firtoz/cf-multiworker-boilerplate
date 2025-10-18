@@ -1,12 +1,11 @@
 import { Suspense } from "react";
 import { Await } from "react-router";
-import { cn } from "~/lib/cn";
-
 import cloudflareWorkersIcon from "~/assets/cloudflare-workers.svg?width=24&as=metadata";
 import durableObjectsIcon from "~/assets/durable-objects.svg?width=24&as=metadata";
 import reactRouterIcon from "~/assets/react-router.svg?width=44&as=metadata";
 import turborepoIcon from "~/assets/turborepo.svg?width=18&as=metadata";
 import zodLogoIcon from "~/assets/zod-logo.png?width=18&as=metadata";
+import { cn } from "~/lib/cn";
 
 // Icon styling constants
 const ICON_CONTAINER_SIZE = 40; // 40px container
