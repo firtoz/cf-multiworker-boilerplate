@@ -1,7 +1,12 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
-import { type DOWithHonoApp, honoDoFetcherWithName } from "@firtoz/hono-fetcher";
+import { type DOWithHonoApp, honoDoFetcherWithId } from "@firtoz/hono-fetcher";
 import { zValidator } from "@hono/zod-validator";
-import { type QueueMessage, type TimestampEntry, workPayloadSchema } from "do-common";
+import {
+	type QueueMessage,
+	type TimestampEntry,
+	type WorkPayload,
+	workPayloadSchema,
+} from "do-common";
 import { Hono } from "hono";
 
 /**
@@ -21,48 +26,53 @@ export class ProcessorDo extends DurableObject<Env> implements DOWithHonoApp {
 		.post("/process", zValidator("json", workPayloadSchema), async (c) => {
 			const payload = c.req.valid("json");
 
-			const processingStartTime = Date.now();
-
-			// Payload is now validated and fully typed
-			// You get type hinting for payload.message and payload.delay
-			const { delay, message, timestamps = [] } = payload;
-
-			// Add processing start timestamp
-			const updatedTimestamps: TimestampEntry[] = [...timestamps];
-			updatedTimestamps.push({
-				tag: `${updatedTimestamps.length + 1}-processingStarted`,
-				time: processingStartTime,
-			});
-
-			// TODO: Replace with your actual processing logic
-			// Simulate some work (allow 0 delay for benchmarking)
-			if (delay > 0) {
-				await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 5000)));
-			}
-
-			const processingCompletedTime = Date.now();
-
-			// Add processing completed timestamp
-			updatedTimestamps.push({
-				tag: `${updatedTimestamps.length + 1}-processingCompleted`,
-				time: processingCompletedTime,
-			});
-
-			// Track processing count
-			const processCount = ((await this.ctx.storage.get<number>("processCount")) || 0) + 1;
-			await this.ctx.storage.put("processCount", processCount);
-
-			const result = {
-				processed: true,
-				input: payload,
-				processedAt: Date.now(),
-				processCount,
-				message: `Processed "${message}" by ProcessorDo (total: ${processCount})`,
-				timestamps: updatedTimestamps,
-			};
+			const result = await this.processWork(payload);
 
 			return c.json(result);
 		});
+
+	async processWork(payload: WorkPayload) {
+		const processingStartTime = Date.now();
+
+		// Payload is now validated and fully typed
+		// You get type hinting for payload.message and payload.delay
+		const { delay, message, timestamps = [] } = payload;
+
+		// Add processing start timestamp
+		const updatedTimestamps: TimestampEntry[] = [...timestamps];
+		updatedTimestamps.push({
+			tag: `${updatedTimestamps.length + 1}-processingStarted`,
+			time: processingStartTime,
+		});
+
+		// TODO: Replace with your actual processing logic
+		// Simulate some work (allow 0 delay for benchmarking)
+		if (delay > 0) {
+			await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 5000)));
+		}
+
+		const processingCompletedTime = Date.now();
+
+		// Add processing completed timestamp
+		updatedTimestamps.push({
+			tag: `${updatedTimestamps.length + 1}-processingCompleted`,
+			time: processingCompletedTime,
+		});
+
+		// Track processing count
+		const processCount = ((await this.ctx.storage.get<number>("processCount")) || 0) + 1;
+		await this.ctx.storage.put("processCount", processCount);
+
+		const result = {
+			processed: true,
+			input: payload,
+			processedAt: Date.now(),
+			processCount,
+			message: `Processed "${message}" by ProcessorDo (total: ${processCount})`,
+			timestamps: updatedTimestamps,
+		};
+		return result;
+	}
 
 	/**
 	 * Handle HTTP requests to this Durable Object
@@ -107,7 +117,7 @@ export default class ProcessorWorker extends WorkerEntrypoint<Env> {
 						});
 
 						// Report permanent failure to coordinator
-						const coordinatorApi = honoDoFetcherWithName(this.env.CoordinatorDo, coordinatorId);
+						const coordinatorApi = honoDoFetcherWithId(this.env.CoordinatorDo, coordinatorId);
 						await coordinatorApi.post({
 							url: "/result/:workId",
 							params: { workId },
@@ -143,16 +153,11 @@ export default class ProcessorWorker extends WorkerEntrypoint<Env> {
 						time: consumerPickedUpTime,
 					});
 
-					// Use hono-fetcher to call ProcessorDo
-					const processorApi = honoDoFetcherWithName(this.env.ProcessorDo, `processor-${workId}`);
-					const response = await processorApi.post({
-						url: "/process",
-						body: { ...payload, timestamps: updatedTimestamps },
-					});
-					const result = await response.json();
+					const stub = this.env.ProcessorDo.getByName(`processor-${coordinatorId}`);
+					const result = await stub.processWork(payload);
 
 					// Send result back to coordinator using hono-fetcher (result should include timestamps)
-					const coordinatorApi = honoDoFetcherWithName(this.env.CoordinatorDo, coordinatorId);
+					const coordinatorApi = honoDoFetcherWithId(this.env.CoordinatorDo, coordinatorId);
 					await coordinatorApi.post({
 						url: "/result/:workId",
 						params: { workId },

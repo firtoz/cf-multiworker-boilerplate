@@ -1,5 +1,5 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
-import { honoDoFetcherWithName, type DOWithHonoApp } from "@firtoz/hono-fetcher";
+import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
 import { zValidator } from "@hono/zod-validator";
 import {
 	type ProcessorResult,
@@ -200,27 +200,15 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 			// Direct messaging to ProcessorDo
 			const directSendTime = Date.now();
 			workItem.timestamps.push({
-				tag: `${workItem.timestamps.length + 1}-directSend`,
+				tag: `${workItem.timestamps.length + 1}-directSend-rpc`,
 				time: directSendTime,
 			});
 
 			await this.ctx.storage.put("queue", queue);
 
 			try {
-				// Call ProcessorDo directly using hono-fetcher
-				const processorApi = honoDoFetcherWithName(
-					this.env.ProcessorDo,
-					`processor-${workItem.id}`,
-				);
-				const response = await processorApi.post({
-					url: "/process",
-					body: {
-						...workItem.payload,
-						timestamps: workItem.timestamps,
-					},
-				});
-
-				const result = await response.json();
+				const stub = this.env.ProcessorDo.getByName(`processor-${this.ctx.id}`);
+				const result = await stub.processWork(workItem.payload);
 
 				// Update work result directly - result is the whole response from ProcessorDo
 				await this.updateWorkResult(workItem.id, result, undefined, result?.timestamps);
@@ -246,7 +234,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 				await this.env.WORK_QUEUE.send({
 					workId: workItem.id,
 					payload: workItem.payload,
-					coordinatorId: "main-coordinator", // Allow processor to send results back
+					coordinatorId: this.ctx.id.toString(),
 					timestamps: workItem.timestamps,
 				} satisfies QueueMessage);
 			} catch (error) {
