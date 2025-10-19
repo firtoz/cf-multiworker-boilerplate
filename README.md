@@ -95,13 +95,21 @@ bunx turbo gen durable-object
 
 ### Environment Variables
 
-Create `.env.local` in the root:
+Create `.env.local` in the project root:
 
 ```bash
-CLOUDFLARE_API_TOKEN=your_api_token
-CLOUDFLARE_ACCOUNT_ID=your_account_id
+# Required for deployment (see Deployment section for how to get these)
+CLOUDFLARE_API_TOKEN=your_api_token_here
+CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+
+# Required for the web app (generate a random string)
 SESSION_SECRET=random_secret_here
 ```
+
+**Getting your values:**
+- `CLOUDFLARE_API_TOKEN`: Create at https://dash.cloudflare.com/profile/api-tokens
+- `CLOUDFLARE_ACCOUNT_ID`: Find in your Cloudflare dashboard URL or account settings
+- `SESSION_SECRET`: Generate with `openssl rand -base64 32` or any random string
 
 ### Wrangler Config
 
@@ -124,11 +132,46 @@ Then run `bun run typegen` from root to update types across all packages.
 
 ## Deployment
 
+### Prerequisites
+
+Before deploying, you need a Cloudflare API token:
+
+1. **Create an API token** at https://dash.cloudflare.com/profile/api-tokens
+2. Use the **"Edit Cloudflare Workers"** template
+3. Ensure these permissions are included:
+   - Account / Workers Scripts / Edit
+   - Zone / Workers Routes / Edit  
+   - Account / Workers Observability / Edit
+
+4. **Set the token** in `.env.local`:
+   ```bash
+   CLOUDFLARE_API_TOKEN=your_token_here
+   CLOUDFLARE_ACCOUNT_ID=your_account_id  # Optional but recommended
+   ```
+
+### Deploy Command
+
 ```bash
 bun run deploy
 ```
 
-This runs `predeploy.ts` (type checks, builds) then deploys all workers + DOs to Cloudflare.
+**What this does:**
+
+1. **Pre-deploy checks** (`predeploy.ts`):
+   - Validates `CLOUDFLARE_API_TOKEN` is set
+   - Scans all `wrangler.jsonc` files for queue configurations
+   - Automatically creates any missing Cloudflare Queues (e.g., `work-queue`, `work-queue-dlq`)
+   - Validates queue consumer settings (batch timeout, retries, etc.)
+
+2. **Deploys all packages**:
+   - Builds and deploys the React Router 7 web app (`apps/web`)
+   - Deploys all Durable Objects (`durable-objects/*`)
+   - Configures all bindings (DOs, queues, etc.)
+
+**Note:** If deployment fails, check that:
+- Your API token has the correct permissions
+- You have a Cloudflare account with Workers enabled
+- All queue configurations have `max_batch_timeout >= 0.001`
 
 ## Scripts
 
