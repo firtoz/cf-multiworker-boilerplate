@@ -7,6 +7,9 @@
 			"outputLogs": "new-only"
 		},
 		"typecheck": {},
+		"typegen": {
+			"outputLogs": "new-only"
+		},
 		"cf-typegen": {
 			"outputLogs": "new-only"
 		},

@@ -3,6 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"typegen": "bun run cf-typegen",
 		"cf-typegen": "bunx wrangler types && bun run post-typegen",
 		"post-typegen": "bun ../../scripts/post-typegen.ts",
 		"typecheck": "tsc --noEmit -p ./tsconfig.json",

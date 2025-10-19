@@ -120,7 +120,7 @@ Each Durable Object has a `wrangler.jsonc`. To use a DO from another worker, add
 }
 ```
 
-Then run `bun run cf-typegen` to update types.
+Then run `bun run typegen` from root to update types across all packages.
 
 ## Deployment
 
@@ -135,6 +135,7 @@ This runs `predeploy.ts` (type checks, builds) then deploys all workers + DOs to
 - `bun run dev` - Start all workers in dev mode
 - `bun run build` - Build all packages
 - `bun run deploy` - Deploy to Cloudflare
+- `bun run typegen` - Generate types (Cloudflare + React Router)
 - `bun run typecheck` - Type check all packages
 - `bunx turbo gen durable-object` - Generate new DO
 

@@ -24,6 +24,7 @@
 		"dev": "turbo dev",
 		"lint": "turbo lint",
 		"typecheck": "turbo typecheck",
+		"typegen": "turbo typegen",
 		"predeploy": "bun --env-file ./.env.local ./scripts/predeploy.ts",
 		"deploy": "bun --env-file ./.env.local turbo deploy"
 	},

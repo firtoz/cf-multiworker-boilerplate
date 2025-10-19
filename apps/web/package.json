@@ -4,6 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "react-router build",
+		"typegen": "bun run cf-typegen && bun run rr-typegen",
 		"cf-typegen": "bunx wrangler types -c wrangler.jsonc --env-file .env && bun run post-typegen",
 		"post-typegen": "bun ../../scripts/post-typegen.ts",
 		"rr-typegen": "react-router typegen",

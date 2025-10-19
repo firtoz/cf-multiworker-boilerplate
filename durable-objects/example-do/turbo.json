@@ -8,13 +8,18 @@
 			"outputs": []
 		},
 		"typecheck": {
-			"dependsOn": ["cf-typegen"],
+			"dependsOn": ["typegen"],
 			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json"],
 			"outputs": []
 		},
-		"cf-typegen": {
-			"inputs": ["wrangler.jsonc"],
+		"typegen": {
+			"dependsOn": ["cf-typegen"],
+			"inputs": [],
 			"outputs": []
+		},
+		"cf-typegen": {
+			"inputs": ["wrangler.jsonc", "workers/**/*.ts", "../../scripts/post-typegen.ts"],
+			"outputs": ["worker-configuration.d.ts"]
 		},
 		"deploy": {
 			"dependsOn": ["typecheck"],

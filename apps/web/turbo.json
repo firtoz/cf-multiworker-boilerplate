@@ -17,7 +17,7 @@
 			"outputs": []
 		},
 		"typecheck": {
-			"dependsOn": ["cf-typegen", "rr-typegen"],
+			"dependsOn": ["typegen"],
 			"inputs": [
 				"app/**/*.ts",
 				"app/**/*.tsx",
@@ -27,6 +27,11 @@
 				"tsconfig.node.json",
 				"tsconfig.cloudflare.json"
 			],
+			"outputs": []
+		},
+		"typegen": {
+			"dependsOn": ["cf-typegen", "rr-typegen"],
+			"inputs": [],
 			"outputs": []
 		},
 		"post-typegen": {
@@ -48,7 +53,7 @@
 			"outputs": []
 		},
 		"dev": {
-			"dependsOn": ["cf-typegen"],
+			"dependsOn": ["typegen"],
 			"persistent": true,
 			"cache": false
 		},
