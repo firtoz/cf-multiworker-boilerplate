@@ -1,315 +1,154 @@
 # Cloudflare Multi-Worker Boilerplate
 
-A modern, production-ready boilerplate for building full-stack applications with Cloudflare Workers and Durable Objects. This template provides a solid foundation for developing scalable, serverless applications on the Cloudflare platform.
+Production-ready boilerplate for building full-stack React applications on Cloudflare Workers with Durable Objects, Queues, and end-to-end type safety.
 
-## Features
+## Why Use This?
 
-- 🚀 Monorepo structure for multiple workers and durable objects
-- ⚡️ React Router for the web application
-- 📦 TypeScript support across all packages
-- 🔄 Pre-configured scripts for typegen and deployment
-- 🔒 Environment variable management
-- 🔗 Multi-worker communication patterns (DO-to-DO)
-- 🧩 Durable Objects for stateful applications
-- 🎯 Type-safe APIs with Hono and hono-fetcher
-- ✨ Enhanced React Router utilities with router-toolkit
-- 🔍 Zod for schema validation
-- 🛡️ Type-safe error handling with maybe-error
-- 🎨 TailwindCSS for styling
+Building on Cloudflare's edge platform is powerful but complex. This boilerplate solves the hard parts so you can focus on your app:
 
-## Technologies
+- **Type Safety Across Workers**: Automatic type generation for Durable Object bindings - call DOs from any worker with full IntelliSense
+- **Queue-Based Architecture**: Working example of Cloudflare Queues for reliable, scalable task processing
+- **Modern React Stack**: React Router 7 with streaming SSR, form actions, and optimized CSS loading via 103 Early Hints
+- **End-to-End Validation**: Type-safe API calls using Hono + hono-fetcher with Zod validation
+- **Ready to Deploy**: Pre-configured Turborepo with dev/build/deploy scripts that just work
 
-### Core Technologies
+**What's included:**
+- React Router 7 web app with TailwindCSS
+- Working queue demo (`/queue`) showing CoordinatorDo → Queue → ProcessorDo flow
+- Multiple communication patterns (direct RPC + queue-based)
+- Turborepo generator to scaffold new Durable Objects
+- Automatic type imports via custom post-typegen script
 
-- **[Cloudflare Workers](https://developers.cloudflare.com/workers/)**: Serverless JavaScript runtime at the edge
-- **[Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/)**: Stateful serverless objects for coordination and persistence
+## Quick Start
 
+### Use This Template
 
-### Frontend
+**Option 1 - GitHub UI:**
+1. Go to [github.com/firtoz/cf-multiworker-boilerplate](https://github.com/firtoz/cf-multiworker-boilerplate)
+2. Click "Use this template" → "Create a new repository"
 
-- **[React](https://react.dev/)**: UI library for building component-based interfaces
-- **[React Router](https://reactrouter.com/)**: Declarative routing for React applications
-- **[TailwindCSS](https://tailwindcss.com/)**: Utility-first CSS framework
+**Option 2 - GitHub CLI:**
+```bash
+gh repo create my-project --template firtoz/cf-multiworker-boilerplate --public
+cd my-project
+```
 
-### Validation & Utilities
+### Install & Run
 
-- **[Zod](https://zod.dev/)**: TypeScript-first schema validation
-- **[@firtoz/router-toolkit](https://www.npmjs.com/package/@firtoz/router-toolkit)**: Enhanced React Router utilities
-- **[@firtoz/hono-fetcher](https://www.npmjs.com/package/@firtoz/hono-fetcher)**: Type-safe Hono API client
-- **[@firtoz/maybe-error](https://www.npmjs.com/package/@firtoz/maybe-error)**: Type-safe error handling
+```bash
+# Install dependencies
+bun install
 
-### Monorepo Management
+# Start dev server (starts web app + all DOs)
+bun run dev
+```
 
-- **[Turborepo](https://turborepo.com/)**: High-performance build system for JavaScript/TypeScript monorepos
-- **[Bun](https://bun.sh/)**: Fast JavaScript runtime, bundler, test runner, and package manager
+Visit http://localhost:5173 to see the app, or http://localhost:5173/queue for the working queue demo.
 
 ## Project Structure
 
 ```
-cf-multiworker-boilerplate/
-├── apps/                  # Web applications
-│   └── web/               # Main web application (React Router)
-│       ├── app/           # React application code
-│       │   ├── components/# React components
-│       │   ├── routes/    # Route components
-│       │   └── welcome/   # Welcome page assets
-│       └── workers/       # Worker entry points
-├── durable-objects/       # Durable Objects
-│   ├── example-do/        # Example Durable Object
-│   ├── coordinator-do/    # Orchestrates work across DOs
-│   └── processor-do/      # Processes delegated work
-├── scripts/               # Utility scripts
-│   ├── post-typegen.ts    # Script to fix Durable Object type imports
-│   └── predeploy.ts       # Pre-deployment script
-└── turbo.json             # Turborepo configuration
+├── apps/
+│   └── web/                    # React Router 7 app
+│       ├── app/routes/         # Routes (home.tsx, queue.tsx)
+│       └── workers/app.ts      # Cloudflare Worker entry point
+├── durable-objects/
+│   ├── coordinator-do/         # Orchestrates work, manages queue state
+│   ├── processor-do/           # Processes work items
+│   └── example-do/             # Minimal DO example
+├── packages/
+│   └── do-common/              # Shared types & Zod schemas
+└── scripts/
+    ├── post-typegen.ts         # Auto-fixes DO type imports
+    └── predeploy.ts            # Pre-deployment checks
 ```
 
-### Custom Configuration Scripts
+## Key Features
 
-The project includes custom scripts to streamline development and deployment:
+### 1. Type-Safe Durable Object Calls
 
-#### post-typegen.ts
-
-This script automatically fixes Durable Object type definitions after Wrangler generates them:
-
-- Parses type comments generated by Wrangler (e.g., `/* ExampleDo from cf-example-do */`)
-- Resolves the correct import path to the Durable Object implementation
-- Replaces the comment with proper TypeScript import syntax for full type safety
-- Runs automatically after `wrangler types` via the `cf-typegen` script
-- Uses `jsonc-parser` for proper JSONC handling
-
-This approach ensures you get full TypeScript type safety for cross-worker Durable Object bindings without needing to manually re-export classes.
-
-## Multi-Worker Communication Pattern
-
-This boilerplate includes a demonstration of Durable Objects communicating with each other:
-
-### Architecture
-
-```
-Web Worker → CoordinatorDo → ProcessorDo
-```
-
-1. **Web Worker** (`apps/web`): Entry point for HTTP requests
-2. **CoordinatorDo** (`durable-objects/coordinator-do`): Orchestrates work across multiple DOs
-3. **ProcessorDo** (`durable-objects/processor-do`): Processes delegated work
-
-### Example Flow
+The `post-typegen.ts` script automatically converts Wrangler's type comments into proper imports:
 
 ```typescript
-// In your web worker route (apps/web/app/routes/api.multi-worker.ts)
-const coordinator = env.CoordinatorDo.getByName("coordinator-1");
-const response = await coordinator.fetch("https://fake-host/orchestrate", {
-  method: "POST",
-  body: JSON.stringify(payload),
-});
-
-// Inside CoordinatorDo (durable-objects/coordinator-do/workers/app.ts)
-const processor = this.env.ProcessorDo.getByName("processor-1");
-const result = await processor.fetch("https://fake-host/process", {
-  method: "POST",
-  body: JSON.stringify(data),
-});
+// After running cf-typegen, you get full types:
+const coordinator = env.CoordinatorDo.getByName("main");
+const api = honoDoFetcherWithName(env.CoordinatorDo, "main");
+const response = await api.get({ url: "/queue" }); // ✅ Typed!
 ```
 
-### Testing the Pattern
+### 2. Queue Demo
+
+Visit `/queue` to see a complete implementation:
+- Submit work with configurable delay
+- Choose queue-based (reliable, scalable) or direct (faster) mode
+- Watch items flow: pending → processing → completed
+- Timestamps show exact timing through the system
+
+### 3. Add New Durable Objects Easily
 
 ```bash
-# Start dev server
-bun run dev
-
-# In another terminal, test the multi-worker flow
-curl -X POST http://localhost:8788/api/multi-worker \
-  -H "Content-Type: application/json" \
-  -d '{"message": "test"}'
+bunx turbo gen durable-object
+# Follow prompts, then implement logic in workers/app.ts
 ```
 
-### Work Queue Demo
+## Configuration
 
-A complete work queue implementation is included at `/queue`:
+### Environment Variables
 
-**Features:**
-- Submit work items to a queue
-- CoordinatorDo manages queue state and delegates to processors
-- ProcessorDo executes work with simulated delay
-- Real-time status updates (pending → processing → completed/failed)
-- Each work item gets its own ProcessorDo instance
-
-**Implementation:**
-```typescript
-// DOs use Hono with chained routing pattern
-import { Hono } from "hono";
-import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
-
-class CoordinatorDo extends DurableObject implements DOWithHonoApp {
-  app = new Hono()
-    .get("/", (c) => c.json({ status: "ready" }))
-    .get("/queue", async (c) => {
-      const queue = await this.ctx.storage.get("queue") || [];
-      return c.json({ queue });
-    })
-    .post("/queue", async (c) => {
-      const payload = await c.req.json();
-      // ... process work
-      return c.json({ workItem });
-    });
-}
-
-// Web routes use hono-fetcher for type-safe API calls
-import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
-
-const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
-const response = await api.get({ url: "/queue" });
-const data = await response.json(); // Fully typed!
-```
-
-**Type Safety Features:**
-- ✅ Route paths are type-checked at compile time
-- ✅ Request/response types are fully inferred from Hono app
-- ✅ Path parameters are automatically validated
-- ✅ Form validation with Zod schemas
-- ✅ Zero runtime overhead - all type checking happens at compile time
-- ✅ Full IDE autocomplete for routes and parameters
-
-**Try it:**
-1. Start dev: `bun run dev`
-2. Visit http://localhost:5173/queue
-3. Add work items and watch them process!
-
-### Customizing
-
-The provided implementation is intentionally minimal with clear TODOs. Replace the placeholder logic with your own:
-
-- Add your orchestration logic in `CoordinatorDo`
-- Implement processing logic in `ProcessorDo`
-- Access durable storage with `this.ctx.storage`
-- Add more DOs and bindings as needed
-
-## Getting Started
-
-### Prerequisites
-
-- [Bun](https://bun.sh/) (>= 1.2.20)
-- [Node.js](https://nodejs.org/) (>= 18)
-- [Cloudflare Account](https://dash.cloudflare.com/sign-up)
-
-### Creating a New Project from This Template
-
-To create a new project based on this template using the GitHub CLI:
+Create `.env.local` in the root:
 
 ```bash
-gh repo create [repo_name_here] --template firtoz/cf-multiworker-boilerplate [--private]
-cd [repo_name_here]
-```
-
-Replace `[repo_name_here]` with your desired repository name. The repository will be public by default; add `--private` if you want it to be private.
-
-### Installation
-
-Install the dependencies:
-
-```bash
-bun install
-```
-
-### Environment Setup
-
-Create a `.env.local` file in the root directory with your Cloudflare credentials:
-
-```
 CLOUDFLARE_API_TOKEN=your_api_token
 CLOUDFLARE_ACCOUNT_ID=your_account_id
-SESSION_SECRET=your_session_secret
-VALUE_FROM_CLOUDFLARE=example_value
+SESSION_SECRET=random_secret_here
 ```
 
-For the web application, copy the example environment variables:
+### Wrangler Config
 
-```bash
-cd apps/web
-cp .env.example .env
-```
-
-### Development
-
-Start the development server:
-
-```bash
-bun run dev
-```
-
-This will start all the necessary services for development.
-
-## Deployment
-
-### Configuration
-
-Before deploying, you need to configure your wrangler.jsonc files with your Cloudflare account details:
-
-#### 1. Configure Durable Objects
-
-The Durable Objects are already configured in the wrangler files, but you need to ensure that the `script_name` in the web app matches the name of your Durable Object worker:
-
-- In `apps/web/wrangler.jsonc`, make sure the `script_name` in the Durable Object binding matches your Durable Object worker name:
+Each Durable Object has a `wrangler.jsonc`. To use a DO from another worker, add a binding:
 
 ```jsonc
+// apps/web/wrangler.jsonc
 "durable_objects": {
   "bindings": [
     {
-      "name": "ExampleDo",
-      "class_name": "ExampleDo",
-      "script_name": "cf-example-do" // This should match the name in durable-objects/example-do/wrangler.jsonc
+      "name": "CoordinatorDo",
+      "class_name": "CoordinatorDo",
+      "script_name": "cf-coordinator-do"  // matches the DO's wrangler name
     }
   ]
 }
 ```
 
-### Deploying
+Then run `bun run cf-typegen` to update types.
 
-Once configured, deploy all services to Cloudflare:
+## Deployment
 
 ```bash
 bun run deploy
 ```
 
-This will deploy both the web application and the Durable Object to your Cloudflare account.
-
-## Customizing the Boilerplate
-
-### Adding a New Durable Object
-
-Use the built-in Turborepo generator:
-
-```bash
-bunx turbo gen durable-object
-```
-
-This will:
-- Prompt you for a name and description
-- Generate all necessary files (package.json, wrangler.jsonc, tsconfig, etc.)
-- Run `wrangler types` to generate TypeScript definitions
-- Install dependencies automatically
-
-Then:
-1. Implement your Durable Object logic in `workers/app.ts`
-2. Add bindings in other workers' `wrangler.jsonc` to use it
-3. Run `bun run cf-typegen` in the root to update types
-
-### Adding a New Web Application
-
-1. Create a new directory in `apps/`
-2. Copy the structure from `web/`
-3. Update the package.json and wrangler.jsonc files
-4. Implement your web application
+This runs `predeploy.ts` (type checks, builds) then deploys all workers + DOs to Cloudflare.
 
 ## Scripts
 
-- `post-typegen.ts`: Fixes Durable Object type imports after Wrangler type generation
-  - Parses type comments generated by Wrangler
-  - Resolves correct import paths to Durable Object implementations
-  - Ensures full TypeScript type safety for cross-worker bindings
+- `bun run dev` - Start all workers in dev mode
+- `bun run build` - Build all packages
+- `bun run deploy` - Deploy to Cloudflare
+- `bun run typecheck` - Type check all packages
+- `bunx turbo gen durable-object` - Generate new DO
 
-- `predeploy.ts`: Prepares the project for deployment to Cloudflare
+## Technologies
+
+- **[Cloudflare Workers](https://workers.cloudflare.com/)** - Edge runtime
+- **[Durable Objects](https://developers.cloudflare.com/durable-objects/)** - Stateful serverless
+- **[Cloudflare Queues](https://developers.cloudflare.com/queues/)** - Message queues
+- **[React Router 7](https://reactrouter.com/)** - Full-stack React framework
+- **[Hono](https://hono.dev/)** - Fast web framework for Workers
+- **[@firtoz/hono-fetcher](https://www.npmjs.com/package/@firtoz/hono-fetcher)** - Type-safe DO API client
+- **[Zod](https://zod.dev/)** - Schema validation
+- **[Turborepo](https://turbo.build/repo)** - Monorepo build system
+- **[Bun](https://bun.sh/)** - Fast package manager & runtime
 
 ## License
 
