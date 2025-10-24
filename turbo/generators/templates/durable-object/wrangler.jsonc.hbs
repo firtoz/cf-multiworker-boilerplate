@@ -3,9 +3,9 @@
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
-	"$schema": "../../node_modules/wrangler/config-schema.json",
-	"name": "cf-{{ kebabCase name }}",
-	"compatibility_date": "2025-04-04",
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "{{ kebabCase name }}",
+	"compatibility_date": "2025-10-24",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "./workers/app.ts",
 	"vars": {
@@ -48,7 +48,7 @@
 	// "d1_databases": [
 	// 	{
 	// 		"binding": "DB",
-	// 		"database_name": "cf-{{ kebabCase name }}-db",
+	// 		"database_name": "{{ kebabCase name }}-db",
 	// 		"database_id": "your-database-id-here",
 	// 		"migrations_dir": "./drizzle/migrations"
 	// 	}
