@@ -5,8 +5,7 @@
 	"scripts": {
 		"build": "react-router build",
 		"typegen": "bun run cf-typegen && bun run rr-typegen",
-		"cf-typegen": "bunx wrangler types -c wrangler.jsonc --env-file .env && bun run post-typegen",
-		"post-typegen": "bun ../../scripts/post-typegen.ts",
+		"cf-typegen": "bun --cwd ../../packages/scripts cf-typegen $(pwd)",
 		"rr-typegen": "react-router typegen",
 		"deploy": "bunx wrangler deploy",
 		"dev": "react-router dev",

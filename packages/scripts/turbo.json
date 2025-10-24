@@ -1,0 +1,9 @@
+{
+	"extends": ["//"],
+	"tasks": {
+		"pre-deploy": {
+			"inputs": ["$TURBO_ROOT$/**/wrangler.jsonc", "$TURBO_ROOT$/.env.local"],
+			"outputs": []
+		}
+	}
+}

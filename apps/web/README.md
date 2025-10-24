@@ -157,10 +157,12 @@ bun run typegen
 ```
 
 This:
-1. Runs `wrangler types` to generate `worker-configuration.d.ts` (Cloudflare bindings)
-2. Runs `post-typegen.ts` to convert DO comments to proper imports
-3. Runs `react-router typegen` to generate route types
-4. Gives you full IntelliSense for `env.DoName` and route loaders/actions
+1. Runs `cf-typegen` which:
+   - Ensures `.env` file exists (copies from `.env.example` if needed)
+   - Runs `wrangler types` to generate `worker-configuration.d.ts`
+   - Auto-converts DO type comments to proper imports
+2. Runs `react-router typegen` to generate route types
+3. Gives you full IntelliSense for `env.DoName` and route loaders/actions
 
 Or run locally in this directory:
 ```bash

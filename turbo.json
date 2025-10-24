@@ -1,5 +1,5 @@
 {
-	"$schema": "https://turborepo.com/schema.json",
+	"$schema": "./node_modules/turbo/schema.json",
 	"globalDependencies": [".env", "tsconfig.json"],
 	"ui": "tui",
 	"tasks": {
@@ -13,9 +13,6 @@
 		"cf-typegen": {
 			"outputLogs": "new-only"
 		},
-		"post-typegen": {
-			"outputLogs": "new-only"
-		},
 		"rr-typegen": {
 			"outputLogs": "new-only"
 		},
@@ -26,6 +23,9 @@
 		},
 		"lint": {
 			"inputs": ["biome.json"]
+		},
+		"pre-deploy": {
+			"outputLogs": "new-only"
 		},
 		"deploy": {
 			"outputLogs": "new-only"

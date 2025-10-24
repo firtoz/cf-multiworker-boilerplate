@@ -17,7 +17,7 @@ Building on Cloudflare's edge platform is powerful but complex. This boilerplate
 - Working queue demo (`/queue`) showing CoordinatorDo → Queue → ProcessorDo flow
 - Multiple communication patterns (direct RPC + queue-based)
 - Turborepo generator to scaffold new Durable Objects
-- Automatic type imports via custom post-typegen script
+- Automatic type imports via unified cf-typegen script
 
 ## Quick Start
 
@@ -56,18 +56,18 @@ Visit http://localhost:5173 to see the app, or http://localhost:5173/queue for t
 │   ├── coordinator-do/         # Orchestrates work, manages queue state
 │   ├── processor-do/           # Processes work items
 │   └── example-do/             # Minimal DO example
-├── packages/
-│   └── do-common/              # Shared types & Zod schemas
-└── scripts/
-    ├── post-typegen.ts         # Auto-fixes DO type imports
-    └── predeploy.ts            # Pre-deployment checks
+└── packages/
+    ├── do-common/              # Shared types & Zod schemas
+    └── scripts/                # Build & deployment scripts
+        ├── cf-typegen.ts       # Generates types & auto-fixes DO imports
+        └── pre-deploy.ts        # Pre-deployment checks
 ```
 
 ## Key Features
 
 ### 1. Type-Safe Durable Object Calls
 
-The `post-typegen.ts` script automatically converts Wrangler's type comments into proper imports:
+The `cf-typegen` script automatically runs wrangler types and converts DO type comments into proper imports:
 
 ```typescript
 // After running cf-typegen, you get full types:
@@ -157,7 +157,7 @@ bun run deploy
 
 **What this does:**
 
-1. **Pre-deploy checks** (`predeploy.ts`):
+1. **Pre-deploy checks** (`pre-deploy.ts`):
    - Validates `CLOUDFLARE_API_TOKEN` is set
    - Scans all `wrangler.jsonc` files for queue configurations
    - Automatically creates any missing Cloudflare Queues (e.g., `work-queue`, `work-queue-dlq`)

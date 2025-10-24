@@ -27,7 +27,7 @@ console.log("✓ CLOUDFLARE_API_TOKEN is set");
 // Function to find all wrangler.jsonc files and extract queue names
 function findRequiredQueues(): Set<string> {
 	const queueNames = new Set<string>();
-	const WORKSPACE_ROOT = process.cwd();
+	const WORKSPACE_ROOT = path.resolve(process.cwd(), "../..");
 
 	const searchDirs = [
 		path.join(WORKSPACE_ROOT, "durable-objects"),
@@ -99,7 +99,7 @@ interface QueueConsumerConfig {
 
 function findQueueConsumers(): QueueConsumerConfig[] {
 	const consumers: QueueConsumerConfig[] = [];
-	const WORKSPACE_ROOT = process.cwd();
+	const WORKSPACE_ROOT = path.resolve(process.cwd(), "../..");
 
 	const searchDirs = [
 		path.join(WORKSPACE_ROOT, "durable-objects"),

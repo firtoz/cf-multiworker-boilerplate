@@ -1,5 +1,5 @@
 {
-	"$schema": "https://turborepo.com/schema.json",
+	"$schema": "../../node_modules/turbo/schema.json",
 	"extends": ["//"],
 	"tasks": {
 		"lint": {
@@ -34,17 +34,13 @@
 			"inputs": [],
 			"outputs": []
 		},
-		"post-typegen": {
-			"inputs": ["wrangler.jsonc", "../../scripts/post-typegen.ts"],
-			"outputs": ["worker-configuration.d.ts"]
-		},
 		"cf-typegen": {
 			"inputs": [
 				"workers/**/*.ts",
 				"workers/**/*.tsx",
 				"wrangler.jsonc",
 				".env",
-				"../../scripts/post-typegen.ts"
+				"../../packages/scripts/src/**/*.ts"
 			],
 			"outputs": ["worker-configuration.d.ts"]
 		},
@@ -72,7 +68,13 @@
 			"outputs": ["build/**/*"]
 		},
 		"deploy": {
-			"dependsOn": ["build", "example-do#deploy", "coordinator-do#deploy", "processor-do#deploy"],
+			"dependsOn": [
+				"scripts#pre-deploy",
+				"build",
+				"example-do#deploy",
+				"coordinator-do#deploy",
+				"processor-do#deploy"
+			],
 			"inputs": ["build/**/*", "wrangler.jsonc"],
 			"outputs": [],
 			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]

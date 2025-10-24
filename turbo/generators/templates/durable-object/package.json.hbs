@@ -3,8 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"cf-typegen": "bunx wrangler types && bun run post-typegen",
-		"post-typegen": "bun ../../scripts/post-typegen.ts",
+		"typegen": "bun run cf-typegen",
+		"cf-typegen": "bun --cwd ../../packages/scripts cf-typegen $(pwd)",
 		"typecheck": "tsc --noEmit -p ./tsconfig.json",
 		"lint": "biome check --write .",
 		"lint:format": "biome format --write .",
