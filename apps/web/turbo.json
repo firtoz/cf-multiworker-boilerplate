@@ -45,7 +45,12 @@
 			"outputs": ["worker-configuration.d.ts"]
 		},
 		"rr-typegen": {
-			"inputs": ["app/routes.ts", "app/routes/**/*.ts", "app/routes/**/*.tsx"],
+			"inputs": [
+				"app/routes.ts",
+				"app/routes/**/*.ts",
+				"app/routes/**/*.tsx",
+				"react-router.config.ts"
+			],
 			"outputs": []
 		},
 		"dev": {
