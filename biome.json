@@ -36,17 +36,31 @@
 		"rules": {
 			"recommended": true,
 			"correctness": {
-				"noUnusedVariables": "error"
+				"noUnusedVariables": "error",
+				"noUnusedImports": "error",
+				"useExhaustiveDependencies": "warn"
 			},
 			"suspicious": {
-				"noExplicitAny": "error"
+				"noExplicitAny": "error",
+				"noConsole": "warn"
 			},
 			"style": {
 				"useConst": "error",
-				"useTemplate": "error"
+				"useTemplate": "error",
+				"noNegationElse": "warn",
+				"useBlockStatements": "warn"
 			},
 			"security": {
 				"noDangerouslySetInnerHtml": "warn"
+			},
+			"performance": {
+				"noAccumulatingSpread": "warn",
+				"noDelete": "warn"
+			},
+			"complexity": {
+				"noExcessiveCognitiveComplexity": "warn",
+				"noForEach": "warn",
+				"useLiteralKeys": "error"
 			}
 		}
 	},

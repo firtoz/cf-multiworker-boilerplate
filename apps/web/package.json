@@ -3,7 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "react-router build",
+		"build": "react-router build --mode production",
+		"build:dev": "react-router build --mode development",
 		"typegen": "bun run cf-typegen && bun run rr-typegen",
 		"cf-typegen": "bun --cwd ../../packages/scripts cf-typegen $(pwd)",
 		"rr-typegen": "react-router typegen",
@@ -34,7 +35,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "catalog:",
-		"@cloudflare/vite-plugin": "^1.19.0",
+		"@cloudflare/vite-plugin": "^1.17.1",
 		"@react-router/dev": "^7.11.0",
 		"@tailwindcss/vite": "^4.1.18",
 		"@types/json-diff": "^1.0.3",

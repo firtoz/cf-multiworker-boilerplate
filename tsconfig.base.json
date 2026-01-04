@@ -1,0 +1,20 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compilerOptions": {
+		// Strict type checking
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"exactOptionalPropertyTypes": true,
+
+		// Module resolution
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true,
+
+		// Build settings
+		"noEmit": true,
+
+		// Common settings for all packages
+		"checkJs": true
+	}
+}

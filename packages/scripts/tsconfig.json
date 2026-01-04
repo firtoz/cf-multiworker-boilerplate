@@ -4,6 +4,8 @@
 		"module": "ES2022",
 		"moduleResolution": "bundler",
 		"lib": ["ES2022"],
+		"types": ["bun"],
+		"typeRoots": ["../../node_modules/@types"],
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,

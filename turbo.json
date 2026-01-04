@@ -1,6 +1,6 @@
 {
 	"$schema": "./node_modules/turbo/schema.json",
-	"globalDependencies": [".env", "tsconfig.json"],
+	"globalDependencies": [".env", "tsconfig.base.json"],
 	"ui": "tui",
 	"tasks": {
 		"build": {
@@ -21,15 +21,17 @@
 			"persistent": true,
 			"outputLogs": "new-only"
 		},
-		"lint": {
-			"inputs": ["biome.json"]
-		},
+		"lint": {},
 		"pre-deploy": {
 			"outputLogs": "new-only"
 		},
 		"deploy": {
+			"cache": false,
 			"outputLogs": "new-only"
+		},
+		"clean": {
+			"cache": false
 		}
 	},
-	"globalEnv": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
+	"globalEnv": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "SESSION_SECRET"]
 }

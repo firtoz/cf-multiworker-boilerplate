@@ -1,8 +1,8 @@
 {
+	"extends": "../../tsconfig.base.json",
 	"include": ["./workers/**/*.ts", "./worker-configuration.d.ts"],
 	"compilerOptions": {
 		"composite": true,
-		"strict": true,
 		"lib": ["ES2022"],
 		"target": "ES2022",
 		"module": "ES2022",
@@ -11,10 +11,6 @@
 		// "rootDirs": ["."],
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
-		"checkJs": true,
-		"verbatimModuleSyntax": true,
-		"skipLibCheck": true,
-		"noEmit": true,
 		"types": []
 	}
 }

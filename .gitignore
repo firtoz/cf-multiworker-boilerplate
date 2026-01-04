@@ -5,6 +5,7 @@ node_modules/
 # Cloudflare
 .mf
 .wrangler
+.dev.vars
 .env*
 !.env.example*
 
@@ -13,3 +14,24 @@ node_modules/
 
 # Environment
 .env.local
+
+# Build outputs
+build/
+dist/
+.next/
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# Logs
+*.log
+bun-debug.log*

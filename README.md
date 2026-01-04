@@ -130,6 +130,17 @@ Each Durable Object has a `wrangler.jsonc`. To use a DO from another worker, add
 
 Then run `bun run typegen` from root to update types across all packages.
 
+## Continuous Integration
+
+This project includes a GitHub Actions CI workflow that runs on every push and pull request:
+
+- **Lint & Format**: Validates code style with Biome
+- **Type Check**: Ensures type safety across all packages
+- **Build**: Verifies all packages build successfully
+- **Security Audit**: Checks for dependency vulnerabilities
+
+The workflow uses Bun for fast dependency installation and Turborepo for efficient caching.
+
 ## Deployment
 
 ### Prerequisites
@@ -175,12 +186,56 @@ bun run deploy
 
 ## Scripts
 
+### Development
 - `bun run dev` - Start all workers in dev mode
 - `bun run build` - Build all packages
-- `bun run deploy` - Deploy to Cloudflare
-- `bun run typegen` - Generate types (Cloudflare + React Router)
 - `bun run typecheck` - Type check all packages
+- `bun run typegen` - Generate types (Cloudflare + React Router)
+- `bun run lint` - Lint and format code with Biome
+
+### Deployment
+- `bun run deploy` - Deploy to Cloudflare
+
+### Dependency Management
+- `bun run audit` - Audit dependencies for vulnerabilities
+- `bun run outdated` - Check for outdated dependencies across all packages
+- `bun run update:interactive` - Interactively update dependencies
+- `bun run clean` - Remove all node_modules and build artifacts
+
+### Code Generation
 - `bunx turbo gen durable-object` - Generate new DO
+
+## Best Practices & Optimizations
+
+This boilerplate follows modern 2026 best practices:
+
+### Type Safety
+- **Shared TypeScript Config**: Centralized `tsconfig.base.json` ensures consistent strict settings across all packages
+- **Strict TypeScript**: All packages use strict mode with additional checks (`noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`)
+- **Automatic Type Generation**: Cloudflare bindings and React Router routes are fully typed
+- **No explicit `any`**: Biome enforces no explicit any types
+
+### Code Quality
+- **Biome**: Fast linter and formatter with strict rules for correctness, performance, and security
+- **Pre-commit Hooks**: Automatic code formatting and linting
+- **Turborepo Caching**: Optimized build pipeline with smart caching and dependency tracking
+
+### Performance
+- **103 Early Hints**: CSS preloading for faster initial page loads
+- **Smart Placement**: Workers automatically deployed to optimal global locations
+- **Aggressive Code Splitting**: Vendor chunks split for better caching
+- **Streaming SSR**: React Router 7 streams HTML for faster TTFB
+
+### Dependency Management
+- **Renovate Bot**: Automated dependency updates via `renovate.json`
+- **Regular Audits**: Use `bun run audit` to check for vulnerabilities
+- **Lock Files**: Bun lock file ensures consistent installs
+- **Semantic Versioning**: Automated grouping of patch/minor updates
+
+### Observability
+- **Cloudflare Logs**: Enabled for all workers and DOs
+- **CPU Limits**: Configured to catch runaway executions early
+- **Observability Dashboard**: View real-time metrics in Cloudflare dashboard
 
 ## Technologies
 
@@ -192,6 +247,7 @@ bun run deploy
 - **[@firtoz/hono-fetcher](https://www.npmjs.com/package/@firtoz/hono-fetcher)** - Type-safe DO API client
 - **[Zod](https://zod.dev/)** - Schema validation
 - **[Turborepo](https://turbo.build/repo)** - Monorepo build system
+- **[Biome](https://biomejs.dev/)** - Fast linter & formatter
 - **[Bun](https://bun.sh/)** - Fast package manager & runtime
 
 ## License

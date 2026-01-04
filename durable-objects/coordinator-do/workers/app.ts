@@ -119,9 +119,14 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 					time: baseTime, // All received at the same time in batch
 				});
 
+				const message = messages[i];
+				if (!message) {
+					continue;
+				}
+
 				const workItem: WorkItem = {
 					id: crypto.randomUUID(),
-					payload: { message: messages[i], delay, timestamps },
+					payload: { message, delay, timestamps },
 					status: "pending",
 					createdAt: Date.now(),
 					updatedAt: Date.now(),
@@ -273,14 +278,18 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 			workItem.error = error;
 		} else {
 			workItem.status = "completed";
-			workItem.result = result;
+			if (result !== undefined) {
+				workItem.result = result;
+			}
 		}
 
 		// Calculate timeTaken from first to last timestamp
 		if (workItem.timestamps.length > 1) {
-			const firstTime = workItem.timestamps[0].time;
-			const lastTime = workItem.timestamps[workItem.timestamps.length - 1].time;
-			workItem.timeTaken = lastTime - firstTime;
+			const firstTimestamp = workItem.timestamps[0];
+			const lastTimestamp = workItem.timestamps[workItem.timestamps.length - 1];
+			if (firstTimestamp && lastTimestamp) {
+				workItem.timeTaken = lastTimestamp.time - firstTimestamp.time;
+			}
 		}
 
 		workItem.updatedAt = Date.now();
