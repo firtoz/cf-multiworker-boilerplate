@@ -193,12 +193,11 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 	const [messages, setMessages] = useState<string[]>(["Process this data"]);
 
 	useEffect(() => {
-		console.log("[Queue] submitter.data", submitter.data);
 		// Reset modified fields when form is submitted
 		if (submitter.state === "submitting") {
 			setModifiedFields(new Set());
 		}
-	}, [submitter.data, submitter.state]);
+	}, [submitter.state]);
 
 	// Clear error for a specific field when it's modified
 	const handleFieldChange = useCallback((fieldName: string) => {

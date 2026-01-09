@@ -10,7 +10,9 @@ export type SessionResult = Session<AppSessionData>;
 const maxAge = 60 * 60 * 24 * 30; // 30 days
 
 function getSessionStorage() {
-	if (!env.SESSION_SECRET) throw new Error("SESSION_SECRET is not defined");
+	if (!env.SESSION_SECRET) {
+		throw new Error("SESSION_SECRET is not defined");
+	}
 
 	return createCookieSessionStorage<AppSessionData>({
 		cookie: {

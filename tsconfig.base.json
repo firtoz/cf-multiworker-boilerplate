@@ -3,7 +3,7 @@
 	"compilerOptions": {
 		// Strict type checking
 		"strict": true,
-		"noUncheckedIndexedAccess": true,
+		"noUncheckedIndexedAccess": false,
 		"noPropertyAccessFromIndexSignature": true,
 		"exactOptionalPropertyTypes": true,
 

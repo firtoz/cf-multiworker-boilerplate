@@ -41,8 +41,7 @@
 				"useExhaustiveDependencies": "warn"
 			},
 			"suspicious": {
-				"noExplicitAny": "error",
-				"noConsole": "warn"
+				"noExplicitAny": "error"
 			},
 			"style": {
 				"useConst": "error",

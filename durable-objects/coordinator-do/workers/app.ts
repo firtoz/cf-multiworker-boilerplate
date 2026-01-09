@@ -178,7 +178,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 	private async checkAndMigrateVersion() {
 		const storedVersion = await this.ctx.storage.get<number>("version");
 		if (storedVersion !== COORDINATOR_VERSION) {
-			console.log(
+			console.warn(
 				`Version mismatch (stored: ${storedVersion}, current: ${COORDINATOR_VERSION}). Clearing storage...`,
 			);
 			await this.ctx.storage.deleteAll();
