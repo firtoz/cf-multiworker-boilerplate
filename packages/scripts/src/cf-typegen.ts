@@ -44,56 +44,76 @@ function runWranglerTypes() {
 	}
 }
 
+const WORKER_CONFIG_PATH = path.join(cwd, "worker-configuration.d.ts");
+const WORKSPACE_ROOT = path.resolve(cwd, "../..");
+
+// Extract script name from a wrangler.jsonc file
+function getScriptNameFromWrangler(wranglerPath: string): string | null {
+	try {
+		const content = fs.readFileSync(wranglerPath, "utf8");
+		const tree = parseTree(content);
+		if (!tree) {
+			return null;
+		}
+
+		const nameNode = findNodeAtLocation(tree, ["name"]);
+		return nameNode?.value || null;
+	} catch (err) {
+		console.warn(`Failed to parse ${wranglerPath}:`, err);
+		return null;
+	}
+}
+
+// Process a single directory to find wrangler.jsonc files
+function processDirectory(searchDir: string, configMap: Map<string, string>): void {
+	if (!fs.existsSync(searchDir)) {
+		return;
+	}
+
+	const items = fs.readdirSync(searchDir);
+	for (const item of items) {
+		const itemPath = path.join(searchDir, item);
+		if (!fs.statSync(itemPath).isDirectory()) {
+			continue;
+		}
+
+		const wranglerPath = path.join(itemPath, "wrangler.jsonc");
+		if (!fs.existsSync(wranglerPath)) {
+			continue;
+		}
+
+		const scriptName = getScriptNameFromWrangler(wranglerPath);
+		if (scriptName) {
+			configMap.set(scriptName, wranglerPath);
+		}
+	}
+}
+
+// Function to find all wrangler.jsonc files in the workspace
+function findAllWranglerConfigs(): Map<string, string> {
+	const configMap = new Map<string, string>(); // script_name -> wrangler.jsonc path
+
+	const searchDirs = [
+		path.join(WORKSPACE_ROOT, "durable-objects"),
+		path.join(WORKSPACE_ROOT, "apps"),
+	];
+
+	for (const searchDir of searchDirs) {
+		processDirectory(searchDir, configMap);
+	}
+
+	return configMap;
+}
+
 // Step 3: Fix type definitions
 function fixTypeDefinitions() {
 	console.log("Fixing Durable Object type definitions...");
-
-	const WORKER_CONFIG_PATH = path.join(cwd, "worker-configuration.d.ts");
-	const WORKSPACE_ROOT = path.resolve(cwd, "../..");
 
 	// Check if worker-configuration.d.ts exists
 	if (!fs.existsSync(WORKER_CONFIG_PATH)) {
 		console.error(`Error: Type definitions file not found at ${WORKER_CONFIG_PATH}`);
 		console.error("Make sure wrangler types has been run before this step.");
 		process.exit(1);
-	}
-
-	// Function to find all wrangler.jsonc files in the workspace
-	function findAllWranglerConfigs(): Map<string, string> {
-		const configMap = new Map<string, string>(); // script_name -> wrangler.jsonc path
-
-		const searchDirs = [
-			path.join(WORKSPACE_ROOT, "durable-objects"),
-			path.join(WORKSPACE_ROOT, "apps"),
-		];
-
-		for (const searchDir of searchDirs) {
-			if (!fs.existsSync(searchDir)) continue;
-
-			const items = fs.readdirSync(searchDir);
-			for (const item of items) {
-				const itemPath = path.join(searchDir, item);
-				if (!fs.statSync(itemPath).isDirectory()) continue;
-
-				const wranglerPath = path.join(itemPath, "wrangler.jsonc");
-				if (fs.existsSync(wranglerPath)) {
-					try {
-						const content = fs.readFileSync(wranglerPath, "utf8");
-						const tree = parseTree(content);
-						if (tree) {
-							const nameNode = findNodeAtLocation(tree, ["name"]);
-							if (nameNode?.value) {
-								configMap.set(nameNode.value, wranglerPath);
-							}
-						}
-					} catch (err) {
-						console.warn(`Failed to parse ${wranglerPath}:`, err);
-					}
-				}
-			}
-		}
-
-		return configMap;
 	}
 
 	// Function to get the main file and class name for a durable object
@@ -104,11 +124,15 @@ function fixTypeDefinitions() {
 		try {
 			const content = fs.readFileSync(wranglerPath, "utf8");
 			const tree = parseTree(content);
-			if (!tree) return null;
+			if (!tree) {
+				return null;
+			}
 
 			// Get the main file
 			const mainNode = findNodeAtLocation(tree, ["main"]);
-			if (!mainNode?.value) return null;
+			if (!mainNode?.value) {
+				return null;
+			}
 
 			// Resolve the main file path relative to the wrangler.jsonc location
 			const wranglerDir = path.dirname(wranglerPath);
