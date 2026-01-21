@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { findNodeAtLocation, parseTree } from "jsonc-parser";
-import { prepareEnvFile } from "./utils/prepare-env.js";
+import { prepareEnvFile } from "./utils/prepare-env";
 
 // Use the current working directory
 const cwd = process.argv[2];
