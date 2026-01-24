@@ -26,7 +26,7 @@ const limitToMainEnvironments = (plugins: Plugin | Plugin[]): Plugin[] => {
 
 // Find all wrangler.jsonc files in the durable-objects directory.
 const durableObjectsDir = path.resolve(__dirname, "../../durable-objects");
-const findWranglerConfigs = (): AuxiliaryWorkerConfig[] => {
+const findWranglerConfigsForDev = (): AuxiliaryWorkerConfig[] => {
 	if (!fs.existsSync(durableObjectsDir)) {
 		return [];
 	}
@@ -43,14 +43,34 @@ const findWranglerConfigs = (): AuxiliaryWorkerConfig[] => {
 			const configPath = path.join("../../durable-objects", subdir, "wrangler.jsonc");
 			const fullPath = path.resolve(durableObjectsDir, subdir, "wrangler.jsonc");
 
-			return fs.existsSync(fullPath) ? { configPath } : null;
+			if (!fs.existsSync(fullPath)) {
+				return null;
+			}
+
+			// Check if this DO has its own dev script (should be run independently)
+			const packageJsonPath = path.resolve(durableObjectsDir, subdir, "package.json");
+			if (fs.existsSync(packageJsonPath)) {
+				try {
+					const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+					if (packageJson.scripts?.dev) {
+						console.log(`[vite] Skipping ${subdir} (has own dev script)`);
+						return null;
+					}
+				} catch (err) {
+					console.warn(`[vite] Failed to parse ${packageJsonPath}:`, err);
+				}
+			}
+
+			return { configPath };
 		})
 		.filter((config) => config !== null); // Type guard to remove null entries
 };
 
-const auxiliaryWorkerConfigs = findWranglerConfigs();
+export default defineConfig((configEnv) => {
+	const { command, mode } = configEnv;
+	const auxiliaryWorkerConfigs: AuxiliaryWorkerConfig[] =
+		command === "serve" ? findWranglerConfigsForDev() : [];
 
-export default defineConfig(({ mode }) => {
 	// Type assertion needed due to exactOptionalPropertyTypes incompatibility with plugin types
 	return {
 		define: {
