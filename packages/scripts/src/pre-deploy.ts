@@ -1,7 +1,7 @@
-import { $ } from "bun";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { $ } from "bun";
 import { findNodeAtLocation, parseTree } from "jsonc-parser";
 
 // Check if CLOUDFLARE_API_TOKEN is defined
@@ -35,19 +35,25 @@ function findRequiredQueues(): Set<string> {
 	];
 
 	for (const searchDir of searchDirs) {
-		if (!fs.existsSync(searchDir)) continue;
+		if (!fs.existsSync(searchDir)) {
+			continue;
+		}
 
 		const items = fs.readdirSync(searchDir);
 		for (const item of items) {
 			const itemPath = path.join(searchDir, item);
-			if (!fs.statSync(itemPath).isDirectory()) continue;
+			if (!fs.statSync(itemPath).isDirectory()) {
+				continue;
+			}
 
 			const wranglerPath = path.join(itemPath, "wrangler.jsonc");
 			if (fs.existsSync(wranglerPath)) {
 				try {
 					const content = fs.readFileSync(wranglerPath, "utf8");
 					const tree = parseTree(content);
-					if (!tree) continue;
+					if (!tree) {
+						continue;
+					}
 
 					// Check for queue producers
 					const producersNode = findNodeAtLocation(tree, ["queues", "producers"]);
@@ -107,24 +113,32 @@ function findQueueConsumers(): QueueConsumerConfig[] {
 	];
 
 	for (const searchDir of searchDirs) {
-		if (!fs.existsSync(searchDir)) continue;
+		if (!fs.existsSync(searchDir)) {
+			continue;
+		}
 
 		const items = fs.readdirSync(searchDir);
 		for (const item of items) {
 			const itemPath = path.join(searchDir, item);
-			if (!fs.statSync(itemPath).isDirectory()) continue;
+			if (!fs.statSync(itemPath).isDirectory()) {
+				continue;
+			}
 
 			const wranglerPath = path.join(itemPath, "wrangler.jsonc");
 			if (fs.existsSync(wranglerPath)) {
 				try {
 					const content = fs.readFileSync(wranglerPath, "utf8");
 					const tree = parseTree(content);
-					if (!tree) continue;
+					if (!tree) {
+						continue;
+					}
 
 					// Get worker name
 					const nameNode = findNodeAtLocation(tree, ["name"]);
 					const workerName = nameNode?.value;
-					if (!workerName) continue;
+					if (!workerName) {
+						continue;
+					}
 
 					// Check for queue consumers
 					const consumersNode = findNodeAtLocation(tree, ["queues", "consumers"]);
@@ -174,12 +188,12 @@ if (requiredQueues.size === 0) {
 			const listResult = await $`bunx wrangler queues list`.quiet();
 			const queueExists = listResult.stdout.toString().includes(queueName);
 
-			if (!queueExists) {
+			if (queueExists) {
+				console.log(`  ✓ Queue '${queueName}' already exists`);
+			} else {
 				console.log(`  Creating queue: ${queueName}...`);
 				await $`bunx wrangler queues create ${queueName}`;
 				console.log(`  ✓ Queue '${queueName}' created successfully`);
-			} else {
-				console.log(`  ✓ Queue '${queueName}' already exists`);
 			}
 		} catch (error) {
 			console.error(`  ✗ Error checking/creating queue '${queueName}':`, error);

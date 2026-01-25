@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"typegen": "bun run cf-typegen",
-		"cf-typegen": "bun --cwd ../../packages/scripts cf-typegen $(pwd)",
+		"cf-typegen": "cf-typegen $(pwd)",
 		"typecheck": "tsc --noEmit -p ./tsconfig.json",
 		"lint": "biome check --write .",
 		"lint:format": "biome format --write .",
