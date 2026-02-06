@@ -43,7 +43,7 @@ function ResourceIcon({ info }: { info: ResourceInfo }) {
 				rel="noreferrer"
 			>
 				<div
-					className={cn(iconContainerClassName, "flex-shrink-0")}
+					className={cn(iconContainerClassName, "shrink-0")}
 					style={{ width: ICON_CONTAINER_SIZE, height: ICON_CONTAINER_SIZE }}
 				>
 					<img
@@ -53,7 +53,7 @@ function ResourceIcon({ info }: { info: ResourceInfo }) {
 						height={displayHeight}
 					/>
 				</div>
-				<span className="break-words hyphens-auto">{info.text}</span>
+				<span className="wrap-break-word hyphens-auto">{info.text}</span>
 			</a>
 		</li>
 	);
@@ -91,7 +91,7 @@ export function Welcome({
 							{resources.map((item) => (
 								<ResourceIcon key={item.href} info={item} />
 							))}
-							<li className="self-stretch p-3 text-sm sm:text-base leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4 break-words hyphens-auto">
+							<li className="self-stretch p-3 text-sm sm:text-base leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4 wrap-break-word hyphens-auto">
 								<span className="font-semibold">Environment value:</span> {message}
 							</li>
 							{doResponsePromise && (

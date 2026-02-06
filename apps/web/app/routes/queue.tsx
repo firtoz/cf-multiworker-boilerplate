@@ -70,7 +70,7 @@ const MessageInput = memo(
 							onClick={onRemove}
 							disabled={disabled}
 							className={cn(
-								"px-3 py-2 bg-red-200 hover:bg-red-300 dark:bg-red-900 dark:hover:bg-red-800 text-red-800 dark:text-red-200 rounded-md font-bold transition-colors flex-shrink-0",
+								"px-3 py-2 bg-red-200 hover:bg-red-300 dark:bg-red-900 dark:hover:bg-red-800 text-red-800 dark:text-red-200 rounded-md font-bold transition-colors shrink-0",
 								{ "opacity-50 cursor-not-allowed": disabled },
 							)}
 						>
@@ -83,7 +83,7 @@ const MessageInput = memo(
 							onClick={onAdd}
 							disabled={disabled}
 							className={cn(
-								"px-3 py-2 bg-green-200 hover:bg-green-300 dark:bg-green-900 dark:hover:bg-green-800 text-green-800 dark:text-green-200 rounded-md font-bold transition-colors flex-shrink-0",
+								"px-3 py-2 bg-green-200 hover:bg-green-300 dark:bg-green-900 dark:hover:bg-green-800 text-green-800 dark:text-green-200 rounded-md font-bold transition-colors shrink-0",
 								{ "opacity-50 cursor-not-allowed": disabled },
 							)}
 						>
@@ -268,10 +268,10 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 
 			{/* Architecture section - static, shows immediately */}
 			<div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-blue-50 dark:bg-blue-900/30 border border-gray-200 dark:border-gray-700 rounded-lg">
-				<h2 className="text-lg sm:text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100 hyphens-auto break-words">
+				<h2 className="text-lg sm:text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100 hyphens-auto wrap-break-word">
 					Architecture
 				</h2>
-				<p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-3 hyphens-auto break-words">
+				<p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-3 hyphens-auto wrap-break-word">
 					This demonstrates queue-based multi-worker communication using Cloudflare Queues:
 				</p>
 				<div className="flex flex-col sm:flex-row lg:flex-col gap-4">
@@ -433,7 +433,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 							onClick={() => revalidator.revalidate()}
 							disabled={revalidator.state === "loading"}
 							className={cn(
-								"text-xs sm:text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 rounded transition-colors whitespace-nowrap flex-shrink-0",
+								"text-xs sm:text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 rounded transition-colors whitespace-nowrap shrink-0",
 								{ "opacity-50": revalidator.state === "loading" },
 							)}
 						>
@@ -496,7 +496,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 													</div>
 													<span
 														className={cn(
-															"px-2 sm:px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap flex-shrink-0",
+															"px-2 sm:px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap shrink-0",
 															{
 																"bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700":
 																	item.status === "pending",
@@ -535,7 +535,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 														<span className="text-sm sm:text-base font-semibold text-red-700 dark:text-red-400">
 															Error:
 														</span>
-														<div className="mt-1 p-2 bg-red-50 dark:bg-red-900/30 rounded text-xs sm:text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 break-words hyphens-auto">
+														<div className="mt-1 p-2 bg-red-50 dark:bg-red-900/30 rounded text-xs sm:text-sm text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700 wrap-break-word hyphens-auto">
 															{item.error}
 														</div>
 													</div>
