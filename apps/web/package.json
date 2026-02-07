@@ -50,7 +50,7 @@
 		"vite": "^7.3.1",
 		"vite-imagetools": "^9.0.2",
 		"vite-plugin-devtools-json": "^1.0.0",
-		"vite-tsconfig-paths": "^6.0.5",
+		"vite-tsconfig-paths": "^6.1.0",
 		"wrangler": "catalog:"
 	},
 	"packageManager": "bun@1.3.0"
