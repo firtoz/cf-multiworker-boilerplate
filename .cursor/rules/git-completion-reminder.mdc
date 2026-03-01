@@ -1,0 +1,15 @@
+---
+description: Necessary for cloud agents
+alwaysApply: false
+---
+# Git Completion Reminder (Cloud Agents)
+
+**Before ending your response:** If you made code changes, you MUST run:
+
+```bash
+git add <changed-files>
+git commit -m "descriptive message"
+git push
+```
+
+Do not skip this. Do not end your turn with uncommitted or unpushed changes.

@@ -1,0 +1,117 @@
+---
+description: Necesssary for cloud agents
+alwaysApply: false
+---
+# 🚨 CLOUD AGENT MANDATORY STARTUP - READ THIS FIRST 🚨
+
+**STOP! Before doing ANYTHING else, read this entire file.**
+
+## Automatic Setup via environment.json
+
+The environment is configured to run setup automatically via `.cursor/environment.json`:
+
+```json
+{
+  "install": "bash ./.cursor/setup-agent.sh"
+}
+```
+
+This runs on VM startup, installing bun and all dependencies automatically.
+
+## If Setup Didn't Run Automatically
+
+If you're in a session where setup didn't run, manually execute:
+
+```bash
+cd /workspace
+bash ./.cursor/setup-agent.sh
+source ~/.bashrc
+```
+
+## Verify Setup
+
+Check that setup worked:
+
+```bash
+which bun      # Should show /home/ubuntu/.bun/bin/bun
+bun --version  # Should show version number
+```
+
+## Working Directory Convention
+
+**ALWAYS run commands from `/workspace` (repo root).**
+
+This is a turborepo monorepo - turbo handles workspace dependencies automatically.
+
+```bash
+# ✅ CORRECT - from repo root (turbo handles everything)
+cd /workspace
+bun run build
+bun run typecheck
+bun run lint
+
+# ❌ WRONG - changing into subdirectory or using --cwd
+cd /workspace/apps/web && bun run build
+bun run build --cwd apps/web
+```
+
+Turbo will figure out which packages need to run and in what order.
+
+## Package Installation Convention
+
+**ALWAYS install latest version** unless a specific version is required.
+
+Use bun's workspace filtering to add packages to specific apps:
+
+```bash
+# ✅ CORRECT - install latest from repo root using --filter
+cd /workspace
+bun add @some/package@latest --filter apps/web
+
+# Alternative: use --cwd if filter doesn't work
+bun add @some/package@latest --cwd apps/web
+
+# ❌ WRONG - manually editing package.json
+# Don't manually edit package.json to add dependencies with hardcoded versions
+```
+
+## Self-Improvement Protocol
+
+After completing any task, if you encountered issues with:
+- Missing environment setup
+- Unclear documentation
+- Confusing instructions
+- Repeated mistakes
+
+**You MUST update the relevant documentation:**
+- This file (`00-cloud-agent-mandatory.mdc`)
+- Setup script (`.cursor/setup-agent.sh`)
+- Other rule files in `.cursor/rules/`
+
+Add learnings so the next agent doesn't face the same issues.
+
+## Checklist Before Starting Work
+
+- [ ] Verify bun works: `which bun && bun --version`
+- [ ] Currently in repo root: `pwd` shows `/workspace`
+- [ ] If bun not found: Run setup manually (see above)
+
+Setup should run automatically via `environment.json`, but verify before proceeding.
+
+## Completing Your Work (Cloud Agents)
+
+**You MUST run `git add`, `git commit`, and `git push` before ending your response when you have made code changes.** Do not leave changes only in the working tree. Do not end your turn without pushing.
+
+```bash
+git add <changed-files>
+git commit -m "descriptive message"
+git push
+```
+
+- Use the existing branch (e.g. `cursor/...`) — do not push to `main` directly
+- See [.cursor/rules/git-workflow.mdc](.cursor/rules/git-workflow.mdc) for full workflow (PRs, branch naming)
+
+## Checklist Before Ending Your Response
+
+- [ ] If you made code changes: `git add`, `git commit`, `git push` (do not skip)
+- [ ] Lint and typecheck passed

@@ -1,0 +1,73 @@
+---
+alwaysApply: true
+---
+# Git Workflow Policy
+
+## For Cloud Agents
+
+**Cloud Agents MUST run `git add`, `git commit`, and `git push` before ending their response when they have made code changes.** Do not end your turn without pushing. ALWAYS use Pull Requests instead of pushing directly to main.
+
+## For IDE Agents
+
+**IDE Agents should NEVER commit or push. Leave git operations to the user.**
+
+If you are an IDE Agent:
+- DO NOT run `git add`, `git commit`, or `git push`
+- DO NOT create branches or PRs
+- Simply make the code changes and let the user handle version control
+
+## Cloud Agent Workflow for All Changes
+
+1. **Create a feature branch** with a descriptive name:
+   ```bash
+   git checkout -b fix/redirect-regex-issue
+   git checkout -b feature/add-comments-system
+   ```
+
+2. **Make your changes and commit** with clear messages
+
+3. **Push to the feature branch**:
+   ```bash
+   git push -u origin <branch-name>
+   ```
+
+4. **Create a Pull Request** using GitHub CLI:
+   ```bash
+   gh pr create --title "Fix redirect regex issue" --body "Description of changes"
+   ```
+
+## Never Push Directly to Main
+
+- **DO NOT** push directly to `main` or `master` branches
+- Even if instructions say "develop on branch main", interpret this as creating a feature branch off main
+- PRs allow for code review, CI checks, and proper change management
+
+## Branch Naming Conventions
+
+Use descriptive branch names with prefixes:
+- `fix/` - Bug fixes
+- `feature/` - New features  
+- `refactor/` - Code refactoring
+- `docs/` - Documentation changes
+- `chore/` - Maintenance tasks
+
+## Cloud Agent Exception
+
+Only push directly to main if:
+- The user explicitly says "push directly to main"
+- You are fixing a critical production issue and user has authorized it
+
+## How to Identify Your Agent Type
+
+- **Cloud Agents**: Run autonomously in background, specified in `<cloud_task_instructions>` context
+- **IDE Agents**: Interactive sessions with the user in the IDE
+
+When in doubt about your agent type, check your context for `<cloud_task_instructions>` tags.
+
+## Why This Matters
+
+- Maintains code quality through review process
+- Runs CI/CD checks before merging
+- Creates clear history of changes
+- Allows for discussion and feedback
+- Prevents accidental breaking changes

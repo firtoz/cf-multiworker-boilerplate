@@ -1,0 +1,46 @@
+---
+description: For non-cloud agents
+alwaysApply: false
+---
+# Dev Server Policy
+
+**NEVER run dev servers or long-running watch processes.**
+
+## What NOT to Run
+
+- `bun dev`, `npm run dev`, `yarn dev`
+- `npm start`, `yarn start`
+- Watch commands (`--watch`, `nodemon`, etc.)
+- Any long-running development processes
+
+## What IS Okay to Run
+
+- Build commands: `bun run build`, `npm run build`
+- Type checking: `tsc --noEmit`
+- Linting: `biome check`, `eslint`
+- Tests: `bun test`, `npm test`
+- Database migrations: `bun run db:migrate`
+- Code generation: `bun run db:generate`, `typegen`
+- One-off scripts and utilities
+
+## When Dev Server is Needed
+
+Instead of running the dev server, tell the user:
+
+```
+You'll need to restart your dev server to see these changes:
+
+bun dev
+```
+
+Or if they need to test in the browser:
+
+```
+Test the changes by visiting http://localhost:5173 in your browser
+```
+
+## Why
+
+- Dev servers run indefinitely and consume resources
+- User may already have a dev server running
+- User prefers to control when processes start/stop

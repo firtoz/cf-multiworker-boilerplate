@@ -2,6 +2,37 @@
 
 This file contains important guidelines for AI agents working on this codebase.
 
+## For Cloud Agents
+
+**If you're a Cloud Agent, read this first:** [.cursor/rules/00-cloud-agent-mandatory.mdc](.cursor/rules/00-cloud-agent-mandatory.mdc)
+
+Setup runs automatically via `.cursor/environment.json`. If bun is not available:
+
+```bash
+cd /workspace && bash ./.cursor/setup-agent.sh && source ~/.bashrc
+```
+
+## Run From Repo Root
+
+Always run build, typecheck, lint, and typegen from the workspace root. Turbo handles packages and task order.
+
+```bash
+bun run build
+bun run typecheck
+bun run lint
+bun run typegen
+```
+
+## Package Installation
+
+Install packages from the repo root. Use workspace filtering to add dependencies to a specific app:
+
+```bash
+bun add <package-name>@latest --filter apps/web
+# or if filter doesn't work:
+bun add <package-name>@latest --cwd apps/web
+```
+
 ## Code Quality
 
 ### Always Check Lints After Editing
@@ -71,3 +102,11 @@ This generates:
 - Cloudflare Worker binding types (`worker-configuration.d.ts`)
 - React Router route types (in the web app)
 - Durable Object type imports
+
+## Completion Checklist
+
+Before considering the task complete:
+
+- [ ] Lint passes: `bun run lint`
+- [ ] Typecheck passes: `bun run typecheck`
+- [ ] If you made code changes and you're a Cloud Agent: `git add`, `git commit`, `git push` (do not skip)
