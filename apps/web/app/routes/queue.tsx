@@ -341,7 +341,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 						<div className="space-y-3">
 							{messages.map((msg, idx) => (
 								<MessageInput
-									key={`message-${idx}-${messages.length}`}
+									key={`message-${idx.toString()}-${messages.length}`}
 									index={idx}
 									value={msg}
 									onChange={(value) => {
