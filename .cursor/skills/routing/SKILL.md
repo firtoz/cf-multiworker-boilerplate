@@ -1,6 +1,6 @@
 ---
 name: routing
-description: React Router v7 routing patterns and environment variable configuration. Use when adding routes, configuring routing, or setting up environment variables.
+description: React Router v7 routing patterns and environment variable configuration. Use whenever you touch React Router–related code (routes, links, params, loaders, actions, route config, or env in route context).
 ---
 
 # React Router Routes
@@ -53,6 +53,23 @@ import type { Route } from "./+types/dashboard";
 export async function action({ request }: Route.ActionArgs) {
   // ...
 }
+```
+
+## Href and links (use `href` from react-router)
+
+Import `href` from `react-router` and use it for all `<Link to>` values. Do not hardcode paths or concatenate strings.
+
+```typescript
+import { Link, href } from "react-router";
+```
+
+- **Static path:** `href("/")`, `href("/collection")`
+- **Path with params:** pass the path with `:param` and an object of param values:
+
+```tsx
+<Link to={href("/")} />
+<Link to={href("/collection")} />
+<Link to={href("/charts/:id", { id: c.id.toString() })} />
 ```
 
 ## Common Mistake
