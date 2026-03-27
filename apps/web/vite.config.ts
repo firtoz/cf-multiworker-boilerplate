@@ -86,7 +86,8 @@ export default defineConfig((configEnv) => {
 			tailwindcss(),
 			// Limit react-router plugin to client/ssr environments only
 			// Prevents it from running on auxiliary Durable Object worker environments
-			...limitToMainEnvironments(reactRouter()),
+			// @react-router/dev resolves Vite from its own nested dependency; types differ from hoisted vite.
+			...(limitToMainEnvironments(reactRouter() as unknown as Plugin) as Plugin[]),
 			tsconfigPaths(),
 			imagetools({
 				include: "**/*.{heif,avif,jpeg,jpg,png,tiff,webp,gif,svg}?*",
@@ -104,29 +105,6 @@ export default defineConfig((configEnv) => {
 			minify: "esbuild",
 			target: "esnext",
 			sourcemap: false, // Disable source maps in production
-			rollupOptions: {
-				output: {
-					// Removed experimentalMinChunkSize - it was merging chunks into entry.client
-					manualChunks: (id) => {
-						// Aggressive vendor splitting for better caching and parallel loads
-						if (id.includes("node_modules")) {
-							// Split out heavy libraries
-							if (id.includes("zod")) {
-								return "vendor-zod";
-							}
-							if (id.includes("@firtoz/hono-fetcher")) {
-								return "vendor-hono";
-							}
-							if (id.includes("clsx") || id.includes("tailwind-merge")) {
-								return "vendor-utils";
-							}
-							// Default vendor chunk
-							return "vendor";
-						}
-					},
-					experimentalMinChunkSize: 1000, // Prevent too many tiny chunks
-				},
-			},
 		},
 		// Modern build optimizations
 		optimizeDeps: {
