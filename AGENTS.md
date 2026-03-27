@@ -2,6 +2,10 @@
 
 This file contains important guidelines for AI agents working on this codebase.
 
+## Project initialization (forks)
+
+If this repo is a **fork or template copy** that still has root `package.json` `"name": "cf-multiworker-boilerplate"` and the user wants their own app name, deployable worker names, and docs—follow the **project-init** skill: [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md). The always-applied rule [.cursor/rules/project-init.mdc](.cursor/rules/project-init.mdc) explains when to offer this (and when **not** to, e.g. when working on the upstream boilerplate repo).
+
 ## For Cloud Agents
 
 **If you're a Cloud Agent, read this first:** [.cursor/rules/00-cloud-agent-mandatory.mdc](.cursor/rules/00-cloud-agent-mandatory.mdc)
