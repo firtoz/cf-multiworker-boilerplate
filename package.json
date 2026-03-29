@@ -8,6 +8,7 @@
 			"durable-objects/*"
 		],
 		"catalog": {
+			"@typescript/native-preview": "^7.0.0-dev.20260329.1",
 			"@biomejs/biome": "^2.4.9",
 			"@firtoz/hono-fetcher": "^2.3.2",
 			"@hono/zod-validator": "^0.7.6",

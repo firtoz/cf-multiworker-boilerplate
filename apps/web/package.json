@@ -11,7 +11,7 @@
 		"deploy": "bunx wrangler deploy",
 		"dev": "react-router dev",
 		"preview": "bun run build && vite preview",
-		"typecheck": "tsc --noEmit -p ./tsconfig.json",
+		"typecheck": "tsgo --noEmit -p ./tsconfig.json",
 		"lint": "biome check --write .",
 		"lint:format": "biome format --write ."
 	},
@@ -34,6 +34,7 @@
 		"zod-validation-error": "^5.0.0"
 	},
 	"devDependencies": {
+		"@typescript/native-preview": "catalog:",
 		"@biomejs/biome": "catalog:",
 		"@cloudflare/vite-plugin": "^1.30.2",
 		"@react-router/dev": "^7.13.2",
