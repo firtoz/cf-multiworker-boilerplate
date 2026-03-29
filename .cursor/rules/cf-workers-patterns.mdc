@@ -1,0 +1,39 @@
+---
+alwaysApply: true
+---
+# Cloudflare Workers + routes — avoid common agent mistakes
+
+Skim this on every task that touches workers, env, routes, or bindings.
+
+## Worker `env` (bindings, secrets, vars)
+
+- **Use** the Workers virtual module: `import { env } from "cloudflare:workers";`
+- **Do not** read bindings from React Router or loader/action context (e.g. `context.cloudflare.env`). That pattern is wrong here; types and runtime expect `cloudflare:workers`.
+
+After changing wrangler bindings or `.env.example` / `.env.local`, run `bun run typegen` from the repo root (see root `AGENTS.md`).
+
+## Route modules (`apps/web/app/routes/`)
+
+- For each route file, export the pathname for type-safe toolkit usage, matching the URL registered in `app/routes.ts`:
+  - `import { type RoutePath } from "@firtoz/router-toolkit";`
+  - `export const route: RoutePath<"/your-path"> = "/your-path";`
+- Required for `formAction` / `useDynamicSubmitter` flows; omitting it breaks typed submissions. See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) and [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).
+
+## Typegen and typecheck cadence
+
+Run from the **repository root** often while building (not only at the end):
+
+- `bun run typegen` — after `routes.ts` changes, new routes, wrangler/env changes
+- `bun run typecheck` — after substantive edits
+- `bun run lint` — before considering work done
+
+CI runs these; running locally catches the same failures early.
+
+## Loaders and actions: `Promise<MaybeError<...>>`
+
+Prefer **typed success/error** from [`@firtoz/maybe-error`](https://www.npmjs.com/package/@firtoz/maybe-error) (re-exported by `@firtoz/router-toolkit`):
+
+- **Loaders:** `export async function loader(...): Promise<MaybeError<YourData>>` — return `success({ ... })` or `fail("...")` so `loaderData` narrows with `loaderData.success` / `loaderData.result`.
+- **Actions:** use `formAction` from `@firtoz/router-toolkit` (handler already returns `Promise<MaybeError<...>>`). For non-`formAction` actions, still return `success` / `fail` the same way.
+
+See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) and [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).

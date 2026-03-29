@@ -2,6 +2,29 @@
 
 This file contains important guidelines for AI agents working on this codebase.
 
+## Fork / template gotchas (read first)
+
+These trip up new contributors and coding agents most often:
+
+1. **Worker bindings and env** — Import the typed `env` from the Workers module, not from React Router context:
+   ```typescript
+   import { env } from "cloudflare:workers";
+   ```
+   Do **not** use `context.cloudflare.env` (or similar) for Cloudflare bindings in this stack.
+
+2. **Route path export** — Each file under `apps/web/app/routes/` should export its path for `@firtoz/router-toolkit` (forms, typed submitters), matching `app/routes.ts`:
+   ```typescript
+   import { type RoutePath } from "@firtoz/router-toolkit";
+   export const route: RoutePath<"/login"> = "/login";
+   ```
+   See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md).
+
+3. **Regenerate types and verify often** — After routes, wrangler, or env changes, run `bun run typegen` from the repo root. Run `bun run typecheck` and `bun run lint` regularly while implementing features, not only before opening a PR.
+
+4. **Loaders and actions return `Promise<MaybeError<...>>`** — Use `success` / `fail` from `@firtoz/maybe-error` (or `@firtoz/router-toolkit`, which re-exports them). Annotate loaders as `Promise<MaybeError<YourLoaderData>>`, return `success({ ... })` or `fail("...")`, and narrow in the route component with `loaderData.success`. Use `formAction` for actions so the handler stays `Promise<MaybeError<...>>` as well.
+
+Cursor also loads [.cursor/rules/cf-workers-patterns.mdc](.cursor/rules/cf-workers-patterns.mdc) on every conversation as a short reminder.
+
 ## Project initialization (forks)
 
 If this repo is a **fork or template copy** that still has root `package.json` `"name": "cf-multiworker-boilerplate"` and the user wants their own app name, deployable worker names, and docs—follow the **project-init** skill: [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md). The always-applied rule [.cursor/rules/project-init.mdc](.cursor/rules/project-init.mdc) explains when to offer this (and when **not** to, e.g. when working on the upstream boilerplate repo).
@@ -83,6 +106,15 @@ When adding new environment variables to any worker:
    bun run typegen
    ```
 
+**Access in code:** use the generated bindings via the Workers virtual module only:
+
+```typescript
+import { env } from "cloudflare:workers";
+// env.MY_NEW_VAR, env.SomeDoBinding, etc.
+```
+
+Do not use React Router loader/action `context` to reach Cloudflare `env`; it is not the source of truth here.
+
 **What happens:**
 - `.env.local` files are read by the build system and injected into the worker configuration
 - This automatically updates `worker-configuration.d.ts` with proper TypeScript types
@@ -96,11 +128,13 @@ When adding new environment variables to any worker:
 
 ## Type Generation
 
-After making changes to worker configurations or environment variables, always run:
+After making changes to worker configurations, environment variables, or `apps/web/app/routes.ts`, always run:
 
 ```bash
 bun run typegen
 ```
+
+Run it **during** feature work whenever those areas change, not only at the end. Pair with `bun run typecheck` so TypeScript errors surface immediately.
 
 This generates:
 - Cloudflare Worker binding types (`worker-configuration.d.ts`)
@@ -111,6 +145,7 @@ This generates:
 
 Before considering the task complete:
 
+- [ ] If you touched routes, wrangler, or env: `bun run typegen` (repo root)
 - [ ] Lint passes: `bun run lint`
 - [ ] Typecheck passes: `bun run typecheck`
 - [ ] If you made code changes and you're a Cloud Agent: `git add`, `git commit`, `git push` (do not skip)

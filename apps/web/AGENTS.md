@@ -2,6 +2,16 @@
 
 This file contains important guidelines for AI agents working on the React Router 7 web application.
 
+## Worker `env` (bindings)
+
+Use the Cloudflare Workers virtual module only:
+
+```typescript
+import { env } from "cloudflare:workers";
+```
+
+Do **not** use `context.cloudflare.env` (or similar) from React Router for bindings — types and runtime expect `cloudflare:workers`. See root [AGENTS.md](../../AGENTS.md).
+
 ## Routes
 
 ### Adding or Editing Routes
@@ -27,6 +37,12 @@ When you want to add or edit routes:
    import type { Route } from "./+types/my-route";
    ```
 
+5. **Export the pathname** for `@firtoz/router-toolkit` (required for typed forms / submitters):
+   ```typescript
+   import { type RoutePath } from "@firtoz/router-toolkit";
+   export const route: RoutePath<"/my-route"> = "/my-route";
+   ```
+
 **What this gives you:**
 - Full type safety for route params, loaders, and actions
 - IntelliSense for route paths and data
@@ -36,6 +52,14 @@ When you want to add or edit routes:
 - Manually edit generated type files
 - Reference routes by string without using the type system
 - Skip running `typegen` after adding/modifying routes
+- Read Cloudflare bindings from React Router `context` instead of `import { env } from "cloudflare:workers"`
+
+**While implementing features**, run `bun run typegen`, `bun run typecheck`, and `bun run lint` from the **monorepo root** whenever routes, wrangler, or env change — not only when finishing a task.
+
+## Loaders and actions: `Promise<MaybeError<...>>`
+
+- **Loaders:** return `Promise<MaybeError<YourData>>` using `success` / `fail` from `@firtoz/maybe-error` or `@firtoz/router-toolkit`. In the component, branch on `loaderData.success` then use `loaderData.result`.
+- **Actions:** `formAction` handlers already return `Promise<MaybeError<...>>`; keep using `success()` / `fail()` in the handler.
 
 ## General Guidelines
 

@@ -1,9 +1,12 @@
 import { env } from "cloudflare:workers";
 import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
+import { type MaybeError, type RoutePath, success } from "@firtoz/router-toolkit";
 import { Suspense } from "react";
 import { Await, href, Link } from "react-router";
 import { Welcome } from "../welcome/welcome";
 import type { Route } from "./+types/home";
+
+export const route: RoutePath<"/"> = "/";
 
 export function meta(_args: Route.MetaArgs) {
 	return [
@@ -12,7 +15,13 @@ export function meta(_args: Route.MetaArgs) {
 	];
 }
 
-export async function loader(_args: Route.LoaderArgs) {
+type HomeLoaderData = {
+	message: string;
+	doStatus: Promise<string>;
+	doCount: Promise<number>;
+};
+
+export async function loader(_args: Route.LoaderArgs): Promise<MaybeError<HomeLoaderData>> {
 	// Example of using a Durable Object with type-safe fetcher
 	const api = honoDoFetcherWithName(env.ExampleDo, "example");
 
@@ -28,18 +37,28 @@ export async function loader(_args: Route.LoaderArgs) {
 		return countData.count;
 	})();
 
-	return {
+	return success({
 		message: env.VALUE_FROM_CLOUDFLARE,
 		doStatus: doStatusPromise,
 		doCount: doCountPromise,
-	};
+	});
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+	if (!loaderData.success) {
+		return (
+			<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6">
+				<p className="text-red-600 dark:text-red-400">{loaderData.error}</p>
+			</div>
+		);
+	}
+
+	const { message, doStatus, doCount } = loaderData.result;
+
 	return (
 		<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6">
 			{/* Welcome section with its own streaming for DO response */}
-			<Welcome message={loaderData.message} doResponsePromise={loaderData.doStatus} />
+			<Welcome message={message} doResponsePromise={doStatus} />
 
 			{/* DO State card - streams independently */}
 			<div className="max-w-[600px] mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-green-50 dark:bg-green-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl">
@@ -56,7 +75,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 						</div>
 					}
 				>
-					<Await resolve={loaderData.doCount}>
+					<Await resolve={doCount}>
 						{(count) => (
 							<>
 								<p className="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400 mb-3 sm:mb-4">

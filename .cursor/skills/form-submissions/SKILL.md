@@ -7,6 +7,10 @@ description: Form submission patterns using useDynamicSubmitter and formAction. 
 
 Always use `submitter.submitJson()` instead of React Router's `<Form>` component.
 
+## Loaders use `MaybeError` too
+
+Match actions: **loaders** should return `Promise<MaybeError<LoaderData>>` with `success` / `fail`, not a bare object. That keeps `loaderData` typed the same way as submitter/fetcher results and avoids ambiguous error shapes. See [.cursor/skills/routing/SKILL.md](../routing/SKILL.md).
+
 ## Route Setup
 
 ### 1. Define Route and Form Schema

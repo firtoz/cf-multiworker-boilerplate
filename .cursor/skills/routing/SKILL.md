@@ -55,6 +55,35 @@ export async function action({ request }: Route.ActionArgs) {
 }
 ```
 
+### 5. Export the route path (`RoutePath`)
+
+**Every route module should export its URL** so `@firtoz/router-toolkit` (e.g. `formAction`, `useDynamicSubmitter`) stays type-safe. The string must match the path registered in `routes.ts`:
+
+```typescript
+import { type RoutePath } from "@firtoz/router-toolkit";
+
+export const route: RoutePath<"/dashboard"> = "/dashboard";
+```
+
+Omitting this is a common mistake after cloning; forms and typed submitters depend on it. See [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).
+
+## Loaders and actions: `Promise<MaybeError<...>>`
+
+Use [`@firtoz/maybe-error`](https://www.npmjs.com/package/@firtoz/maybe-error) (`success` / `fail`, type `MaybeError`) — also re-exported from `@firtoz/router-toolkit` — so return types are a discriminated union and TypeScript can narrow.
+
+**Loaders**
+
+- Annotate: `Promise<MaybeError<YourData>>`.
+- Return `success({ ...fields })` or `fail("message")` (or a typed error as the second generic).
+- In the route component, check `loaderData.success` before reading `loaderData.result`; handle `loaderData.error` on failure.
+
+Deferred values (promises for `<Await>`) can live inside the success payload: `success({ items: itemsPromise })`.
+
+**Actions**
+
+- Prefer `formAction({ ... })` — the handler already returns `Promise<MaybeError<...>>` with validation errors folded in.
+- For actions that are not `formAction`, still return `success` / `fail` the same way for consistent typing with `useFetcher` / toolkit helpers.
+
 ## Href and links (use `href` from react-router)
 
 Import `href` from `react-router` and use it for all `<Link to>` values. Do not hardcode paths or concatenate strings.
@@ -89,3 +118,9 @@ bun run typegen
 ```
 
 The `env` object from `cloudflare:workers` is auto-generated based on what's in your wrangler config and env files.
+
+**Do not** read bindings from React Router loader/action `context` (e.g. `context.cloudflare.env`). In this project, use:
+
+```typescript
+import { env } from "cloudflare:workers";
+```

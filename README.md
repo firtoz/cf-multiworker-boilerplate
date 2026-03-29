@@ -45,6 +45,15 @@ bun run dev
 
 Visit http://localhost:5173 to see the app, or http://localhost:5173/queue for the working queue demo.
 
+### Conventions (humans & AI coding agents)
+
+Skim [AGENTS.md](AGENTS.md) at the repo root. In short:
+
+- **Cloudflare `env`:** `import { env } from "cloudflare:workers";` — do not use React Router context (e.g. `context.cloudflare.env`) for bindings.
+- **New routes:** register in `apps/web/app/routes.ts`, run `bun run typegen`, and in each route module export `route` with `RoutePath<"...">` from `@firtoz/router-toolkit` (see `apps/web/app/routes/queue.tsx`).
+- **While building:** run `bun run typegen`, `bun run typecheck`, and `bun run lint` from the repo root whenever you change routes, wrangler, or env — not only at the end.
+- **Loaders / actions:** prefer `Promise<MaybeError<...>>` with `success` / `fail` so UI and submitters narrow cleanly (see `apps/web/app/routes/home.tsx` and `formAction` in `queue.tsx`).
+
 ## Project Structure
 
 ```

@@ -3,6 +3,7 @@ import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
 import {
 	fail,
 	formAction,
+	type MaybeError,
 	type RoutePath,
 	success,
 	useDynamicSubmitter,
@@ -99,6 +100,18 @@ const MessageInput = memo(
 // Export route for type safety
 export const route: RoutePath<"/queue"> = "/queue";
 
+type WorkQueueItem = {
+	id: string;
+	status: "pending" | "processing" | "completed" | "failed";
+	payload: unknown;
+	result?: unknown;
+	error?: string;
+	timestamps?: Array<{ tag: string; time: number }>;
+	timeTaken?: number;
+	createdAt: number;
+	updatedAt: number;
+};
+
 // Form schema - defines what the web app sends to the coordinator
 // zfd handles coercion from FormData strings to proper types
 export const formSchema = zfd.formData({
@@ -111,18 +124,15 @@ export function meta() {
 	return [{ title: "Work Queue - Multi-Worker Demo" }];
 }
 
-export async function loader() {
-	// Return promise for streaming
-	const queueDataPromise = (async () => {
+export async function loader(): Promise<MaybeError<{ queue: Promise<WorkQueueItem[]> }>> {
+	const queueDataPromise = (async (): Promise<WorkQueueItem[]> => {
 		const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
 		const response = await api.get({ url: "/queue" });
-		const data = await response.json();
+		const data = (await response.json()) as { queue: WorkQueueItem[] };
 		return data.queue;
 	})();
 
-	return {
-		queue: queueDataPromise,
-	};
+	return success({ queue: queueDataPromise });
 }
 
 export const action = formAction({
@@ -250,6 +260,26 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 
 		return errors;
 	}, [modifiedFields, submitter.data, submitter.state]);
+
+	if (!loaderData.success) {
+		return (
+			<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 max-w-6xl">
+				<div className="mb-4 sm:mb-6">
+					<Link
+						to={href("/")}
+						className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm sm:text-base py-2"
+					>
+						⬅️ Back to Home
+					</Link>
+				</div>
+				<p className="text-red-600 dark:text-red-400" role="alert">
+					{loaderData.error}
+				</p>
+			</div>
+		);
+	}
+
+	const { queue } = loaderData.result;
 
 	return (
 		<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 max-w-6xl">
@@ -447,10 +477,10 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 							</div>
 						}
 					>
-						<Await resolve={loaderData.queue}>
-							{(queue) => (
+						<Await resolve={queue}>
+							{(items) => (
 								<div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-									Total items: {queue.length}
+									Total items: {items.length}
 								</div>
 							)}
 						</Await>
@@ -472,15 +502,15 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 						</div>
 					}
 				>
-					<Await resolve={loaderData.queue}>
-						{(queue) =>
-							queue.length === 0 ? (
+					<Await resolve={queue}>
+						{(items) =>
+							items.length === 0 ? (
 								<div className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 text-center text-gray-500 dark:text-gray-400 rounded-lg border border-gray-200 dark:border-gray-700">
 									No work items in queue. Add one above!
 								</div>
 							) : (
 								<div className="space-y-3 sm:space-y-4">
-									{queue
+									{items
 										.slice()
 										.reverse()
 										.map((item) => (
@@ -540,46 +570,50 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 														</div>
 													</div>
 												)}
-												{item.timestamps && item.timestamps.length > 0 && (
-													<div className="mb-2">
-														<span className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-400">
-															Timestamps:
-														</span>
-														{item.timeTaken !== undefined && (
-															<span className="ml-2 text-xs sm:text-sm font-mono text-purple-700 dark:text-purple-400">
-																Total Time: {item.timeTaken.toFixed(3)}ms
+												{(() => {
+													const stamps = item.timestamps;
+													if (!stamps?.length) {
+														return null;
+													}
+													return (
+														<div className="mb-2">
+															<span className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-400">
+																Timestamps:
 															</span>
-														)}
-														<div className="mt-1 p-2 bg-blue-50 dark:bg-blue-900/30 rounded text-xs border border-blue-200 dark:border-blue-700">
-															<div className="space-y-1 font-mono">
-																{item.timestamps.map((ts, idx) => {
-																	const delta =
-																		idx > 0
-																			? (ts.time - item.timestamps[idx - 1].time).toFixed(3)
-																			: null;
-																	return (
-																		<div
-																			key={idx.toString()}
-																			className="flex justify-between items-center text-blue-900 dark:text-blue-200"
-																		>
-																			<span className="font-semibold">{ts.tag}</span>
-																			<div className="ml-4 flex items-center gap-2">
-																				{delta && (
-																					<span className="text-orange-700 dark:text-orange-400">
-																						+{delta}ms
+															{item.timeTaken !== undefined && (
+																<span className="ml-2 text-xs sm:text-sm font-mono text-purple-700 dark:text-purple-400">
+																	Total Time: {item.timeTaken.toFixed(3)}ms
+																</span>
+															)}
+															<div className="mt-1 p-2 bg-blue-50 dark:bg-blue-900/30 rounded text-xs border border-blue-200 dark:border-blue-700">
+																<div className="space-y-1 font-mono">
+																	{stamps.map((ts, idx) => {
+																		const delta =
+																			idx > 0 ? (ts.time - stamps[idx - 1].time).toFixed(3) : null;
+																		return (
+																			<div
+																				key={idx.toString()}
+																				className="flex justify-between items-center text-blue-900 dark:text-blue-200"
+																			>
+																				<span className="font-semibold">{ts.tag}</span>
+																				<div className="ml-4 flex items-center gap-2">
+																					{delta && (
+																						<span className="text-orange-700 dark:text-orange-400">
+																							+{delta}ms
+																						</span>
+																					)}
+																					<span className="text-gray-600 dark:text-gray-400">
+																						@{ts.time.toFixed(3)}ms
 																					</span>
-																				)}
-																				<span className="text-gray-600 dark:text-gray-400">
-																					@{ts.time.toFixed(3)}ms
-																				</span>
+																				</div>
 																			</div>
-																		</div>
-																	);
-																})}
+																		);
+																	})}
+																</div>
 															</div>
 														</div>
-													</div>
-												)}
+													);
+												})()}
 												<div className="text-xs text-gray-500 dark:text-gray-400 flex flex-col sm:flex-row gap-1 sm:gap-4">
 													<span>Created: {formatTime(item.createdAt)}</span>
 													<span>Updated: {formatTime(item.updatedAt)}</span>
