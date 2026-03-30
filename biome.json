@@ -57,7 +57,8 @@
 				"noDelete": "warn"
 			},
 			"complexity": {
-				"noForEach": "warn"
+				"noForEach": "warn",
+				"useLiteralKeys": "off"
 			}
 		}
 	},
