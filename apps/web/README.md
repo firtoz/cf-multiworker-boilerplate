@@ -50,7 +50,8 @@ Route is auto-available at `/my-feature`.
 ### 2. Add a Form That Submits to a DO
 
 ```tsx
-import { formAction, success, fail } from "@firtoz/router-toolkit";
+import { fail, success } from "@firtoz/maybe-error";
+import { formAction } from "@firtoz/router-toolkit";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 

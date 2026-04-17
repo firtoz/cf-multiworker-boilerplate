@@ -21,7 +21,7 @@ These trip up new contributors and coding agents most often:
 
 3. **Regenerate types and verify often** — After routes, wrangler, or env changes, run `bun run typegen` from the repo root. Run `bun run typecheck` and `bun run lint` regularly while implementing features, not only before opening a PR.
 
-4. **Loaders and actions return `Promise<MaybeError<...>>`** — Use `success` / `fail` from `@firtoz/maybe-error` (or `@firtoz/router-toolkit`, which re-exports them). Annotate loaders as `Promise<MaybeError<YourLoaderData>>`, return `success({ ... })` or `fail("...")`, and narrow in the route component with `loaderData.success`. Use `formAction` for actions so the handler stays `Promise<MaybeError<...>>` as well.
+4. **Loaders and actions return `Promise<MaybeError<...>>`** — Use `success` / `fail` (and the `MaybeError` type) from `@firtoz/maybe-error` directly. Annotate loaders as `Promise<MaybeError<YourLoaderData>>`, return `success({ ... })` or `fail("...")`, and narrow in the route component with `loaderData.success`. Use `formAction` from `@firtoz/router-toolkit` for actions so the handler stays `Promise<MaybeError<...>>` as well.
 
 Cursor also loads [.cursor/rules/cf-workers-patterns.mdc](.cursor/rules/cf-workers-patterns.mdc) on every conversation as a short reminder.
 

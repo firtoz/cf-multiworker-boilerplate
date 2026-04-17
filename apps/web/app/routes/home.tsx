@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
-import { type MaybeError, type RoutePath, success } from "@firtoz/router-toolkit";
+import { type MaybeError, success } from "@firtoz/maybe-error";
+import type { RoutePath } from "@firtoz/router-toolkit";
 import { Suspense } from "react";
 import { Await, href, Link } from "react-router";
 import { Welcome } from "../welcome/welcome";

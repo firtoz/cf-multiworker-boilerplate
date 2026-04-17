@@ -31,7 +31,7 @@ CI runs these; running locally catches the same failures early.
 
 ## Loaders and actions: `Promise<MaybeError<...>>`
 
-Prefer **typed success/error** from [`@firtoz/maybe-error`](https://www.npmjs.com/package/@firtoz/maybe-error) (re-exported by `@firtoz/router-toolkit`):
+Prefer **typed success/error** from [`@firtoz/maybe-error`](https://www.npmjs.com/package/@firtoz/maybe-error) — import `success`, `fail`, and the `MaybeError` type directly from that package (they are **not** re-exported by `@firtoz/router-toolkit`):
 
 - **Loaders:** `export async function loader(...): Promise<MaybeError<YourData>>` — return `success({ ... })` or `fail("...")` so `loaderData` narrows with `loaderData.success` / `loaderData.result`.
 - **Actions:** use `formAction` from `@firtoz/router-toolkit` (handler already returns `Promise<MaybeError<...>>`). For non-`formAction` actions, still return `success` / `fail` the same way.

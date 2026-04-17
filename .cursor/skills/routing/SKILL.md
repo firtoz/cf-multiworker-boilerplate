@@ -69,7 +69,7 @@ Omitting this is a common mistake after cloning; forms and typed submitters depe
 
 ## Loaders and actions: `Promise<MaybeError<...>>`
 
-Use [`@firtoz/maybe-error`](https://www.npmjs.com/package/@firtoz/maybe-error) (`success` / `fail`, type `MaybeError`) — also re-exported from `@firtoz/router-toolkit` — so return types are a discriminated union and TypeScript can narrow.
+Use [`@firtoz/maybe-error`](https://www.npmjs.com/package/@firtoz/maybe-error) (`success` / `fail`, type `MaybeError`) — import directly from that package (it is **not** re-exported by `@firtoz/router-toolkit`) — so return types are a discriminated union and TypeScript can narrow.
 
 **Loaders**
 

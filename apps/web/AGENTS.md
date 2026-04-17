@@ -58,7 +58,7 @@ When you want to add or edit routes:
 
 ## Loaders and actions: `Promise<MaybeError<...>>`
 
-- **Loaders:** return `Promise<MaybeError<YourData>>` using `success` / `fail` from `@firtoz/maybe-error` or `@firtoz/router-toolkit`. In the component, branch on `loaderData.success` then use `loaderData.result`.
+- **Loaders:** return `Promise<MaybeError<YourData>>` using `success` / `fail` from `@firtoz/maybe-error`. In the component, branch on `loaderData.success` then use `loaderData.result`.
 - **Actions:** `formAction` handlers already return `Promise<MaybeError<...>>`; keep using `success()` / `fail()` in the handler.
 
 ## General Guidelines
