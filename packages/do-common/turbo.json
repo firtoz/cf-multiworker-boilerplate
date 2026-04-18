@@ -3,12 +3,16 @@
 	"extends": ["//"],
 	"tasks": {
 		"lint": {
-			"dependsOn": ["typecheck"],
+			"dependsOn": ["typecheck:local"],
 			"inputs": ["*.ts", "tsconfig.json", "biome.json"],
 			"outputs": []
 		},
-		"typecheck": {
-			"inputs": ["*.ts", "tsconfig.json"],
+		"typecheck:local": {
+			"inputs": ["*.ts", "tsconfig.json", "package.json", "$TURBO_ROOT$/tsconfig.base.json"],
+			"outputs": []
+		},
+		"typecheck:prod": {
+			"inputs": ["*.ts", "tsconfig.json", "package.json", "$TURBO_ROOT$/tsconfig.base.json"],
 			"outputs": []
 		}
 	}

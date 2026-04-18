@@ -9,7 +9,8 @@
 		".": "./index.ts"
 	},
 	"scripts": {
-		"typecheck": "tsgo --noEmit -p ./tsconfig.json",
+		"typecheck:local": "tsgo --noEmit -p ./tsconfig.json",
+		"typecheck:prod": "tsgo --noEmit -p ./tsconfig.json",
 		"lint": "biome check --write .",
 		"lint:format": "biome format --write ."
 	},

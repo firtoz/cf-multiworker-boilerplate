@@ -8,7 +8,7 @@ export function getCriticalCssAssets(context: EntryContext): string[] {
 	const cssAssets = new Set<string>();
 
 	// Get CSS from the root route (critical CSS that blocks first paint)
-	const rootRoute = context.manifest.routes.root;
+	const rootRoute = context.manifest.routes["root"];
 	if (rootRoute?.css) {
 		for (const cssFile of rootRoute.css) {
 			cssAssets.add(cssFile);

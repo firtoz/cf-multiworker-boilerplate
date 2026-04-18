@@ -2,28 +2,87 @@
 	"$schema": "../../node_modules/turbo/schema.json",
 	"extends": ["//"],
 	"tasks": {
+		"generate-wrangler:local": {
+			"dependsOn": ["scripts#build:local"],
+			"inputs": ["wrangler.jsonc.hbs", "$TURBO_ROOT$/.env.local"],
+			"outputs": ["wrangler-dev.jsonc"],
+			"env": []
+		},
+		"generate-wrangler:prod": {
+			"inputs": ["wrangler.jsonc.hbs", "$TURBO_ROOT$/.env.production"],
+			"outputs": ["wrangler-prod.jsonc"],
+			"env": [
+				"ROUTES",
+				"ROUTES_ZONE_NAME",
+				"PROCESSOR_DO_WORKER_NAME",
+				"COORDINATOR_DO_WORKER_NAME",
+				"VALUE_FROM_CLOUDFLARE"
+			]
+		},
 		"lint": {
-			"dependsOn": ["typecheck"],
+			"dependsOn": ["typecheck:local"],
 			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
 			"outputs": []
 		},
-		"typecheck": {
-			"dependsOn": ["typegen"],
-			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json"],
+		"typecheck:local": {
+			"dependsOn": ["typegen:local"],
+			"inputs": [
+				"workers/**/*.ts",
+				"tsconfig.json",
+				"tsconfig.cloudflare.json",
+				"package.json",
+				"$TURBO_ROOT$/tsconfig.base.json"
+			],
 			"outputs": []
 		},
-		"typegen": {
-			"dependsOn": ["cf-typegen"],
-			"inputs": [],
+		"typecheck:prod": {
+			"dependsOn": ["typegen:prod"],
+			"inputs": [
+				"workers/**/*.ts",
+				"tsconfig.json",
+				"tsconfig.cloudflare.json",
+				"package.json",
+				"$TURBO_ROOT$/tsconfig.base.json"
+			],
 			"outputs": []
 		},
-		"cf-typegen": {
-			"inputs": ["wrangler.jsonc", "workers/**/*.ts", "../../packages/scripts/src/**/*.ts", ".env"],
+		"typegen:local": {
+			"dependsOn": [
+				"generate-wrangler:local",
+				"cf-web-app#generate-wrangler:local",
+				"example-do#generate-wrangler:local",
+				"coordinator-do#generate-wrangler:local"
+			],
+			"inputs": [
+				"wrangler.jsonc.hbs",
+				"wrangler-dev.jsonc",
+				"workers/**/*.ts",
+				"$TURBO_ROOT$/.env.local",
+				"package.json",
+				"../../packages/scripts/src/**/*.ts"
+			],
+			"outputs": ["worker-configuration.d.ts"]
+		},
+		"typegen:prod": {
+			"dependsOn": [
+				"generate-wrangler:prod",
+				"cf-web-app#generate-wrangler:prod",
+				"example-do#generate-wrangler:prod",
+				"coordinator-do#generate-wrangler:prod"
+			],
+			"inputs": [
+				"wrangler.jsonc.hbs",
+				"wrangler-prod.jsonc",
+				"workers/**/*.ts",
+				"$TURBO_ROOT$/.env.production",
+				"package.json",
+				"../../packages/scripts/src/**/*.ts"
+			],
 			"outputs": ["worker-configuration.d.ts"]
 		},
 		"deploy": {
-			"dependsOn": ["scripts#pre-deploy", "typecheck", "coordinator-do#deploy"],
-			"inputs": ["workers/**/*.ts", "wrangler.jsonc"],
+			"dependsOn": ["scripts#pre-deploy", "typecheck:prod"],
+			"inputs": ["workers/**/*.ts", "wrangler-prod.jsonc", "wrangler.jsonc.hbs"],
 			"outputs": [],
 			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
 		}

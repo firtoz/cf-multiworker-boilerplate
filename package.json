@@ -17,16 +17,23 @@
 			"typescript": "^6.0.3",
 			"uuid": "^13.0.0",
 			"wrangler": "^4.83.0",
-			"zod": "^4.3.6"
+			"zod": "^4.3.6",
+			"dotenv": "^17.4.0"
 		}
 	},
 	"scripts": {
-		"build": "turbo build",
+		"setup": "bun ./packages/scripts/src/bootstrap-env.ts",
+		"build": "turbo run build:local",
 		"dev": "turbo dev",
 		"lint": "turbo lint",
-		"typecheck": "turbo typecheck",
-		"typegen": "turbo typegen",
-		"deploy": "bun --env-file ./.env.local turbo deploy",
+		"typecheck": "turbo run typecheck:local",
+		"typecheck:local": "turbo run typecheck:local",
+		"typecheck:prod": "turbo run typecheck:prod",
+		"typegen": "turbo run typegen:local",
+		"typegen:local": "turbo run typegen:local",
+		"typegen:prod": "turbo run typegen:prod",
+		"deploy": "bun --env-file ./.env.local turbo run deploy --filter=cf-web-app",
+		"deploy:execute": "bun --env-file ./.env.local turbo run deploy:execute --filter=cf-web-app",
 		"outdated": "bun outdated --recursive",
 		"update:interactive": "bun update --latest --ir",
 		"clean": "turbo clean && rm -rf node_modules **/node_modules"

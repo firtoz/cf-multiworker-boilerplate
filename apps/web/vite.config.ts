@@ -12,6 +12,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 type AuxiliaryWorkerConfig = Exclude<PluginConfig["auxiliaryWorkers"], undefined>[number];
 
+/** `build:prod` sets `WRANGLER_CONFIG_FILE=./wrangler-prod.jsonc`; dev defaults to wrangler-dev.jsonc. */
+const wranglerMainConfigPath = process.env["WRANGLER_CONFIG_FILE"] ?? "./wrangler-dev.jsonc";
+
 // Wrap plugins to only apply to specific environments (client and ssr)
 // This prevents react-router plugin from running on auxiliary worker environments
 const limitToMainEnvironments = (plugins: Plugin | Plugin[]): Plugin[] => {
@@ -40,8 +43,8 @@ const findWranglerConfigsForDev = (): AuxiliaryWorkerConfig[] => {
 	// Check each subdirectory for a wrangler.jsonc file
 	return subdirs
 		.map((subdir): AuxiliaryWorkerConfig | null => {
-			const configPath = path.join("../../durable-objects", subdir, "wrangler.jsonc");
-			const fullPath = path.resolve(durableObjectsDir, subdir, "wrangler.jsonc");
+			const configPath = path.join("../../durable-objects", subdir, "wrangler-dev.jsonc");
+			const fullPath = path.resolve(durableObjectsDir, subdir, "wrangler-dev.jsonc");
 
 			if (!fs.existsSync(fullPath)) {
 				return null;
@@ -79,7 +82,7 @@ export default defineConfig((configEnv) => {
 		plugins: [
 			devtoolsJson(),
 			cloudflare({
-				configPath: "./wrangler.jsonc",
+				configPath: wranglerMainConfigPath,
 				viteEnvironment: { name: "ssr" },
 				auxiliaryWorkers: auxiliaryWorkerConfigs,
 			}),

@@ -159,8 +159,8 @@ bun run typegen
 
 This:
 1. Runs `cf-typegen` which:
-   - Ensures `.env` file exists (copies from `.env.example` if needed)
-   - Runs `wrangler types` to generate `worker-configuration.d.ts`
+   - Runs `wrangler types` with real env files (`--env-file` to repo-root `.env.local` / `.env.production`, plus per-package `.env` / `.env.local` when present — never `.env.example`)
+   - Generates `worker-configuration.d.ts`
    - Auto-converts DO type comments to proper imports
 2. Runs `react-router typegen` to generate route types
 3. Gives you full IntelliSense for `env.DoName` and route loaders/actions
@@ -174,8 +174,11 @@ bun run rr-typegen  # Just React Router types
 
 ## Deploy
 
+From the **repo root** (Turbo filters `cf-web-app`):
+
 ```bash
-bun run deploy
+bun run deploy          # wrangler deploy --dry-run only (no live upload)
+bun run deploy:execute  # full pipeline: pre-deploy, build, live Wrangler deploys
 ```
 
-Deploys to Cloudflare Workers.
+See root `AGENTS.md` for details.

@@ -16,11 +16,7 @@ Thank you for contributing to this project! This guide will help you get started
    bun install
    ```
 
-3. **Set up environment variables**:
-   ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your values
-   ```
+3. **Environment** — run **`bun run setup`** (writes **`.env.local`**; if it already exists, you’ll see a **summary** and can **change individual sections** or re-run the full wizard). Non-interactive / CI: **`bun run setup --yes`** (leaves an existing file unchanged unless **`--force`**). Or copy manually: `cp .env.example .env.local`.
 
 4. **Start development server**:
    ```bash
@@ -74,8 +70,8 @@ Follow the prompts and the generator will:
 - Add Biome config
 
 After generation:
-1. Add DO binding to `apps/web/wrangler.jsonc`
-2. Run `bun run typegen` to update types
+1. Wire the DO in **`apps/web/wrangler.jsonc.hbs`** (and any cross-worker `script_name` references in other `wrangler.jsonc.hbs` files)
+2. Run `bun run typegen` (or `generate-wrangler:local` / `:prod` per package) so generated JSONC and types exist
 3. Implement your DO logic in `workers/app.ts`
 
 ## Testing
@@ -91,7 +87,7 @@ Before submitting a PR:
 
 - **Adding dependencies**: Use `bun add <package>`
 - **Updating dependencies**: Use `bun run update:interactive`
-- **Security audit**: Run `bun run audit` regularly
+- **Security**: Run `bun pm audit` or your registry’s audit workflow when upgrading deps
 - **Check outdated**: Use `bun run outdated`
 
 ### Dependency Guidelines
@@ -100,9 +96,14 @@ Before submitting a PR:
 - Use workspace protocol (`workspace:*`) for internal packages
 - Keep dependencies up to date with Renovate bot
 
-## Performance Considerations
+## Deploy (from a contributor machine)
 
-### Bundle Size
+- **`bun run deploy`** — Validates bundles with Wrangler **dry-run** only (no uploads).
+- **`bun run deploy:execute`** — Full live deploy (queues, workers). Requires credentials and correct worker order for cross-DO bindings; see root **README** and **AGENTS.md**.
+
+## Performance considerations
+
+### Bundle size
 - Monitor bundle size with the visualizer: `build/stats.html`
 - Lazy load heavy components
 - Use dynamic imports for large libraries
@@ -120,7 +121,7 @@ Before submitting a PR:
 3. **Test thoroughly** using the commands above
 4. **Commit with semantic messages**
 5. **Push and create a PR** with a clear description
-6. **Wait for CI** to pass (lint, typecheck, build, audit)
+6. **Wait for CI** to pass (lint, typecheck, build, etc.)
 7. **Address review feedback** if any
 
 ## Questions?

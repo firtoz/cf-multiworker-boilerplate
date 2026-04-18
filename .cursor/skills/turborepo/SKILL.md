@@ -111,6 +111,36 @@ When a package needs files from another package to be ready:
 "inputs": ["$TURBO_ROOT$/packages/scripts/src/utils/file.ts"]
 ```
 
+### 2b. `^task` — run a task in all workspace dependencies
+
+Prefix a task with `^` to depend on the **same task name** in every package listed in this package’s `package.json` **`dependencies` and `devDependencies`** (workspace graph). Avoids repeating `peer-a#task`, `peer-b#task` in `turbo.json`.
+
+**Example — `apps/web` lists Durable Object packages so Turbo can fan out:**
+
+```json
+// apps/web/package.json
+{
+  "dependencies": { "example-do": "workspace:*" },
+  "devDependencies": {
+    "coordinator-do": "workspace:*",
+    "processor-do": "workspace:*"
+  }
+}
+```
+
+```json
+// apps/web/turbo.json
+"typegen:local": {
+  "dependsOn": ["^generate-wrangler:local", "generate-wrangler:local"]
+}
+```
+
+This runs `generate-wrangler:local` in `example-do`, `coordinator-do`, and `processor-do`, then in `cf-web-app`. Same idea for `^typegen:local`, `^generate-wrangler:prod`, and `^deploy` on **`deploy:execute`** (not on dry-run `deploy`).
+
+**Limits:** `^` only follows **declared** workspace deps. Packages that are not dependencies (e.g. sibling workers with only Wrangler `script_name` links) still need explicit `other-pkg#task` in their own `turbo.json`. Verify with:
+
+`bunx turbo run <task> --filter=<pkg> --dry-run=json`
+
 ### 3. Task Definition Hierarchy
 
 Tasks are defined in three places:
@@ -260,16 +290,16 @@ Tasks are defined in three places:
 }
 ```
 
-### Disable Cache for Side Effects
-```json
-"deploy": {
-  "cache": false,      // Deployment has side effects
-  "dependsOn": ["build"]
-}
+### What stays uncached
+Only **`dev`** (persistent dev server) and **`clean`** (destructive) set `cache: false` in root `turbo.json`. Everything else—including `lint`, `pre-deploy`, `deploy`, `deploy:execute`, and per-worker `deploy`—is **cacheable** when task inputs (and declared `env` for deploy paths) match. Run `turbo run <task> --force` if you need to bypass cache (e.g. redeploy without changing files).
 
+```json
 "dev": {
-  "cache": false,      // Dev server is persistent
+  "cache": false,
   "persistent": true
+},
+"clean": {
+  "cache": false
 }
 ```
 
@@ -365,11 +395,12 @@ bun run build --verbose
 
 ### Root turbo.json
 - Global settings: `globalDependencies`, `ui`, task defaults
-- Tasks: `build`, `typecheck`, `typegen`, `cf-typegen`, `rr-typegen`, `dev`, `lint`, `pre-deploy`, `deploy`, `clean`
+- Tasks: `build`, `typecheck`, `typegen`, `cf-typegen`, `rr-typegen`, `dev`, `lint`, `pre-deploy`, `wrangler:dry-run:prod`, `deploy`, `deploy:execute`, `clean`
 - `globalEnv`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SESSION_SECRET`
 
 ### packages/scripts/turbo.json
-- `pre-deploy` - Pre-deployment validation (inputs: wrangler.jsonc, .env.local)
+- `pre-deploy` - Pre-deployment validation (creates queues / checks consumers; **only** used by `deploy:execute`, not dry-run `deploy`)
+- `wrangler:dry-run:prod` - `wrangler deploy --dry-run` for every worker (depends on `cf-web-app#build:prod`)
 
 ### apps/web/turbo.json
 - `typegen` - Depends on `cf-typegen`, `rr-typegen`
@@ -378,7 +409,8 @@ bun run build --verbose
 - `lint` - Depends on `typecheck`
 - `typecheck` - Depends on `typegen`
 - `build` - Depends on `typecheck`
-- `deploy` - Depends on `scripts#pre-deploy`, `build`, `example-do#deploy`, `coordinator-do#deploy`, `processor-do#deploy`
+- `deploy` - **`scripts#wrangler:dry-run:prod` only** (no live deploy, no queue creation)
+- `deploy:execute` - `scripts#pre-deploy`, `build:prod`, `^deploy` (live DO + web deploy)
 
 ### Durable objects (example-do, coordinator-do, processor-do)
 - Each has its own turbo.json with `deploy` and other tasks as needed.
@@ -390,7 +422,8 @@ typegen → cf-typegen, rr-typegen
 typecheck → typegen
 lint → typecheck
 build → typecheck
-deploy → scripts#pre-deploy, build, example-do#deploy, coordinator-do#deploy, processor-do#deploy
+deploy → scripts#wrangler:dry-run:prod (after build:prod)
+deploy:execute → scripts#pre-deploy, build:prod, live deploy for DOs + web
 ```
 
 ## Resources

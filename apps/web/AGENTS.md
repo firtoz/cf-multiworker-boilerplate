@@ -12,6 +12,11 @@ import { env } from "cloudflare:workers";
 
 Do **not** use `context.cloudflare.env` (or similar) from React Router for bindings — types and runtime expect `cloudflare:workers`. See root [AGENTS.md](../../AGENTS.md).
 
+## Wrangler config (dev vs prod)
+
+- Source: commit **`wrangler.jsonc.hbs`**. Generated **`wrangler-dev.jsonc`** / **`wrangler-prod.jsonc`** are gitignored; Vite / `react-router dev` uses **`wrangler-dev.jsonc`** (see `vite.config.ts` and `WRANGLER_CONFIG_FILE` for production builds).
+- Regenerate: `bun run generate-wrangler:local` from `apps/web`, or run **`bun run typegen`** from the repo root so Turbo runs generators in order.
+
 ## Routes
 
 ### Adding or Editing Routes

@@ -10,7 +10,7 @@ Building on Cloudflare's edge platform is powerful but complex. This boilerplate
 - **Queue-Based Architecture**: Working example of Cloudflare Queues for reliable, scalable task processing
 - **Modern React Stack**: React Router 7 with streaming SSR, form actions, and optimized CSS loading via 103 Early Hints
 - **End-to-End Validation**: Type-safe API calls using Hono + hono-fetcher with Zod validation
-- **Ready to Deploy**: Pre-configured Turborepo with dev/build/deploy scripts that just work
+- **Ready to Deploy**: Turborepo tasks for local vs prod typegen/wrangler, **dry-run deploy** vs **live deploy**, and aggressive caching (only `dev` and `clean` skip the Turbo cache)
 
 **What's included:**
 - React Router 7 web app with TailwindCSS
@@ -33,17 +33,23 @@ gh repo create my-project --template firtoz/cf-multiworker-boilerplate --public
 cd my-project
 ```
 
-### Install & Run
+### Install & run
 
 ```bash
-# Install dependencies
 bun install
 
-# Start dev server (starts web app + all DOs)
+# Interactive .env.local (prompts for SESSION_SECRET, optional Cloudflare token/account; won't overwrite unless --force)
+bun run setup
+
+# Dev (Turbo runs typegen → wrangler generate → Vite; first run can take a minute)
 bun run dev
 ```
 
-Visit http://localhost:5173 to see the app, or http://localhost:5173/queue for the working queue demo.
+Open http://localhost:5173 — queue demo: http://localhost:5173/queue
+
+**Flags:** **`bun run setup --yes`** skips prompts (random **`SESSION_SECRET`**, placeholders for deploy; use when stdin is not a TTY). If **`.env.local` already exists** and you run **`setup` interactively**, you get a **summary** and can **update one section** (secret, demo string, Cloudflare, worker names) or re-run the full wizard. **`bun run setup --force`** replaces the file (after confirm in a TTY; **`--yes --force`** for scripts). **If you skip `setup`:** a real **`SESSION_SECRET`** avoids session surprises. **Before deploy**, set **`CLOUDFLARE_*`** or use **`setup`** again.
+
+**After forking:** **`bun run setup`** can set a **prefix for local Wrangler worker script names** (the `*-dev` workers). For production names, queues, `package.json` names, README/UI, and a full rebrand, see [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md).
 
 ### Conventions (humans & AI coding agents)
 
@@ -67,10 +73,14 @@ Skim [AGENTS.md](AGENTS.md) at the repo root. In short:
 │   └── example-do/             # Minimal DO example
 └── packages/
     ├── do-common/              # Shared types & Zod schemas
-    └── scripts/                # Build & deployment scripts
-        ├── cf-typegen.ts       # Generates types & auto-fixes DO imports
-        └── pre-deploy.ts        # Pre-deployment checks
+    └── scripts/                # Shared tooling
+        ├── src/cf-typegen.ts   # Wrangler types across workspace packages
+        ├── src/pre-deploy.ts   # Queue ensure + checks (used by deploy:execute)
+        ├── src/utils/generate-wrangler.ts  # wrangler.jsonc.hbs → wrangler-dev | wrangler-prod
+        └── src/wrangler-dry-run-prod.ts    # wrangler deploy --dry-run (used by deploy)
 ```
+
+For deeper conventions (env files, `^task` dependencies, caching), see **[AGENTS.md](AGENTS.md)** and [.cursor/skills/turborepo/SKILL.md](.cursor/skills/turborepo/SKILL.md).
 
 ## Key Features
 
@@ -102,132 +112,98 @@ bunx turbo gen durable-object
 
 ## Configuration
 
-### Environment Variables
+### Environment variables
 
-Create `.env.local` in the project root:
+- **`.env.example`** (committed) — **Documentation only.** No script reads it; copy values into real env files.
+- **`.env.local`** (gitignored) — Local dev, `cf-typegen`, and `bun --env-file` for builds.
+- **`.env.production`** (gitignored) — Production deploy: Cloudflare credentials, optional `ROUTES` / worker name overrides. `generate-wrangler --mode=remote` merges only keys listed in **`DEPLOYMENT_KEYS`** in `packages/scripts/src/utils/generate-wrangler.ts` (not the whole file dumped on top of `process.env`).
+
+Minimal root `.env.local`:
 
 ```bash
-# Required for deployment (see Deployment section for how to get these)
 CLOUDFLARE_API_TOKEN=your_api_token_here
 CLOUDFLARE_ACCOUNT_ID=your_account_id_here
-
-# Required for the web app (generate a random string)
 SESSION_SECRET=random_secret_here
 ```
 
-**Getting your values:**
-- `CLOUDFLARE_API_TOKEN`: Create at https://dash.cloudflare.com/profile/api-tokens
-- `CLOUDFLARE_ACCOUNT_ID`: Find in your Cloudflare dashboard URL or account settings
-- `SESSION_SECRET`: Generate with `openssl rand -base64 32` or any random string
+### Wrangler config (templates + generated JSONC)
 
-### Wrangler Config
+Each app/DO package keeps a committed **`wrangler.jsonc.hbs`**. Generated files **`wrangler-dev.jsonc`** and **`wrangler-prod.jsonc`** are **gitignored** — produce them with `bun run typegen` (or per-package `generate-wrangler:local` / `:prod`). Do not hand-edit the generated JSONC.
 
-Each Durable Object has a `wrangler.jsonc`. To use a DO from another worker, add a binding:
+To bind a Durable Object from another worker, use `script_name` in the template (see `durable-objects/*/wrangler.jsonc.hbs` and `apps/web/wrangler.jsonc.hbs`). Default worker names use a `*-dev` suffix locally and non-suffixed names for prod unless you override in `.env.local` / `.env.production` / CI.
 
-```jsonc
-// apps/web/wrangler.jsonc
-"durable_objects": {
-  "bindings": [
-    {
-      "name": "CoordinatorDo",
-      "class_name": "CoordinatorDo",
-      "script_name": "cf-coordinator-do"  // matches the DO's wrangler name
-    }
-  ]
-}
-```
-
-Then run `bun run typegen` from root to update types across all packages.
+Then run **`bun run typegen`** from the repo root so `worker-configuration.d.ts` stays in sync everywhere.
 
 ## Continuous Integration
 
-This project includes a GitHub Actions CI workflow that runs on every push and pull request:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pushes and PRs to **`main`**:
 
-- **Lint & Format**: Validates code style with Biome
-- **Type Check**: Ensures type safety across all packages
-- **Build**: Verifies all packages build successfully
-- **Security Audit**: Checks for dependency vulnerabilities
+1. **Lint** — `bun run lint` (Biome)
+2. **Typecheck** — `bun run typegen` then `bun run typecheck`
+3. **Build** — `bun run build`
 
-The workflow uses Bun for fast dependency installation and Turborepo for efficient caching.
+Uses Bun with a frozen lockfile and Turborepo for parallel/cached tasks.
 
 ## Deployment
 
 ### Prerequisites
 
-Before deploying, you need a Cloudflare API token:
+1. **API token** — https://dash.cloudflare.com/profile/api-tokens → **Edit Cloudflare Workers** (or equivalent: Workers Scripts, Workers Routes, Observability).
+2. **Root env** — put `CLOUDFLARE_API_TOKEN` (and usually `CLOUDFLARE_ACCOUNT_ID`) in **`.env.local`** for local CLI. For production wrangler generation, use **`.env.production`** as described in [AGENTS.md](AGENTS.md).
 
-1. **Create an API token** at https://dash.cloudflare.com/profile/api-tokens
-2. Use the **"Edit Cloudflare Workers"** template
-3. Ensure these permissions are included:
-   - Account / Workers Scripts / Edit
-   - Zone / Workers Routes / Edit  
-   - Account / Workers Observability / Edit
+### Two commands: dry-run vs live
 
-4. **Set the token** in `.env.local`:
-   ```bash
-   CLOUDFLARE_API_TOKEN=your_token_here
-   CLOUDFLARE_ACCOUNT_ID=your_account_id  # Optional but recommended
-   ```
+| Command | What it does |
+|--------|----------------|
+| **`bun run deploy`** | After **`cf-web-app#build:prod`**, runs **`wrangler deploy --dry-run`** for each DO (`wrangler-prod.jsonc`) and the web app (`build/server/wrangler.json`). **No uploads**, no queue creation. |
+| **`bun run deploy:execute`** | Runs **`pre-deploy`** (ensure queues + validate consumers), **`build:prod`**, **live `wrangler deploy`** for workspace DOs (order respects cross-worker DO bindings), then deploys the web worker from the production build. |
 
-### Deploy Command
+Use **`deploy`** in CI or locally to verify bundles/config without changing Cloudflare state. Use **`deploy:execute`** when you intend to ship.
 
-```bash
-bun run deploy
-```
+**Turbo tip:** Most tasks are cached when inputs are unchanged. Only **`dev`** and **`clean`** always skip cache. To force a fresh run (e.g. redeploy same tree), use `turbo run deploy:execute --filter=cf-web-app --force`.
 
-**What this does:**
+**If live deploy fails** with errors about bindings to another worker script: ensure dependent workers are deployed first (this repo’s Turbo graph orders processor before coordinator where required). See [AGENTS.md](AGENTS.md) deploy section.
 
-1. **Pre-deploy checks** (`pre-deploy.ts`):
-   - Validates `CLOUDFLARE_API_TOKEN` is set
-   - Scans all `wrangler.jsonc` files for queue configurations
-   - Automatically creates any missing Cloudflare Queues (e.g., `work-queue`, `work-queue-dlq`)
-   - Validates queue consumer settings (batch timeout, retries, etc.)
-
-2. **Deploys all packages**:
-   - Builds and deploys the React Router 7 web app (`apps/web`)
-   - Deploys all Durable Objects (`durable-objects/*`)
-   - Configures all bindings (DOs, queues, etc.)
-
-**Note:** If deployment fails, check that:
-- Your API token has the correct permissions
-- You have a Cloudflare account with Workers enabled
-- All queue configurations have `max_batch_timeout >= 0.001`
+**Queue config:** `max_batch_timeout` must be **≥ 0.001** (enforced by `pre-deploy`).
 
 ## Scripts
 
 ### Development
-- `bun run dev` - Start all workers in dev mode
-- `bun run build` - Build all packages
-- `bun run typecheck` - Type check all packages
-- `bun run typegen` - Generate types (Cloudflare + React Router)
-- `bun run lint` - Lint and format code with Biome
+- `bun run dev` — Dev servers (Turbo; **`cache: false`**, long-running)
+- `bun run build` — `turbo run build:local`
+- `bun run typecheck` — `typecheck:local` across packages
+- `bun run typecheck:prod` — Prod-shaped types/config
+- `bun run typegen` / `typegen:local` — Generate Wrangler types + React Router route types
+- `bun run typegen:prod` — Prod wrangler inputs + types
+- `bun run lint` — Biome (`check --write`)
 
 ### Deployment
-- `bun run deploy` - Deploy to Cloudflare
+- `bun run deploy` — **Dry-run only** (see table above)
+- `bun run deploy:execute` — **Live** deploy pipeline
 
-### Dependency Management
-- `bun run audit` - Audit dependencies for vulnerabilities
-- `bun run outdated` - Check for outdated dependencies across all packages
-- `bun run update:interactive` - Interactively update dependencies
-- `bun run clean` - Remove all node_modules and build artifacts
+### Dependency management
+- `bun run outdated` — Outdated deps across workspaces
+- `bun run update:interactive` — Interactive updates
+- `bun run clean` — Remove `node_modules` and build artifacts (**Turbo `clean`**)
 
-### Code Generation
-- `bunx turbo gen durable-object` - Generate new DO
+### Code generation
+- `bunx turbo gen durable-object` — Scaffold a new Durable Object package
 
 ## Best Practices & Optimizations
 
 This boilerplate follows modern 2026 best practices:
 
-### Type Safety
-- **Shared TypeScript Config**: Centralized `tsconfig.base.json` ensures consistent strict settings across all packages
-- **Strict TypeScript**: All packages use strict mode with additional checks (`noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`)
-- **Automatic Type Generation**: Cloudflare bindings and React Router routes are fully typed
-- **No explicit `any`**: Biome enforces no explicit any types
+### Type safety
+- **Shared TypeScript config**: `tsconfig.base.json` across packages
+- **Strict TypeScript**: Additional checks where enabled (`noUncheckedIndexedAccess`, etc.)
+- **Automatic generation**: `worker-configuration.d.ts` from Wrangler; React Router types under `.react-router/` (gitignored)
 
-### Code Quality
-- **Biome**: Fast linter and formatter with strict rules for correctness, performance, and security
-- **Pre-commit Hooks**: Automatic code formatting and linting
-- **Turborepo Caching**: Optimized build pipeline with smart caching and dependency tracking
+### Code quality
+- **Biome** for lint + format
+- **Turborepo**: Declared `inputs` / `outputs` / `env` so unchanged work **hits the cache** on repeat runs (except `dev` and `clean`)
+
+### Git hooks
+If you use pre-commit hooks in your fork, wire them to `bun run lint` / `typecheck` as you prefer — this template does not enforce a specific hook framework.
 
 ### Performance
 - **103 Early Hints**: CSS preloading for faster initial page loads
@@ -235,11 +211,9 @@ This boilerplate follows modern 2026 best practices:
 - **Aggressive Code Splitting**: Vendor chunks split for better caching
 - **Streaming SSR**: React Router 7 streams HTML for faster TTFB
 
-### Dependency Management
-- **Renovate Bot**: Automated dependency updates via `renovate.json`
-- **Regular Audits**: Use `bun run audit` to check for vulnerabilities
-- **Lock Files**: Bun lock file ensures consistent installs
-- **Semantic Versioning**: Automated grouping of patch/minor updates
+### Dependency management
+- **Lock file**: `bun.lock` for reproducible installs
+- Optional: add Renovate or Dependabot in your fork for automated bumps
 
 ### Observability
 - **Cloudflare Logs**: Enabled for all workers and DOs

@@ -19,7 +19,7 @@ These trip up new contributors and coding agents most often:
    ```
    See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md).
 
-3. **Regenerate types and verify often** — After routes, wrangler, or env changes, run `bun run typegen` from the repo root. Run `bun run typecheck` and `bun run lint` regularly while implementing features, not only before opening a PR.
+3. **Regenerate types and verify often** — After routes, wrangler, or env changes, run `bun run typegen` from the repo root (runs `typegen:local` via Turbo). Run `bun run typecheck` and `bun run lint` regularly while implementing features, not only before opening a PR. Before production deploys, run `turbo run typecheck:prod` after `typegen:prod` if you changed prod bindings.
 
 4. **Loaders and actions return `Promise<MaybeError<...>>`** — Use `success` / `fail` (and the `MaybeError` type) from `@firtoz/maybe-error` directly. Annotate loaders as `Promise<MaybeError<YourLoaderData>>`, return `success({ ... })` or `fail("...")`, and narrow in the route component with `loaderData.success`. Use `formAction` from `@firtoz/router-toolkit` for actions so the handler stays `Promise<MaybeError<...>>` as well.
 
@@ -50,6 +50,12 @@ bun run lint
 bun run typegen
 ```
 
+## Turborepo
+
+- **`^task`** — In `apps/web/turbo.json`, a leading `^` runs `task` in every workspace package listed in `apps/web` **dependencies** / **devDependencies** (e.g. `^generate-wrangler:local`, `^deploy` on `deploy:execute`). Avoids hard-coding `example-do#…` in every graph.
+- **Caching** — Tasks are cached when hashes of **inputs**, **outputs**, and declared **`env`** match. By design only **`dev`** and **`clean`** set `cache: false` at the root. Use **`turbo run <task> --force`** when you must bypass cache (e.g. repeat **`deploy:execute`** without file changes).
+- More detail: [.cursor/skills/turborepo/SKILL.md](.cursor/skills/turborepo/SKILL.md).
+
 ## Package Installation
 
 Install packages from the repo root. Use workspace filtering to add dependencies to a specific app:
@@ -78,9 +84,9 @@ Fix any linting errors before considering the task complete. This project uses B
 
 **DO NOT manually edit these files:**
 - `worker-configuration.d.ts` (in any package)
-- `wrangler.jsonc` bindings (unless you fully understand the implications)
+- `wrangler-dev.jsonc` / `wrangler-prod.jsonc` (generated; edit `wrangler.jsonc.hbs` and run `bun run generate-wrangler:local` / `:prod` from each package, or use root `typegen`)
 
-These files are auto-generated or managed by automated scripts.
+Committed source of truth for Wrangler shape is **`wrangler.jsonc.hbs`** per worker package. Bindings and vars belong there; generated JSONC is gitignored.
 
 ## Environment Variables
 
@@ -88,20 +94,13 @@ These files are auto-generated or managed by automated scripts.
 
 When adding new environment variables to any worker:
 
-1. **Create or update `.env.local`** in the package directory with your development values:
-   ```bash
-   # .env.local
-   MY_NEW_VAR=some_value
-   ```
+1. **Document new variables in repo-root `.env.example`** (committed, human-readable placeholders only). **Scripts never read `.env.example`** — copy keys into **`.env.local`** (dev) and **`.env.production`** (prod) as needed. Those files are gitignored.
 
-2. **Update `.env.example`** in the same package to document the variable for other developers:
-   ```bash
-   # .env.example
-   # Description of what this variable does
-   MY_NEW_VAR=example_value_here
-   ```
+2. **Prod wrangler generation** — `generate-wrangler --mode=remote` merges **only** deployment keys from repo-root `.env.production` (see `DEPLOYMENT_KEYS` in `packages/scripts/src/utils/generate-wrangler.ts`) onto `process.env`.
 
-3. **Run typegen** to update the worker configuration type definitions:
+3. **If the var is interpolated into Wrangler config** (e.g. `$MY_NEW_VAR` in `wrangler.jsonc.hbs`), set it in **`.env.local`** / **`.env.production`** (or CI) so `wrangler types` and deploys see real values. If it must participate in remote wrangler generation, add its name to `DEPLOYMENT_KEYS` in `generate-wrangler.ts`.
+
+4. **Run typegen** to update the worker configuration type definitions:
    ```bash
    bun run typegen
    ```
@@ -116,15 +115,18 @@ import { env } from "cloudflare:workers";
 Do not use React Router loader/action `context` to reach Cloudflare `env`; it is not the source of truth here.
 
 **What happens:**
-- `.env.local` files are read by the build system and injected into the worker configuration
-- This automatically updates `worker-configuration.d.ts` with proper TypeScript types
-- You get full type safety for `env` variables in your worker code
-- Other developers can reference `.env.example` to set up their own `.env.local`
+- Real env files (`.env.local`, `.env.production`, per-package `.env` / `.env.local`) feed `wrangler types` and builds via explicit `--env-file` — not `.env.example`.
+- Typegen updates `worker-configuration.d.ts` from Wrangler output.
 
 **Important:**
-- `.env.local` files are gitignored and never committed
-- Always keep `.env.example` in sync with required variables
-- Never commit secrets or API keys to `.env.example` - use placeholder values
+- `.env.local` and `.env.production` are gitignored
+- **`.env.example` is documentation only** — keep it updated when you add new vars so humans and agents know what to put in `.env.local` / `.env.production`
+- Never commit secrets or API keys to `.env.example` — use placeholder values
+
+## Deploy (dry-run vs live)
+
+- **`bun run deploy`** — Runs `scripts#wrangler:dry-run:prod` (after `cf-web-app#build:prod`): `wrangler deploy --dry-run` for each Durable Object package and the web app. **No live upload**, no `pre-deploy` queue creation.
+- **`bun run deploy:execute`** — Runs **`scripts#pre-deploy`** (queues / checks), **`build:prod`**, **`^deploy`** (live Wrangler deploy for dependency workers), then the web app’s real **`wrangler deploy`**.
 
 ## Type Generation
 
@@ -145,7 +147,7 @@ This generates:
 
 Before considering the task complete:
 
-- [ ] If you touched routes, wrangler, or env: `bun run typegen` (repo root)
+- [ ] If you touched routes, wrangler, or env: `bun run typegen` (repo root; local stack). For prod parity: `turbo run typegen:prod` then `turbo run typecheck:prod`.
 - [ ] Lint passes: `bun run lint`
 - [ ] Typecheck passes: `bun run typecheck`
 - [ ] If you made code changes and you're a Cloud Agent: `git add`, `git commit`, `git push` (do not skip)

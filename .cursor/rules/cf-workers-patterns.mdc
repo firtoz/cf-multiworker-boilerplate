@@ -10,7 +10,7 @@ Skim this on every task that touches workers, env, routes, or bindings.
 - **Use** the Workers virtual module: `import { env } from "cloudflare:workers";`
 - **Do not** read bindings from React Router or loader/action context (e.g. `context.cloudflare.env`). That pattern is wrong here; types and runtime expect `cloudflare:workers`.
 
-After changing wrangler bindings or `.env.example` / `.env.local`, run `bun run typegen` from the repo root (see root `AGENTS.md`).
+After changing wrangler bindings or `.env.local` / `.env.production`, run `bun run typegen` from the repo root (see root `AGENTS.md`).
 
 ## Route modules (`apps/web/app/routes/`)
 

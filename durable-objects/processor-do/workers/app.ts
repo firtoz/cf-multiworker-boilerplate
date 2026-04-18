@@ -8,13 +8,33 @@ import {
 	workPayloadSchema,
 } from "do-common";
 import { Hono } from "hono";
+import type { CoordinatorDo } from "../../coordinator-do/workers/app";
+
+/**
+ * Explicit env shape for this worker so apps/web typecheck (via wrangler re-exports) does not
+ * use the web worker's merged global `Env`.
+ */
+type ProcessorWorkerEnv = {
+	ProcessorDo: DurableObjectNamespace<ProcessorDo>;
+	CoordinatorDo: DurableObjectNamespace<CoordinatorDo>;
+	CLOUDFLARE_API_TOKEN: string;
+	CLOUDFLARE_ACCOUNT_ID: string;
+	SESSION_SECRET: string;
+	VALUE_FROM_CLOUDFLARE: string;
+	WEB_WORKER_NAME: string;
+	EXAMPLE_DO_WORKER_NAME: string;
+	COORDINATOR_DO_WORKER_NAME: string;
+	PROCESSOR_DO_WORKER_NAME: string;
+	ROUTES: string;
+	ROUTES_ZONE_NAME: string;
+};
 
 /**
  * Processes work delegated from coordinator
  * Simulates work processing with configurable delay
  */
-export class ProcessorDo extends DurableObject<Env> implements DOWithHonoApp {
-	app = new Hono<{ Bindings: Env }>()
+export class ProcessorDo extends DurableObject<ProcessorWorkerEnv> implements DOWithHonoApp {
+	app = new Hono<{ Bindings: ProcessorWorkerEnv }>()
 		// Health check
 		.get("/", (c) => c.json({ status: "ProcessorDo ready" }))
 		// Get stats
@@ -86,7 +106,7 @@ export class ProcessorDo extends DurableObject<Env> implements DOWithHonoApp {
  * Worker Entrypoint
  * Handles queue consumption and routes to Durable Objects
  */
-export default class ProcessorWorker extends WorkerEntrypoint<Env> {
+export default class ProcessorWorker extends WorkerEntrypoint<ProcessorWorkerEnv> {
 	/**
 	 * Handle HTTP requests to the worker
 	 */

@@ -1,16 +1,53 @@
 {
 	"$schema": "./node_modules/turbo/schema.json",
-	"globalDependencies": [".env", "tsconfig.base.json"],
+	"globalDependencies": [
+		".env",
+		".env.local",
+		".env.production",
+		"tsconfig.base.json"
+	],
 	"ui": "tui",
 	"tasks": {
 		"build": {
 			"outputLogs": "new-only"
 		},
-		"typecheck": {},
+		"build:local": {
+			"outputLogs": "new-only"
+		},
+		"build:prod": {
+			"outputLogs": "new-only"
+		},
+		"typecheck": {
+			"outputLogs": "new-only"
+		},
+		"typecheck:local": {
+			"outputLogs": "new-only"
+		},
+		"typecheck:prod": {
+			"outputLogs": "new-only"
+		},
 		"typegen": {
 			"outputLogs": "new-only"
 		},
+		"typegen:local": {
+			"outputLogs": "new-only"
+		},
+		"typegen:prod": {
+			"outputLogs": "new-only"
+		},
 		"cf-typegen": {
+			"outputLogs": "new-only"
+		},
+		"cf-typegen:local": {
+			"outputLogs": "new-only"
+		},
+		"cf-typegen:prod": {
+			"outputLogs": "new-only"
+		},
+		"generate-wrangler:local": {
+			"outputLogs": "new-only"
+		},
+		"generate-wrangler:prod": {
 			"outputLogs": "new-only"
 		},
 		"rr-typegen": {
@@ -21,17 +58,24 @@
 			"persistent": true,
 			"outputLogs": "new-only"
 		},
-		"lint": {},
+		"lint": {
+			"outputLogs": "new-only"
+		},
 		"pre-deploy": {
 			"outputLogs": "new-only"
 		},
+		"wrangler:dry-run:prod": {
+			"outputLogs": "new-only"
+		},
 		"deploy": {
-			"cache": false,
+			"outputLogs": "new-only"
+		},
+		"deploy:execute": {
 			"outputLogs": "new-only"
 		},
 		"clean": {
 			"cache": false
 		}
 	},
-	"globalEnv": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "SESSION_SECRET"]
+	"globalEnv": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "SESSION_SECRET", "CI"]
 }

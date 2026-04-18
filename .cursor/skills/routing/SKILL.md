@@ -109,8 +109,8 @@ Creating a route file without registering it in `routes.ts` will result in a 404
 
 When adding new environment variables (see root AGENTS.md):
 
-1. Add the variable to `.env.example` in the package with documentation
-2. Add the same variable to `.env.local` (with a real or placeholder value for local dev)
+1. Document the variable in repo-root `.env.example` (documentation only — scripts do not read it)
+2. Add the variable to `.env.local` (and `.env.production` if needed for prod) with real values
 3. Run `bun run typegen` from workspace root to regenerate TypeScript types for `env`
 
 ```bash

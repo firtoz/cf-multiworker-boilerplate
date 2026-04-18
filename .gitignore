@@ -5,6 +5,10 @@ node_modules/
 # Cloudflare
 .mf
 .wrangler
+apps/web/wrangler-dev.jsonc
+apps/web/wrangler-prod.jsonc
+durable-objects/**/wrangler-dev.jsonc
+durable-objects/**/wrangler-prod.jsonc
 .dev.vars
 .env*
 !.env.example*

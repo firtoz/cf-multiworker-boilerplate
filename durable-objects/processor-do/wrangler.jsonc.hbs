@@ -1,0 +1,61 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ *
+ * Generated: bun run generate-wrangler:local → wrangler-dev.jsonc; generate-wrangler:prod → wrangler-prod.jsonc
+ */
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "{{WORKER_NAME}}",
+	{{WORKERS_DEV_BLOCK}}
+	"compatibility_date": "2025-12-17",
+	"compatibility_flags": ["nodejs_compat"],
+	"main": "./workers/app.ts",
+	"vars": {
+		"VALUE_FROM_CLOUDFLARE": "$VALUE_FROM_CLOUDFLARE"
+	},
+	"observability": {
+		"enabled": true,
+		"logs": {
+			"enabled": true
+		}
+	},
+	"placement": {
+		"mode": "smart"
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "ProcessorDo",
+				"class_name": "ProcessorDo"
+			},
+			{
+				"name": "CoordinatorDo",
+				"class_name": "CoordinatorDo",
+				"script_name": "{{COORDINATOR_DO_WORKER_NAME}}"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["ProcessorDo"]
+		}
+	],
+	"queues": {
+		"consumers": [
+			{
+				"queue": "work-queue",
+				"max_batch_size": 10,
+				"max_batch_timeout": 0.001,
+				"max_retries": 3,
+				"dead_letter_queue": "work-queue-dlq"
+			},
+			{
+				"queue": "work-queue-dlq",
+				"max_batch_size": 10,
+				"max_batch_timeout": 0.001
+			}
+		]
+	}
+}

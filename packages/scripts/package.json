@@ -1,14 +1,30 @@
 {
 	"name": "scripts",
 	"private": true,
+	"bin": {
+		"generate-wrangler": "./src/utils/generate-wrangler.ts"
+	},
 	"scripts": {
+		"build": "echo '✓ scripts package ready'",
+		"build:local": "bun run build",
+		"typecheck:local": "tsgo --noEmit -p ./tsconfig.json",
 		"cf-typegen": "bun ./src/cf-typegen.ts",
-		"pre-deploy": "bun --env-file ../../.env.local ./src/pre-deploy.ts"
+		"pre-deploy": "bun --env-file ../../.env.local ./src/pre-deploy.ts",
+		"wrangler:dry-run:prod": "bun ./src/wrangler-dry-run-prod.ts",
+		"generate-wrangler": "bun ./src/utils/generate-wrangler.ts"
 	},
 	"dependencies": {
+		"@firtoz/worker-helper": "^1.6.1",
+		"dotenv": "catalog:",
 		"jsonc-parser": "^3.3.1"
 	},
 	"devDependencies": {
-		"@types/bun": "1.3.12"
+		"@inquirer/core": "^11.1.8",
+		"@inquirer/prompts": "^8.4.1",
+		"@types/bun": "1.3.12",
+		"@types/node": "catalog:",
+		"@typescript/native-preview": "catalog:",
+		"picocolors": "^1.1.1",
+		"typescript": "catalog:"
 	}
 }

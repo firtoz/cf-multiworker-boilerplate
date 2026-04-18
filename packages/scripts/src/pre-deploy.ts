@@ -46,8 +46,10 @@ function findRequiredQueues(): Set<string> {
 				continue;
 			}
 
-			const wranglerPath = path.join(itemPath, "wrangler.jsonc");
-			if (fs.existsSync(wranglerPath)) {
+			const wranglerPath = ["wrangler-dev.jsonc", "wrangler-prod.jsonc", "wrangler.jsonc"]
+				.map((n) => path.join(itemPath, n))
+				.find((p) => fs.existsSync(p));
+			if (wranglerPath) {
 				try {
 					const content = fs.readFileSync(wranglerPath, "utf8");
 					const tree = parseTree(content);
@@ -124,8 +126,10 @@ function findQueueConsumers(): QueueConsumerConfig[] {
 				continue;
 			}
 
-			const wranglerPath = path.join(itemPath, "wrangler.jsonc");
-			if (fs.existsSync(wranglerPath)) {
+			const wranglerPath = ["wrangler-dev.jsonc", "wrangler-prod.jsonc", "wrangler.jsonc"]
+				.map((n) => path.join(itemPath, n))
+				.find((p) => fs.existsSync(p));
+			if (wranglerPath) {
 				try {
 					const content = fs.readFileSync(wranglerPath, "utf8");
 					const tree = parseTree(content);

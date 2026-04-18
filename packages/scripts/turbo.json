@@ -1,8 +1,51 @@
 {
 	"extends": ["//"],
 	"tasks": {
+		"build": {
+			"inputs": ["src/**/*.ts", "package.json"],
+			"outputs": []
+		},
+		"build:local": {
+			"inputs": ["src/**/*.ts", "package.json"],
+			"outputs": []
+		},
+		"typecheck:local": {
+			"inputs": ["src/**/*.ts", "tsconfig.json"],
+			"outputs": []
+		},
+		"wrangler:dry-run:prod": {
+			"dependsOn": ["cf-web-app#build:prod"],
+			"env": [
+				"CLOUDFLARE_API_TOKEN",
+				"CLOUDFLARE_ACCOUNT_ID",
+				"ROUTES",
+				"ROUTES_ZONE_NAME",
+				"WEB_WORKER_NAME",
+				"EXAMPLE_DO_WORKER_NAME",
+				"COORDINATOR_DO_WORKER_NAME",
+				"PROCESSOR_DO_WORKER_NAME"
+			],
+			"inputs": [
+				"src/wrangler-dry-run-prod.ts",
+				"$TURBO_ROOT$/apps/web/wrangler.jsonc.hbs",
+				"$TURBO_ROOT$/durable-objects/**/wrangler.jsonc.hbs",
+				"$TURBO_ROOT$/durable-objects/**/wrangler-prod.jsonc",
+				"$TURBO_ROOT$/apps/web/build/server/wrangler.json"
+			],
+			"outputs": []
+		},
 		"pre-deploy": {
-			"inputs": ["$TURBO_ROOT$/**/wrangler.jsonc", "$TURBO_ROOT$/.env.local"],
+			"dependsOn": ["cf-web-app#generate-wrangler:local"],
+			"inputs": [
+				"src/pre-deploy.ts",
+				"$TURBO_ROOT$/**/wrangler-dev.jsonc",
+				"$TURBO_ROOT$/**/wrangler-prod.jsonc",
+				"$TURBO_ROOT$/**/wrangler.jsonc",
+				"$TURBO_ROOT$/apps/web/wrangler.jsonc.hbs",
+				"$TURBO_ROOT$/durable-objects/**/wrangler.jsonc.hbs",
+				"$TURBO_ROOT$/.env.local",
+				"$TURBO_ROOT$/.env.production"
+			],
 			"outputs": []
 		}
 	}

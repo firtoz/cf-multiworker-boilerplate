@@ -12,6 +12,26 @@ import {
 import { Hono } from "hono";
 import { z } from "zod";
 
+/**
+ * Explicit env shape for this worker so packages that import this file (e.g. apps/web via
+ * wrangler-generated imports) do not merge against the web worker's global `Env`.
+ * `ProcessorDo` is typed loosely here to avoid pulling other packages into apps/web's tsconfig.
+ */
+type CoordinatorWorkerEnv = {
+	WORK_QUEUE: Queue;
+	ProcessorDo: DurableObjectNamespace<DurableObject>;
+	CLOUDFLARE_API_TOKEN: string;
+	CLOUDFLARE_ACCOUNT_ID: string;
+	SESSION_SECRET: string;
+	VALUE_FROM_CLOUDFLARE: string;
+	WEB_WORKER_NAME: string;
+	EXAMPLE_DO_WORKER_NAME: string;
+	COORDINATOR_DO_WORKER_NAME: string;
+	PROCESSOR_DO_WORKER_NAME: string;
+	ROUTES: string;
+	ROUTES_ZONE_NAME: string;
+};
+
 // Version number for coordinator storage schema
 // If this changes, the DB will be cleared on next access
 const COORDINATOR_VERSION = 1;
@@ -39,8 +59,8 @@ type WorkItem = {
  * Orchestrates work across multiple Durable Objects
  * Manages a queue of work items and delegates to processor DOs
  */
-export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
-	constructor(ctx: DurableObjectState, env: Env) {
+export class CoordinatorDo extends DurableObject<CoordinatorWorkerEnv> implements DOWithHonoApp {
+	constructor(ctx: DurableObjectState, env: CoordinatorWorkerEnv) {
 		super(ctx, env);
 
 		// Block all incoming requests until migration is complete
@@ -49,7 +69,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 		});
 	}
 
-	app = new Hono<{ Bindings: Env }>()
+	app = new Hono<{ Bindings: CoordinatorWorkerEnv }>()
 		// Health check
 		.get("/", (c) => c.json({ status: "CoordinatorDo ready" }))
 		// Get queue status
@@ -213,7 +233,11 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
 
 			try {
 				const stub = this.env.ProcessorDo.getByName(`processor-${this.ctx.id}`);
-				const result = await stub.processWork(workItem.payload);
+				const result = await (
+					stub as unknown as {
+						processWork: (payload: WorkPayload) => Promise<ProcessorResult>;
+					}
+				).processWork(workItem.payload);
 
 				// Update work result directly - result is the whole response from ProcessorDo
 				await this.updateWorkResult(workItem.id, result, undefined, result?.timestamps);
@@ -301,7 +325,7 @@ export class CoordinatorDo extends DurableObject<Env> implements DOWithHonoApp {
  * Worker Entrypoint
  * Handles incoming HTTP requests
  */
-export default class CoordinatorWorker extends WorkerEntrypoint<Env> {
+export default class CoordinatorWorker extends WorkerEntrypoint<CoordinatorWorkerEnv> {
 	/**
 	 * Handle HTTP requests to the worker
 	 */
