@@ -74,6 +74,21 @@
 			],
 			"outputs": []
 		},
+		"lint:format": {
+			"inputs": [
+				"app/**/*.ts",
+				"app/**/*.tsx",
+				"workers/**/*.ts",
+				"workers/**/*.tsx",
+				"biome.json",
+				"vite.config.ts",
+				"react-router.config.ts",
+				"wrangler-dev.jsonc",
+				"wrangler-prod.jsonc",
+				"wrangler.jsonc.hbs"
+			],
+			"outputs": []
+		},
 		"typecheck:local": {
 			"dependsOn": ["typegen:local"],
 			"inputs": [

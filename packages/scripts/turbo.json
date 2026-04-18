@@ -13,6 +13,15 @@
 			"inputs": ["src/**/*.ts", "tsconfig.json"],
 			"outputs": []
 		},
+		"lint": {
+			"dependsOn": ["typecheck:local"],
+			"inputs": ["src/**/*.ts", "tsconfig.json", "$TURBO_ROOT$/biome.json"],
+			"outputs": []
+		},
+		"lint:format": {
+			"inputs": ["src/**/*.ts", "tsconfig.json", "$TURBO_ROOT$/biome.json"],
+			"outputs": []
+		},
 		"wrangler:dry-run:prod": {
 			"dependsOn": ["cf-web-app#build:prod"],
 			"env": [

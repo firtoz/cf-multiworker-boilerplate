@@ -4,7 +4,7 @@
  * Generate wrangler-dev.jsonc (local) or wrangler-prod.jsonc (remote) from wrangler.jsonc.hbs
  * in the current working directory (apps/web or durable-objects/*).
  *
- * Remote (`--mode=remote`): repo-root `.env.production` contributes **only** `DEPLOYMENT_KEYS`
+ * Remote (`--mode=remote`): repo-root `.env.production` merges `DEPLOYMENT_KEYS` and any `*_WORKER_NAME`
  * (merged on top of `process.env`). CI sets the same keys without a file.
  *
  * Local: `LOCAL_DEFAULTS` + optional `cwd/.env` + repo-root `.env.local`, then `process.env`.
@@ -42,13 +42,25 @@ const DEPLOYMENT_KEYS = [
 	"PROCESSOR_DO_WORKER_NAME",
 ] as const;
 
-/** Env keys used for {{WORKER_NAME}} per package directory (relative to repo root). */
-const WORKER_NAME_ENV_BY_DIR: Record<string, string> = {
-	"apps/web": "WEB_WORKER_NAME",
-	"durable-objects/example-do": "EXAMPLE_DO_WORKER_NAME",
-	"durable-objects/coordinator-do": "COORDINATOR_DO_WORKER_NAME",
-	"durable-objects/processor-do": "PROCESSOR_DO_WORKER_NAME",
-};
+/**
+ * Env key for `{{WORKER_NAME}}` substitution: `apps/web` → `WEB_WORKER_NAME`;
+ * `durable-objects/foo-bar` → `FOO_BAR_WORKER_NAME` (kebab folder → UPPER_SNAKE + `_WORKER_NAME`).
+ */
+function workerNameEnvKeyForPackageDir(packageRelDir: string): string {
+	if (packageRelDir === "apps/web") {
+		return "WEB_WORKER_NAME";
+	}
+	const m = /^durable-objects\/([^/]+)$/.exec(packageRelDir);
+	if (m) {
+		const folder = m[1];
+		return `${folder.replace(/-/g, "_").toUpperCase()}_WORKER_NAME`;
+	}
+	throw new Error(`Unknown package directory for wrangler template: ${packageRelDir}`);
+}
+
+function defaultWorkerNameForDurableObjectFolder(folder: string, mode: Mode): string {
+	return mode === "local" ? `cf-${folder}-dev` : `cf-${folder}`;
+}
 
 function findRepoRoot(startDir: string): string {
 	let dir = path.resolve(startDir);
@@ -90,7 +102,10 @@ function processEnvSnapshot(): Record<string, string> {
 	);
 }
 
-/** process.env first; only `DEPLOYMENT_KEYS` from `.env.production` overwrite (ja-ti pattern). */
+/**
+ * process.env first; repo-root `.env.production` overwrites `DEPLOYMENT_KEYS` and any `*_WORKER_NAME`
+ * (so new `durable-objects/*` workers do not need a code change).
+ */
 function mergeEnvForRemote(fileEnv: Record<string, string>): Record<string, string> {
 	const base = processEnvSnapshot();
 	const out = { ...base };
@@ -98,6 +113,15 @@ function mergeEnvForRemote(fileEnv: Record<string, string>): Record<string, stri
 		const v = fileEnv[k]?.trim();
 		if (v !== undefined && v !== "") {
 			out[k] = v;
+		}
+	}
+	for (const [k, v] of Object.entries(fileEnv)) {
+		if (!k.endsWith("_WORKER_NAME")) {
+			continue;
+		}
+		const t = v?.trim();
+		if (t) {
+			out[k] = t;
 		}
 	}
 	return out;
@@ -182,13 +206,16 @@ function buildSubstitutionMap(
 	env: Record<string, string>,
 ): Record<string, string> {
 	const defaults = mode === "local" ? LOCAL_DEFAULTS : PROD_DEFAULTS;
-	const workerKey = WORKER_NAME_ENV_BY_DIR[packageRelDir];
-	if (!workerKey) {
-		throw new Error(`Unknown package directory for wrangler template: ${packageRelDir}`);
-	}
+	const workerKey = workerNameEnvKeyForPackageDir(packageRelDir);
+	const doFolder = /^durable-objects\/([^/]+)$/.exec(packageRelDir)?.[1];
 
+	const fromDefaults = defaults[workerKey as keyof typeof defaults];
 	const workerName =
-		env[workerKey]?.trim() || defaults[workerKey] || env.WORKER_NAME?.trim() || "";
+		env[workerKey]?.trim() ||
+		(fromDefaults ?? "") ||
+		(doFolder ? defaultWorkerNameForDurableObjectFolder(doFolder, mode) : "") ||
+		env.WORKER_NAME?.trim() ||
+		"";
 
 	const map: Record<string, string> = {
 		...defaults,
@@ -203,6 +230,12 @@ function buildSubstitutionMap(
 		"PROCESSOR_DO_WORKER_NAME",
 	] as const) {
 		map[k] = env[k]?.trim() || defaults[k] || "";
+	}
+
+	for (const [k, v] of Object.entries(env)) {
+		if (k.endsWith("_WORKER_NAME") && v?.trim()) {
+			map[k] = v.trim();
+		}
 	}
 
 	return map;

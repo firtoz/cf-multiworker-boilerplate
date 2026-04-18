@@ -24,6 +24,10 @@
 			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
 			"outputs": []
 		},
+		"lint:format": {
+			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
+			"outputs": []
+		},
 		"typecheck:local": {
 			"dependsOn": ["typegen:local"],
 			"inputs": [

@@ -45,7 +45,7 @@ bun run setup
 bun run dev
 ```
 
-Open http://localhost:5173 — queue demo: http://localhost:5173/queue
+Open the URL Vite prints (usually `http://localhost:5173`; if that port is busy it picks the next, e.g. `5174`) — queue demo: `/queue`
 
 **Flags:** **`bun run setup --yes`** skips prompts (random **`SESSION_SECRET`**, placeholders for deploy; use when stdin is not a TTY). If **`.env.local` already exists** and you run **`setup` interactively**, you get a **summary** and can **update one section** (secret, demo string, Cloudflare, worker names) or re-run the full wizard. **`bun run setup --force`** replaces the file (after confirm in a TTY; **`--yes --force`** for scripts). **If you skip `setup`:** a real **`SESSION_SECRET`** avoids session surprises. **Before deploy**, set **`CLOUDFLARE_*`** or use **`setup`** again.
 

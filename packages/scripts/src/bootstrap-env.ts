@@ -1,4 +1,10 @@
 #!/usr/bin/env bun
+import { stdin as input } from "node:process";
+import readline from "node:readline";
+import { AbortPromptError, CancelPromptError, ExitPromptError } from "@inquirer/core";
+import { confirm, input as inputPrompt, password, select } from "@inquirer/prompts";
+import pc from "picocolors";
+
 /**
  * Interactive first-run: create repo-root `.env.local` with validation.
  * When `.env.local` already exists: show current values and optional per-section updates.
@@ -7,14 +13,12 @@
  * - `--force`: full replace (confirm in TTY unless `--yes`).
  *
  * SESSION_SECRET: required at runtime for signed cookies (`apps/web/app/sessions.server.ts`). If missing on write, we generate one.
+ *
+ * Non-interactive worker + demo strings (for CI / agents): optional env
+ * **`SETUP_WORKER_PREFIX`** (`isValidWorkerPrefix`) → same `{prefix}-*-dev` names as interactive mode.
+ * **`SETUP_VALUE_FROM_CLOUDFLARE`** → demo UI string (overrides .env.example).
  */
-import { AbortPromptError, CancelPromptError, ExitPromptError } from "@inquirer/core";
-import readline from "node:readline";
-import { stdin as input } from "node:process";
-import { confirm, input as inputPrompt, password, select } from "@inquirer/prompts";
-import pc from "picocolors";
-
-const root = Bun.fileURLToPath(new URL("../../..", import.meta.url));
+const root = Bun.fileURLToPath(new URL("../../..", import.meta.url)).replace(/\/+$/, "");
 const dest = `${root}/.env.local`;
 const src = `${root}/.env.example`;
 
@@ -183,7 +187,7 @@ function parseEnvContent(text: string): ParsedFromExample {
 	for (const line of text.split("\n")) {
 		const m =
 			/^(SESSION_SECRET|VALUE_FROM_CLOUDFLARE|CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|WEB_WORKER_NAME|EXAMPLE_DO_WORKER_NAME|COORDINATOR_DO_WORKER_NAME|PROCESSOR_DO_WORKER_NAME)=(.*)$/.exec(
-				line.trim()
+				line.trim(),
 			);
 		if (!m) {
 			continue;
@@ -273,17 +277,21 @@ function printSummary(answers: Answers, title = "Current .env.local") {
 	const aid = answers.accountId.trim();
 	console.log(
 		`  ${pc.dim("CLOUDFLARE_ACCOUNT_ID")}  ${
-			looksIncomplete(aid) ? pc.yellow("not set (placeholder)") : `${aid.slice(0, 8)}… (${aid.length} hex)`
-		}`
+			looksIncomplete(aid)
+				? pc.yellow("not set (placeholder)")
+				: `${aid.slice(0, 8)}… (${aid.length} hex)`
+		}`,
 	);
 
 	if (answers.localWorkerNames) {
 		const w = answers.localWorkerNames;
 		const pre = inferPrefixFromWebWorkerName(w.web) ?? "?";
-		console.log(`  ${pc.dim("Worker names")}         prefix ${pc.cyan(pre)} → ${w.web}, ${w.exampleDo}, …`);
+		console.log(
+			`  ${pc.dim("Worker names")}         prefix ${pc.cyan(pre)} → ${w.web}, ${w.exampleDo}, …`,
+		);
 	} else {
 		console.log(
-			`  ${pc.dim("Worker names")}         ${pc.dim("template defaults (cf-*-dev) — no overrides in file")}`
+			`  ${pc.dim("Worker names")}         ${pc.dim("template defaults (cf-*-dev) — no overrides in file")}`,
 		);
 	}
 	console.log();
@@ -300,8 +308,8 @@ async function promptSessionSecretBlock(): Promise<string> {
 				],
 				default: "generate",
 			},
-			ctx
-		)
+			ctx,
+		),
 	);
 
 	if (secretMode === "manual") {
@@ -363,7 +371,10 @@ async function promptCloudflareBlock(answers: Answers): Promise<void> {
 	answers.accountId = id.trim() === "" ? PLACEHOLDER_TOKEN : id.trim();
 }
 
-async function promptWorkerBlock(exampleDefaults: ParsedFromExample, current: Answers): Promise<void> {
+async function promptWorkerBlock(
+	exampleDefaults: ParsedFromExample,
+	current: Answers,
+): Promise<void> {
 	const merged = mergeParsed(exampleDefaults, {
 		webWorkerName: current.localWorkerNames?.web,
 		exampleDoWorkerName: current.localWorkerNames?.exampleDo,
@@ -388,8 +399,8 @@ async function promptWorkerBlock(exampleDefaults: ParsedFromExample, current: An
 				],
 				default: "cancel",
 			},
-			ctx
-		)
+			ctx,
+		),
 	);
 
 	if (sub === "cancel") {
@@ -402,19 +413,19 @@ async function promptWorkerBlock(exampleDefaults: ParsedFromExample, current: An
 	}
 
 	const prefixDefault =
-		inferPrefixFromWebWorkerName(merged.webWorkerName ?? current.localWorkerNames?.web ?? "") ?? "cf";
+		inferPrefixFromWebWorkerName(merged.webWorkerName ?? current.localWorkerNames?.web ?? "") ??
+		"cf";
 	const prefix = await inputPrompt({
 		message: "Worker name prefix",
 		default: prefixDefault,
 		validate: (v) =>
-			isValidWorkerPrefix(v) ||
-			"1–50 chars: lowercase letters, numbers, hyphens, underscores.",
+			isValidWorkerPrefix(v) || "1–50 chars: lowercase letters, numbers, hyphens, underscores.",
 	});
 	current.localWorkerNames = deriveLocalWorkerNames(prefix);
 	console.log(
 		pc.dim(
-			`  ${current.localWorkerNames.web}, ${current.localWorkerNames.exampleDo}, ${current.localWorkerNames.coordinatorDo}, ${current.localWorkerNames.processorDo}\n`
-		)
+			`  ${current.localWorkerNames.web}, ${current.localWorkerNames.exampleDo}, ${current.localWorkerNames.coordinatorDo}, ${current.localWorkerNames.processorDo}\n`,
+		),
 	);
 }
 
@@ -437,8 +448,8 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 
 	console.log(
 		pc.dim(
-			"\n  Local Wrangler worker script names (*-dev). Production names: .env.production when you deploy.\n"
-		)
+			"\n  Local Wrangler worker script names (*-dev). Production names: .env.production when you deploy.\n",
+		),
 	);
 
 	let localWorkerNames: LocalWorkerNames | null = null;
@@ -449,8 +460,8 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 					'Use a custom prefix for local worker names? (e.g. "acme" → acme-web-app-dev, …). Otherwise template defaults (cf-*).',
 				default: false,
 			},
-			ctx
-		)
+			ctx,
+		),
 	);
 
 	if (customizeWorkers) {
@@ -465,8 +476,8 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 		localWorkerNames = deriveLocalWorkerNames(prefix);
 		console.log(
 			pc.dim(
-				`  Web: ${localWorkerNames.web} · DOs: ${localWorkerNames.exampleDo}, ${localWorkerNames.coordinatorDo}, ${localWorkerNames.processorDo}\n`
-			)
+				`  Web: ${localWorkerNames.web} · DOs: ${localWorkerNames.exampleDo}, ${localWorkerNames.coordinatorDo}, ${localWorkerNames.processorDo}\n`,
+			),
 		);
 	}
 
@@ -480,12 +491,16 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 					"Set Cloudflare API token and account ID now? (Needed for wrangler deploy; often not required for local dev.)",
 				default: false,
 			},
-			ctx
-		)
+			ctx,
+		),
 	);
 
 	if (wantCf) {
-		console.log(pc.dim("\n  Dashboard: Workers → Overview → Account ID · User Profile → API Tokens → Create.\n"));
+		console.log(
+			pc.dim(
+				"\n  Dashboard: Workers → Overview → Account ID · User Profile → API Tokens → Create.\n",
+			),
+		);
 
 		const t = await password({
 			message: "CLOUDFLARE_API_TOKEN (Enter to skip)",
@@ -532,9 +547,29 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 
 async function defaultsNonInteractive(): Promise<Answers> {
 	const fromExample = await readDefaultsFromExample();
+	const demoFromEnv = process.env.SETUP_VALUE_FROM_CLOUDFLARE?.trim();
+	const valueFromCloudflare =
+		demoFromEnv && demoFromEnv.length > 0
+			? demoFromEnv
+			: (fromExample.valueFromCloudflare ?? "Hello from local dev");
+
+	let localWorkerNames = parsedWorkersToLocal(fromExample);
+	const prefixFromEnv = process.env.SETUP_WORKER_PREFIX?.trim();
+	if (prefixFromEnv) {
+		if (isValidWorkerPrefix(prefixFromEnv)) {
+			localWorkerNames = deriveLocalWorkerNames(prefixFromEnv);
+		} else {
+			console.warn(
+				pc.yellow(
+					`SETUP_WORKER_PREFIX is invalid — ignoring. Use lowercase letters, numbers, hyphens, underscores (1–50 chars). Got: ${prefixFromEnv.slice(0, 40)}`,
+				),
+			);
+		}
+	}
+
 	return {
 		sessionSecret: randomSessionSecret(),
-		valueFromCloudflare: fromExample.valueFromCloudflare ?? "Hello from local dev",
+		valueFromCloudflare,
 		apiToken:
 			fromExample.apiToken && !looksIncomplete(fromExample.apiToken)
 				? fromExample.apiToken
@@ -543,16 +578,22 @@ async function defaultsNonInteractive(): Promise<Answers> {
 			fromExample.accountId && isAccountId(fromExample.accountId)
 				? fromExample.accountId
 				: PLACEHOLDER_TOKEN,
-		localWorkerNames: parsedWorkersToLocal(fromExample),
+		localWorkerNames,
 	};
 }
 
 function afterWriteHints(answers: Answers) {
 	if (answers.localWorkerNames) {
-		console.log(pc.dim("Run bun run typegen or bun run dev so generated wrangler config picks up worker names."));
+		console.log(
+			pc.dim(
+				"Run bun run typegen or bun run dev so generated wrangler config picks up worker names.",
+			),
+		);
 	}
 	if (looksIncomplete(answers.apiToken) || looksIncomplete(answers.accountId)) {
-		console.log(pc.dim("Deploy: set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID before wrangler deploy."));
+		console.log(
+			pc.dim("Deploy: set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID before wrangler deploy."),
+		);
 	}
 }
 
@@ -567,7 +608,9 @@ async function writeDest(answers: Answers) {
 	console.log(pc.green(`Wrote ${dest}`));
 	if (generatedSession) {
 		console.log(
-			pc.dim("SESSION_SECRET was empty — generated one (required for signed cookies / sessions in the web worker).")
+			pc.dim(
+				"SESSION_SECRET was empty — generated one (required for signed cookies / sessions in the web worker).",
+			),
 		);
 	}
 	afterWriteHints(answers);
@@ -597,8 +640,8 @@ async function interactiveUpdateExisting(): Promise<void> {
 					],
 					default: "done",
 				},
-				ctx
-			)
+				ctx,
+			),
 		);
 
 		if (action === "done") {
@@ -614,8 +657,8 @@ async function interactiveUpdateExisting(): Promise<void> {
 							"Run the full wizard? You will re-enter every field (seeded from your current file where possible).",
 						default: false,
 					},
-					ctx
-				)
+					ctx,
+				),
 			);
 			if (!go) {
 				continue;
@@ -685,8 +728,8 @@ async function main() {
 					message: pc.yellow("Overwrite existing .env.local with a new full setup?"),
 					default: false,
 				},
-				ctx
-			)
+				ctx,
+			),
 		);
 		if (!ok) {
 			console.log(pc.dim("Cancelled."));

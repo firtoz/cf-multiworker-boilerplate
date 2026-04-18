@@ -1,15 +1,18 @@
 /**
  * For more details on how to configure Wrangler, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
+ *
+ * Generated: bun run generate-wrangler:local → wrangler-dev.jsonc; generate-wrangler:prod → wrangler-prod.jsonc
  */
 {
 	"$schema": "../../node_modules/wrangler/config-schema.json",
-	"name": "{{ kebabCase name }}",
+	"name": "{{WORKER_NAME}}",
+	{{WORKERS_DEV_BLOCK}}
 	"compatibility_date": "2025-12-17",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "./workers/app.ts",
 	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
+		"VALUE_FROM_CLOUDFLARE": "$VALUE_FROM_CLOUDFLARE"
 	},
 	"observability": {
 		"enabled": true,
@@ -17,10 +20,6 @@
 			"enabled": true
 		}
 	},
-	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
 	"placement": {
 		"mode": "smart"
 	},
@@ -38,32 +37,4 @@
 			"new_sqlite_classes": ["{{ pascalCase name }}"]
 		}
 	]
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	// /**
-	//  * D1 Database
-	//  * https://developers.cloudflare.com/d1/
-	//  */
-	// "d1_databases": [
-	// 	{
-	// 		"binding": "DB",
-	// 		"database_name": "{{ kebabCase name }}-db",
-	// 		"database_id": "your-database-id-here",
-	// 		"migrations_dir": "./drizzle/migrations"
-	// 	}
-	// ]
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": { "directory": "./public/", "binding": "ASSETS" },
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
 }

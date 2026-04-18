@@ -36,7 +36,7 @@ bun dev
 Or if they need to test in the browser:
 
 ```
-Test the changes by visiting http://localhost:5173 in your browser
+Test the changes using the URL from the dev terminal (`Local:` line — often port 5173, else the next free port)
 ```
 
 ## Why

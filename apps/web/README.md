@@ -147,7 +147,7 @@ console.log(env.MY_SECRET);
 bun run dev
 ```
 
-Starts dev server at http://localhost:5173
+Vite prints the local URL in the terminal (`Local:` — default port 5173, or the next free if it’s taken).
 
 ## Type Generation
 

@@ -70,10 +70,7 @@ function discoverWranglerConfigsPreferGenerated(
 	return out.sort((a, b) => (a < b ? -1 : 1));
 }
 
-function normalizeDiscoveryList(
-	workspaceRoot: string | null,
-	configs: string[],
-): string[] {
+function normalizeDiscoveryList(workspaceRoot: string | null, configs: string[]): string[] {
 	const webResolved = workspaceRoot ? webConfigPath(workspaceRoot) : "";
 	const out: string[] = [];
 	const seen = new Set<string>();

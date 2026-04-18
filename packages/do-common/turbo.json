@@ -7,6 +7,10 @@
 			"inputs": ["*.ts", "tsconfig.json", "biome.json"],
 			"outputs": []
 		},
+		"lint:format": {
+			"inputs": ["*.ts", "tsconfig.json", "biome.json"],
+			"outputs": []
+		},
 		"typecheck:local": {
 			"inputs": ["*.ts", "tsconfig.json", "package.json", "$TURBO_ROOT$/tsconfig.base.json"],
 			"outputs": []

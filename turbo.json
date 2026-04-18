@@ -61,6 +61,9 @@
 		"lint": {
 			"outputLogs": "new-only"
 		},
+		"lint:format": {
+			"outputLogs": "new-only"
+		},
 		"pre-deploy": {
 			"outputLogs": "new-only"
 		},

@@ -4,9 +4,17 @@ import * as path from "node:path";
 import type { PlopTypes } from "@turbo/gen";
 
 export default function generator(plop: PlopTypes.NodePlopAPI): void {
+	plop.setHelper(
+		"workerNameEnvKey",
+		(name: string) => {
+			const kebab = plop.getHelper("kebabCase")(name) as string;
+			return `${kebab.replace(/-/g, "_").toUpperCase()}_WORKER_NAME`;
+		},
+	);
+
 	plop.setGenerator("durable-object", {
 		description:
-			"Generate a new Durable Object with all necessary configuration files",
+			"Generate a new Durable Object (wrangler.jsonc.hbs, scripts, turbo). After generation, wire this package into sibling packages' typegen dependsOn and apps/web bindings if other workers need to call it.",
 		prompts: [
 			{
 				type: "input",
@@ -63,17 +71,21 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 			},
 			(answers, _config, _plopfileApi) => {
 				const data = answers as { name: string; description: string };
+				const kebab = plop.getHelper("kebabCase")(data.name) as string;
 				try {
+					execSync(`cd durable-objects/${kebab} && bun run generate-wrangler:local`, {
+						stdio: "inherit",
+					});
 					execSync(
-						`cd durable-objects/${plop.getHelper("kebabCase")(data.name)} && bunx wrangler types`,
+						`cd durable-objects/${kebab} && bunx wrangler types -c wrangler-dev.jsonc`,
 						{ stdio: "inherit" },
 					);
-					return `Generated TypeScript types for ${data.name}`;
+					return `Generated wrangler-dev.jsonc and worker-configuration.d.ts for ${data.name}`;
 				} catch (error) {
 					if (error instanceof Error) {
-						return `Failed to generate types: ${error.message}`;
+						return `Failed to generate wrangler/types: ${error.message}`;
 					}
-					return `Failed to generate types: ${error}`;
+					return `Failed to generate wrangler/types: ${error}`;
 				}
 			},
 			(answers, _config, _plopfileApi) => {
