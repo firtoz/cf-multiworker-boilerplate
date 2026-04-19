@@ -115,7 +115,7 @@ bunx turbo gen durable-object
 
 - **`.env.example`** (committed) — **Documentation** for humans/agents only; **not read** by setup, Wrangler, or builds. Use real env files below.
 - **`.env.local`** (gitignored) — Local dev, `cf-typegen`, and `bun --env-file` for builds.
-- **`.env.production`** (gitignored) — Production deploy: create with **`bun run setup:prod`**. `generate-wrangler --mode=remote` merges only keys listed in **`DEPLOYMENT_KEYS`** in `packages/scripts/src/utils/generate-wrangler.ts` (not the whole file dumped on top of `process.env`).
+- **`.env.production`** (gitignored) — Production deploy: create with **`bun run setup:prod`**. `generate-wrangler --mode=remote` merges deployment keys from repo-root `.env.production` (see `getDeploymentKeys` in `packages/scripts/src/utils/workspace-worker-catalog.ts`: `ROUTES`, `ROUTES_ZONE_NAME`, and each `*_WORKER_NAME` discovered from `wrangler.jsonc.hbs` under `apps/` and `durable-objects/`), plus any extra `*_WORKER_NAME` lines, onto `process.env` — not the whole file dumped blindly.
 
 Minimal root `.env.local` (only **`SESSION_SECRET`** is required for local web sessions; omit **`CLOUDFLARE_*`** if you use **`bunx wrangler login`**). Create it with **`bun run setup`** (generates **`SESSION_SECRET`**) or add **`SESSION_SECRET`** yourself (strong random string, min 16 characters).
 

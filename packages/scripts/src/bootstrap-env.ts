@@ -5,11 +5,12 @@ import { AbortPromptError, CancelPromptError, ExitPromptError } from "@inquirer/
 import { confirm, input as inputPrompt, password, select } from "@inquirer/prompts";
 import pc from "picocolors";
 import {
+	buildLocalSetupBanner,
 	CF_WRANGLER_LOGIN_EXPLAINER,
 	formatBanner,
 	isUnset,
-	LOCAL_SETUP_BANNER,
 } from "./utils/env-setup-manifest";
+import { getWorkerCatalog, getWorkerNameEnvKeys } from "./utils/prod-env-manifest";
 import { isWranglerLoggedIn, runWranglerLogin } from "./utils/wrangler-setup-auth";
 
 /**
@@ -89,12 +90,8 @@ function isPlausibleApiToken(value: string): boolean {
 	return v.length >= 30 && !/\s/.test(v);
 }
 
-type LocalWorkerNames = {
-	web: string;
-	exampleDo: string;
-	coordinatorDo: string;
-	processorDo: string;
-};
+/** Local `*_WORKER_NAME` values keyed like `WEB_WORKER_NAME` (full catalog from templates). */
+type LocalWorkerScriptNames = Record<string, string>;
 
 function isValidWorkerPrefix(s: string): boolean {
 	const t = s.trim().toLowerCase();
@@ -104,14 +101,21 @@ function isValidWorkerPrefix(s: string): boolean {
 	return /^[a-z0-9]+([_-][a-z0-9]+)*$/.test(t);
 }
 
-function deriveLocalWorkerNames(prefix: string): LocalWorkerNames {
+function deriveLocalWorkerNames(prefix: string): LocalWorkerScriptNames {
 	const p = prefix.trim().toLowerCase();
-	return {
-		web: `${p}-web-app-dev`,
-		exampleDo: `${p}-example-do-dev`,
-		coordinatorDo: `${p}-coordinator-do-dev`,
-		processorDo: `${p}-processor-do-dev`,
-	};
+	const out: LocalWorkerScriptNames = {};
+	for (const entry of getWorkerCatalog(root)) {
+		if (entry.packageRelDir === "apps/web") {
+			out[entry.envKey] = `${p}-web-app-dev`;
+		} else if (entry.packageRelDir.startsWith("durable-objects/")) {
+			const folder = entry.packageRelDir.replace(/^durable-objects\//, "");
+			out[entry.envKey] = `${p}-${folder}-dev`;
+		} else if (entry.packageRelDir.startsWith("apps/")) {
+			const folder = entry.packageRelDir.replace(/^apps\//, "");
+			out[entry.envKey] = `${p}-${folder}-dev`;
+		}
+	}
+	return out;
 }
 
 function inferPrefixFromWebWorkerName(web: string): string | undefined {
@@ -124,7 +128,7 @@ type Answers = {
 	/** Omitted from `.env.local` when `null` (use `wrangler login` / CI). */
 	apiToken: string | null;
 	accountId: string | null;
-	localWorkerNames: LocalWorkerNames | null;
+	localWorkerNames: LocalWorkerScriptNames | null;
 };
 
 function buildEnv(a: Answers): string {
@@ -141,15 +145,16 @@ SESSION_SECRET=${escapeEnvValue(a.sessionSecret)}
 	}
 
 	if (a.localWorkerNames) {
-		const w = a.localWorkerNames;
 		out += `
 
 # Local Wrangler worker script names (optional; omit to use generate-wrangler defaults)
-WEB_WORKER_NAME=${escapeEnvValue(w.web)}
-EXAMPLE_DO_WORKER_NAME=${escapeEnvValue(w.exampleDo)}
-COORDINATOR_DO_WORKER_NAME=${escapeEnvValue(w.coordinatorDo)}
-PROCESSOR_DO_WORKER_NAME=${escapeEnvValue(w.processorDo)}
 `;
+		for (const k of getWorkerNameEnvKeys(root)) {
+			const v = a.localWorkerNames[k];
+			if (v) {
+				out += `${k}=${escapeEnvValue(v)}\n`;
+			}
+		}
 	}
 
 	return out;
@@ -166,41 +171,49 @@ type ParsedFromExample = {
 	sessionSecret?: string;
 	apiToken?: string;
 	accountId?: string;
-	webWorkerName?: string;
-	exampleDoWorkerName?: string;
-	coordinatorDoWorkerName?: string;
-	processorDoWorkerName?: string;
+	/** Parsed `*_WORKER_NAME` lines present in the file. */
+	workerNames?: Partial<LocalWorkerScriptNames>;
 };
 
-const ENV_KEY_TO_PARSED: Record<string, keyof ParsedFromExample> = {
-	SESSION_SECRET: "sessionSecret",
-	CLOUDFLARE_API_TOKEN: "apiToken",
-	CLOUDFLARE_ACCOUNT_ID: "accountId",
-	WEB_WORKER_NAME: "webWorkerName",
-	EXAMPLE_DO_WORKER_NAME: "exampleDoWorkerName",
-	COORDINATOR_DO_WORKER_NAME: "coordinatorDoWorkerName",
-	PROCESSOR_DO_WORKER_NAME: "processorDoWorkerName",
-};
+function unquoteEnvValue(raw: string): string {
+	let val = raw;
+	if (val.startsWith('"') && val.endsWith('"')) {
+		val = val.slice(1, -1).replaceAll('\\"', '"').replaceAll("\\\\", "\\");
+	}
+	return val;
+}
 
 function parseEnvContent(text: string): ParsedFromExample {
 	const out: ParsedFromExample = {};
+	const workerKeySet = new Set(getWorkerNameEnvKeys(root));
 	for (const line of text.split("\n")) {
 		const m =
-			/^(SESSION_SECRET|CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|WEB_WORKER_NAME|EXAMPLE_DO_WORKER_NAME|COORDINATOR_DO_WORKER_NAME|PROCESSOR_DO_WORKER_NAME)=(.*)$/.exec(
+			/^(SESSION_SECRET|CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|[A-Z][A-Z0-9_]*)=(.*)$/.exec(
 				line.trim(),
 			);
 		if (!m) {
 			continue;
 		}
-		const prop = ENV_KEY_TO_PARSED[m[1]];
-		if (!prop) {
+		const key = m[1];
+		const val = unquoteEnvValue(m[2]);
+		if (key === "SESSION_SECRET") {
+			out.sessionSecret = val;
 			continue;
 		}
-		let val = m[2];
-		if (val.startsWith('"') && val.endsWith('"')) {
-			val = val.slice(1, -1).replaceAll('\\"', '"').replaceAll("\\\\", "\\");
+		if (key === "CLOUDFLARE_API_TOKEN") {
+			out.apiToken = val;
+			continue;
 		}
-		out[prop] = val;
+		if (key === "CLOUDFLARE_ACCOUNT_ID") {
+			out.accountId = val;
+			continue;
+		}
+		if (workerKeySet.has(key)) {
+			if (!out.workerNames) {
+				out.workerNames = {};
+			}
+			out.workerNames[key] = val;
+		}
 	}
 	return out;
 }
@@ -212,17 +225,19 @@ async function readParsedFromFile(path: string): Promise<ParsedFromExample> {
 	return parseEnvContent(await Bun.file(path).text());
 }
 
-function parsedWorkersToLocal(p: ParsedFromExample): LocalWorkerNames | null {
-	const { webWorkerName, exampleDoWorkerName, coordinatorDoWorkerName, processorDoWorkerName } = p;
-	if (webWorkerName && exampleDoWorkerName && coordinatorDoWorkerName && processorDoWorkerName) {
-		return {
-			web: webWorkerName,
-			exampleDo: exampleDoWorkerName,
-			coordinatorDo: coordinatorDoWorkerName,
-			processorDo: processorDoWorkerName,
-		};
+function parsedWorkersToLocal(p: ParsedFromExample): LocalWorkerScriptNames | null {
+	if (!p.workerNames) {
+		return null;
 	}
-	return null;
+	const out: LocalWorkerScriptNames = {};
+	for (const k of getWorkerNameEnvKeys(root)) {
+		const v = p.workerNames[k]?.trim();
+		if (!v) {
+			return null;
+		}
+		out[k] = v;
+	}
+	return out;
 }
 
 function answersFromParsed(p: ParsedFromExample): Answers {
@@ -235,7 +250,14 @@ function answersFromParsed(p: ParsedFromExample): Answers {
 }
 
 function mergeParsed(base: ParsedFromExample, overlay: ParsedFromExample): ParsedFromExample {
-	return { ...base, ...overlay };
+	return {
+		...base,
+		...overlay,
+		workerNames:
+			base.workerNames || overlay.workerNames
+				? { ...base.workerNames, ...overlay.workerNames }
+				: undefined,
+	};
 }
 
 function maskSecret(s: string, visibleEnd = 4): string {
@@ -273,9 +295,15 @@ function printSummary(answers: Answers, title = "Current .env.local") {
 
 	if (answers.localWorkerNames) {
 		const w = answers.localWorkerNames;
-		const pre = inferPrefixFromWebWorkerName(w.web) ?? "?";
+		const web = w.WEB_WORKER_NAME ?? Object.values(w)[0] ?? "";
+		const pre = inferPrefixFromWebWorkerName(web) ?? "?";
+		const preview = getWorkerNameEnvKeys(root)
+			.map((k) => w[k])
+			.filter(Boolean)
+			.slice(0, 4)
+			.join(", ");
 		console.log(
-			`    ${pc.dim("Worker names")}     prefix ${pc.cyan(pre)} → ${w.web}, ${w.exampleDo}, …`,
+			`    ${pc.dim("Worker names")}     prefix ${pc.cyan(pre)} → ${preview}${getWorkerNameEnvKeys(root).length > 4 ? ", …" : ""}`,
 		);
 	} else {
 		console.log(
@@ -378,12 +406,16 @@ async function promptWorkerBlock(
 	exampleDefaults: ParsedFromExample,
 	current: Answers,
 ): Promise<void> {
-	const merged = mergeParsed(exampleDefaults, {
-		webWorkerName: current.localWorkerNames?.web,
-		exampleDoWorkerName: current.localWorkerNames?.exampleDo,
-		coordinatorDoWorkerName: current.localWorkerNames?.coordinatorDo,
-		processorDoWorkerName: current.localWorkerNames?.processorDo,
-	});
+	const mergedWorkers: ParsedFromExample = { workerNames: { ...exampleDefaults.workerNames } };
+	if (current.localWorkerNames) {
+		if (!mergedWorkers.workerNames) {
+			mergedWorkers.workerNames = {};
+		}
+		for (const k of getWorkerNameEnvKeys(root)) {
+			mergedWorkers.workerNames[k] = current.localWorkerNames[k] ?? mergedWorkers.workerNames[k];
+		}
+	}
+	const merged = mergeParsed(exampleDefaults, mergedWorkers);
 
 	const sub = await withQuit((ctx) =>
 		select<"template" | "prefix" | "cancel">(
@@ -415,9 +447,9 @@ async function promptWorkerBlock(
 		return;
 	}
 
-	const prefixDefault =
-		inferPrefixFromWebWorkerName(merged.webWorkerName ?? current.localWorkerNames?.web ?? "") ??
-		"cf";
+	const webFromMerged =
+		merged.workerNames?.WEB_WORKER_NAME ?? current.localWorkerNames?.WEB_WORKER_NAME ?? "";
+	const prefixDefault = inferPrefixFromWebWorkerName(webFromMerged) ?? "cf";
 	const prefix = await inputPrompt({
 		message: "Worker name prefix",
 		default: prefixDefault,
@@ -425,11 +457,10 @@ async function promptWorkerBlock(
 			isValidWorkerPrefix(v) || "1–50 chars: lowercase letters, numbers, hyphens, underscores.",
 	});
 	current.localWorkerNames = deriveLocalWorkerNames(prefix);
-	console.log(
-		pc.dim(
-			`  ${current.localWorkerNames.web}, ${current.localWorkerNames.exampleDo}, ${current.localWorkerNames.coordinatorDo}, ${current.localWorkerNames.processorDo}\n`,
-		),
-	);
+	const names = getWorkerNameEnvKeys(root)
+		.map((k) => current.localWorkerNames?.[k])
+		.filter(Boolean);
+	console.log(pc.dim(`  ${names.join(", ")}\n`));
 }
 
 async function promptCloudflareInteractiveLocal(): Promise<{
@@ -537,7 +568,7 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 	console.log();
 	console.log(pc.bold("  Env setup"));
 	console.log(pc.dim("  Create or replace .env.local for local dev."));
-	console.log(pc.dim(formatBanner(LOCAL_SETUP_BANNER)));
+	console.log(pc.dim(formatBanner(buildLocalSetupBanner(root))));
 	console.log(pc.dim("  At yes/no and list menus: press q to exit (same as Esc).\n"));
 
 	const sessionSecret = await promptSessionSecretBlock();
@@ -548,7 +579,7 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 		),
 	);
 
-	let localWorkerNames: LocalWorkerNames | null = null;
+	let localWorkerNames: LocalWorkerScriptNames | null = null;
 	const customizeWorkers = await withQuit((ctx) =>
 		confirm(
 			{
@@ -561,7 +592,8 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 	);
 
 	if (customizeWorkers) {
-		const prefixDefault = inferPrefixFromWebWorkerName(defaults.webWorkerName ?? "") ?? "cf";
+		const prefixDefault =
+			inferPrefixFromWebWorkerName(defaults.workerNames?.WEB_WORKER_NAME ?? "") ?? "cf";
 		const prefix = await inputPrompt({
 			message: "Worker name prefix",
 			default: prefixDefault,
@@ -570,11 +602,11 @@ async function interactive(seed?: ParsedFromExample): Promise<Answers> {
 				"Use 1–50 chars: lowercase letters, numbers, hyphens, underscores (e.g. my-app).",
 		});
 		localWorkerNames = deriveLocalWorkerNames(prefix);
-		console.log(
-			pc.dim(
-				`  Web: ${localWorkerNames.web} · DOs: ${localWorkerNames.exampleDo}, ${localWorkerNames.coordinatorDo}, ${localWorkerNames.processorDo}\n`,
-			),
-		);
+		const preview = getWorkerNameEnvKeys(root)
+			.map((k) => localWorkerNames?.[k])
+			.filter(Boolean)
+			.join(", ");
+		console.log(pc.dim(`  ${preview}\n`));
 	}
 
 	const { apiToken, accountId } = await promptCloudflareInteractiveLocal();
@@ -655,7 +687,7 @@ async function interactiveUpdateExisting(): Promise<void> {
 	let answers = answersFromParsed(raw);
 
 	console.log(pc.dim("  At list/yes-no menus: q = quit · Esc = cancel · Ctrl+C = exit.\n"));
-	console.log(pc.dim(formatBanner(LOCAL_SETUP_BANNER)));
+	console.log(pc.dim(formatBanner(buildLocalSetupBanner(root))));
 	console.log();
 
 	for (;;) {
@@ -760,8 +792,7 @@ async function main() {
 	if (nonInteractive) {
 		answers = await defaultsNonInteractive();
 	} else {
-		const seed =
-			destExists && force ? mergeParsed({}, await readParsedFromFile(dest)) : undefined;
+		const seed = destExists && force ? mergeParsed({}, await readParsedFromFile(dest)) : undefined;
 		answers = await interactive(seed);
 	}
 

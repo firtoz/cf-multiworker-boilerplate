@@ -1,0 +1,8 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	// Ensures editors at the repo root still load packages/scripts compiler options (see bun run typecheck:root).
+	"extends": "./packages/scripts/tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true
+	}
+}

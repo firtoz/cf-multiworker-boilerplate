@@ -96,9 +96,9 @@ When adding new environment variables to any worker:
 
 1. **Document new variables in repo-root `.env.example`** (human-readable reference only — never commit secrets; **no script reads this file**). **`generate-wrangler`**, **`cf-typegen`**, **`bun run setup`**, and **`bun run setup:prod`** do **not** load **`.env.example`**. Real values live in **`.env.local`** (dev) and **`.env.production`** (prod); those files are gitignored.
 
-2. **Prod wrangler generation** — `generate-wrangler --mode=remote` merges **only** deployment keys from repo-root `.env.production` (see `DEPLOYMENT_KEYS` in `packages/scripts/src/utils/generate-wrangler.ts`) onto `process.env`.
+2. **Prod wrangler generation** — `generate-wrangler --mode=remote` merges **only** deployment keys from repo-root `.env.production` (see `getDeploymentKeys` in `packages/scripts/src/utils/workspace-worker-catalog.ts`, built from `wrangler.jsonc.hbs` under `apps/` and `durable-objects/`) onto `process.env`, plus any `*_WORKER_NAME` entries in the file.
 
-3. **If the var is interpolated into Wrangler config** (e.g. `$MY_NEW_VAR` in `wrangler.jsonc.hbs`), set it in **`.env.local`** / **`.env.production`** (or CI) so `wrangler types` and deploys see real values. If it must participate in remote wrangler generation, add its name to `DEPLOYMENT_KEYS` in `generate-wrangler.ts`.
+3. **If the var is interpolated into Wrangler config** (e.g. `$MY_NEW_VAR` in `wrangler.jsonc.hbs`), set it in **`.env.local`** / **`.env.production`** (or CI) so `wrangler types` and deploys see real values. New workers pick up `*_WORKER_NAME` keys automatically when you add a package with `wrangler.jsonc.hbs`. For other vars that must participate in remote wrangler generation but are not worker names or routes, extend `getDeploymentKeys` in `workspace-worker-catalog.ts` (or pass them via CI `process.env` if Wrangler reads them without template substitution).
 
 4. **Run typegen** to update the worker configuration type definitions:
    ```bash
@@ -125,7 +125,7 @@ Do not use React Router loader/action `context` to reach Cloudflare `env`; it is
 
 ## Deploy (dry-run vs live)
 
-- **`bun run setup`** writes **`.env.local`** (local dev). **`bun run setup:prod`** writes **`.env.production`** (prod deploy); keep prompts aligned with **`DEPLOYMENT_KEYS`** / **`prod-env-manifest.ts`** when you add env requirements.
+- **`bun run setup`** writes **`.env.local`** (local dev). **`bun run setup:prod`** writes **`.env.production`** (prod deploy); adding a worker package with `wrangler.jsonc.hbs` updates the catalog used by **`prod-env-manifest.ts`** and the setup wizards — no manual list of four worker names in bootstrap.
 - **Prerequisite** — Repo-root **`.env.production`** must exist for prod deploy commands. Create it with **`bun run setup:prod`** or edit it by hand (see **`.env.example`** as a checklist only). **`bun run check-prod-env`** exits immediately with a concrete checklist if it is missing (same check runs at the start of **`deploy`** / **`deploy:execute`**). **`.env.local` alone is not enough** for those flows. Typical first-time flow: **`setup:prod`** → **`check-prod-env`** → **`deploy`** (dry-run) or **`deploy:execute`** (live).
 - **`bun run deploy`** — Runs `scripts#wrangler:dry-run:prod` (after `cf-web-app#build:prod`): `wrangler deploy --dry-run` for each Durable Object package and the web app. **No live upload**, no `pre-deploy` queue creation.
 - **`bun run deploy:execute`** — Loads **`.env.production`** via root `package.json` (`--env-file`). Runs **`scripts#sync-secrets:prod`** (uploads values for `secrets.required` in `wrangler-prod.jsonc`, e.g. `SESSION_SECRET`, when they differ from a local hash cache), then **`scripts#pre-deploy`** (queues / checks), **`build:prod`**, **`^deploy`**, then the web app **`wrangler deploy`**. If Cloudflare still reports missing secrets after a successful sync, run `turbo run sync-secrets:prod --filter=scripts -- --force` or fix values in `.env.production`.

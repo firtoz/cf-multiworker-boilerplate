@@ -30,6 +30,7 @@
 		"lint:format": "turbo lint:format",
 		"typecheck": "turbo run typecheck:local",
 		"typecheck:local": "turbo run typecheck:local",
+		"typecheck:root": "bunx tsc --noEmit -p .",
 		"typecheck:prod": "turbo run typecheck:prod",
 		"typegen": "turbo run typegen:local",
 		"typegen:local": "turbo run typegen:local",

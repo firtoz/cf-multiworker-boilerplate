@@ -4,64 +4,27 @@
  * Generate wrangler-dev.jsonc (local) or wrangler-prod.jsonc (remote) from wrangler.jsonc.hbs
  * in the current working directory (apps/web or durable-objects/*).
  *
- * Remote (`--mode=remote`): repo-root `.env.production` merges `DEPLOYMENT_KEYS` and any `*_WORKER_NAME`
- * (merged on top of `process.env`). CI sets the same keys without a file.
+ * Remote (`--mode=remote`): repo-root `.env.production` merges deployment keys from
+ * `getDeploymentKeys(repoRoot)` and any `*_WORKER_NAME` (merged on top of `process.env`). CI sets the same keys without a file.
  *
- * Local: `LOCAL_DEFAULTS` + optional `cwd/.env.local` + repo-root `.env.local`, then `process.env`.
+ * Local: `buildLocalDefaults(repoRoot)` + optional `cwd/.env.local` + repo-root `.env.local`, then `process.env`.
  */
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { parse as parseDotenv } from "dotenv";
+import {
+	buildLocalDefaults,
+	buildProdDefaults,
+	defaultScriptNameForPackage,
+	getDeploymentKeys,
+	getWorkerNameEnvKeys,
+	workerNameEnvKeyForPackageDir,
+} from "./workspace-worker-catalog";
 
 type Mode = "local" | "remote";
 
 const REPO_ROOT_PACKAGE_NAME = "cf-multiworker-boilerplate";
-
-const LOCAL_DEFAULTS: Record<string, string> = {
-	WEB_WORKER_NAME: "cf-web-app-dev",
-	EXAMPLE_DO_WORKER_NAME: "cf-example-do-dev",
-	COORDINATOR_DO_WORKER_NAME: "cf-coordinator-do-dev",
-	PROCESSOR_DO_WORKER_NAME: "cf-processor-do-dev",
-};
-
-/** Default production worker script names (remote / `generate-wrangler --mode=remote`). */
-export const PROD_DEFAULTS: Record<string, string> = {
-	WEB_WORKER_NAME: "cf-web-app",
-	EXAMPLE_DO_WORKER_NAME: "cf-example-do",
-	COORDINATOR_DO_WORKER_NAME: "cf-coordinator-do",
-	PROCESSOR_DO_WORKER_NAME: "cf-processor-do",
-};
-
-/** Keys read from repo-root `.env.production` for remote wrangler (same names can be set in CI `process.env`). */
-export const DEPLOYMENT_KEYS = [
-	"ROUTES",
-	"ROUTES_ZONE_NAME",
-	"WEB_WORKER_NAME",
-	"EXAMPLE_DO_WORKER_NAME",
-	"COORDINATOR_DO_WORKER_NAME",
-	"PROCESSOR_DO_WORKER_NAME",
-] as const;
-
-/**
- * Env key for `{{WORKER_NAME}}` substitution: `apps/web` → `WEB_WORKER_NAME`;
- * `durable-objects/foo-bar` → `FOO_BAR_WORKER_NAME` (kebab folder → UPPER_SNAKE + `_WORKER_NAME`).
- */
-function workerNameEnvKeyForPackageDir(packageRelDir: string): string {
-	if (packageRelDir === "apps/web") {
-		return "WEB_WORKER_NAME";
-	}
-	const m = /^durable-objects\/([^/]+)$/.exec(packageRelDir);
-	if (m) {
-		const folder = m[1];
-		return `${folder.replace(/-/g, "_").toUpperCase()}_WORKER_NAME`;
-	}
-	throw new Error(`Unknown package directory for wrangler template: ${packageRelDir}`);
-}
-
-function defaultWorkerNameForDurableObjectFolder(folder: string, mode: Mode): string {
-	return mode === "local" ? `cf-${folder}-dev` : `cf-${folder}`;
-}
 
 function findRepoRoot(startDir: string): string {
 	let dir = path.resolve(startDir);
@@ -104,13 +67,16 @@ function processEnvSnapshot(): Record<string, string> {
 }
 
 /**
- * process.env first; repo-root `.env.production` overwrites `DEPLOYMENT_KEYS` and any `*_WORKER_NAME`
- * (so new `durable-objects/*` workers do not need a code change).
+ * process.env first; repo-root `.env.production` overwrites deployment keys and any `*_WORKER_NAME`
+ * (so new worker packages do not need a code change).
  */
-function mergeEnvForRemote(fileEnv: Record<string, string>): Record<string, string> {
+function mergeEnvForRemote(
+	fileEnv: Record<string, string>,
+	repoRoot: string,
+): Record<string, string> {
 	const base = processEnvSnapshot();
 	const out = { ...base };
-	for (const k of DEPLOYMENT_KEYS) {
+	for (const k of getDeploymentKeys(repoRoot)) {
 		const v = fileEnv[k]?.trim();
 		if (v !== undefined && v !== "") {
 			out[k] = v;
@@ -205,16 +171,16 @@ function buildSubstitutionMap(
 	mode: Mode,
 	packageRelDir: string,
 	env: Record<string, string>,
+	repoRoot: string,
 ): Record<string, string> {
-	const defaults = mode === "local" ? LOCAL_DEFAULTS : PROD_DEFAULTS;
+	const defaults = mode === "local" ? buildLocalDefaults(repoRoot) : buildProdDefaults(repoRoot);
 	const workerKey = workerNameEnvKeyForPackageDir(packageRelDir);
-	const doFolder = /^durable-objects\/([^/]+)$/.exec(packageRelDir)?.[1];
 
-	const fromDefaults = defaults[workerKey as keyof typeof defaults];
+	const fromDefaults = defaults[workerKey];
 	const workerName =
 		env[workerKey]?.trim() ||
 		(fromDefaults ?? "") ||
-		(doFolder ? defaultWorkerNameForDurableObjectFolder(doFolder, mode) : "") ||
+		defaultScriptNameForPackage(packageRelDir, mode) ||
 		env.WORKER_NAME?.trim() ||
 		"";
 
@@ -224,12 +190,7 @@ function buildSubstitutionMap(
 		WORKERS_DEV_BLOCK: workersDevAndRoutesBlock(mode, env),
 	};
 
-	for (const k of [
-		"WEB_WORKER_NAME",
-		"EXAMPLE_DO_WORKER_NAME",
-		"COORDINATOR_DO_WORKER_NAME",
-		"PROCESSOR_DO_WORKER_NAME",
-	] as const) {
+	for (const k of getWorkerNameEnvKeys(repoRoot)) {
 		map[k] = env[k]?.trim() || defaults[k] || "";
 	}
 
@@ -271,10 +232,11 @@ export async function generateWranglerConfig(): Promise<boolean> {
 	const packageLocal = loadEnvFile(path.join(cwd, ".env.local"));
 	const mergedLocal = { ...packageLocal, ...rootLocal };
 
+	const prodDefaults = buildProdDefaults(repoRoot);
 	let env: Record<string, string>;
 	if (mode === "local") {
 		env = {
-			...LOCAL_DEFAULTS,
+			...buildLocalDefaults(repoRoot),
 			...mergedLocal,
 			...processEnvSnapshot(),
 		};
@@ -283,15 +245,15 @@ export async function generateWranglerConfig(): Promise<boolean> {
 		if (Object.keys(rootProd).length > 0) {
 			console.log(`Loaded repo-root .env.production (deployment keys merge with process.env)`);
 		}
-		env = mergeEnvForRemote(rootProd);
-		for (const [k, v] of Object.entries(PROD_DEFAULTS)) {
+		env = mergeEnvForRemote(rootProd, repoRoot);
+		for (const [k, v] of Object.entries(prodDefaults)) {
 			if (env[k] === undefined || env[k] === "") {
 				env[k] = v;
 			}
 		}
 	}
 
-	const substitutions = buildSubstitutionMap(mode, packageRelDir, env);
+	const substitutions = buildSubstitutionMap(mode, packageRelDir, env, repoRoot);
 	let template = fs.readFileSync(templatePath, "utf8");
 	template = applyTemplate(template, substitutions);
 

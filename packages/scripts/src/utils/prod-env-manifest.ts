@@ -1,13 +1,19 @@
 /**
- * Single place for production deploy env shape: aligns `setup:prod`, docs, and generate-wrangler remote keys.
- * When adding DEPLOYMENT_KEYS or secrets in wrangler templates, update this module and bootstrap-env-prod prompts.
+ * Production deploy env shape: aligns `setup:prod`, docs, and generate-wrangler remote keys.
+ * Deployment worker names and keys are derived from `wrangler.jsonc.hbs` under `apps/` and `durable-objects/` via `workspace-worker-catalog`.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { findNodeAtLocation, parseTree } from "jsonc-parser";
-import { DEPLOYMENT_KEYS, PROD_DEFAULTS } from "./generate-wrangler";
 
-export { DEPLOYMENT_KEYS, PROD_DEFAULTS };
+export {
+	buildLocalDefaults,
+	buildProdDefaults,
+	getDeploymentKeys,
+	getWorkerCatalog,
+	getWorkerNameEnvKeys,
+	workerNameEnvKeyForPackageDir,
+} from "./workspace-worker-catalog";
 
 /**
  * Union of `secrets.required` across all `wrangler.jsonc.hbs` under apps/ and durable-objects/.

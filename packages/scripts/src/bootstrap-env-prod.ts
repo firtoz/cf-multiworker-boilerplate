@@ -2,7 +2,7 @@
 import path from "node:path";
 /**
  * Interactive setup for repo-root `.env.production` (live deploy / prod wrangler).
- * See `prod-env-manifest.ts` for key lists; keep prompts aligned with DEPLOYMENT_KEYS and templates.
+ * Deployment keys and defaults come from `prod-env-manifest` / workspace worker catalog (wrangler templates).
  */
 import { stdin as input } from "node:process";
 import readline from "node:readline";
@@ -11,22 +11,27 @@ import { confirm, input as inputPrompt, password, select } from "@inquirer/promp
 import pc from "picocolors";
 import { getRepoRoot } from "./load-env-production";
 import {
+	buildProdSetupBanner,
 	CF_WRANGLER_LOGIN_EXPLAINER,
 	formatBanner,
 	isUnset,
 	missingRequiredProdSecrets,
-	PROD_SETUP_BANNER,
 } from "./utils/env-setup-manifest";
 import {
-	DEPLOYMENT_KEYS,
+	buildProdDefaults,
 	discoverSecretsRequiredFromTemplates,
-	PROD_DEFAULTS,
+	getDeploymentKeys,
+	getWorkerCatalog,
+	getWorkerNameEnvKeys,
 } from "./utils/prod-env-manifest";
 import { isWranglerLoggedIn, runWranglerLogin } from "./utils/wrangler-setup-auth";
 
 const root = getRepoRoot();
 const dest = path.join(root, ".env.production");
 const destLocal = path.join(root, ".env.local");
+
+const DEPLOYMENT_KEYS = getDeploymentKeys(root);
+const PROD_DEFAULTS = buildProdDefaults(root);
 
 function parseCfTokenFromEnv(raw: string | undefined): string | null {
 	if (raw === undefined || isUnset(raw)) {
@@ -104,26 +109,24 @@ type ProdAnswers = {
 	/** Omitted from file when `null` — empty ROUTES ⇒ workers.dev / defaults in generate-wrangler. */
 	routes: string | null;
 	routesZoneName: string | null;
-	/** Omitted when `null` — substitution uses PROD_DEFAULTS from generate-wrangler. */
-	webWorkerName: string | null;
-	exampleDoWorkerName: string | null;
-	coordinatorDoWorkerName: string | null;
-	processorDoWorkerName: string | null;
+	/** Omitted when `null` — substitution uses catalog defaults from generate-wrangler. Keyed by `*_WORKER_NAME`. */
+	workerScriptNames: Record<string, string | null>;
 	/** Declared in wrangler `secrets.required`; value must be set for deploy (omit line only before first value). */
 	extraSecrets: Record<string, string | null>;
 };
 
 function defaultProdAnswers(): ProdAnswers {
+	const workerScriptNames: Record<string, string | null> = {};
+	for (const k of getWorkerNameEnvKeys(root)) {
+		workerScriptNames[k] = null;
+	}
 	return {
 		sessionSecret: "",
 		cloudflareApiToken: null,
 		cloudflareAccountId: null,
 		routes: null,
 		routesZoneName: null,
-		webWorkerName: null,
-		exampleDoWorkerName: null,
-		coordinatorDoWorkerName: null,
-		processorDoWorkerName: null,
+		workerScriptNames,
 		extraSecrets: {},
 	};
 }
@@ -153,23 +156,17 @@ function parseExtraSecretFromFile(raw: string | undefined): string | null {
 	return raw.trim();
 }
 
-function deploymentLineValue(a: ProdAnswers, key: (typeof DEPLOYMENT_KEYS)[number]): string | null {
-	switch (key) {
-		case "ROUTES":
-			return a.routes;
-		case "ROUTES_ZONE_NAME":
-			return a.routesZoneName;
-		case "WEB_WORKER_NAME":
-			return a.webWorkerName;
-		case "EXAMPLE_DO_WORKER_NAME":
-			return a.exampleDoWorkerName;
-		case "COORDINATOR_DO_WORKER_NAME":
-			return a.coordinatorDoWorkerName;
-		case "PROCESSOR_DO_WORKER_NAME":
-			return a.processorDoWorkerName;
-		default:
-			return null;
+function deploymentLineValue(a: ProdAnswers, key: string): string | null {
+	if (key === "ROUTES") {
+		return a.routes;
 	}
+	if (key === "ROUTES_ZONE_NAME") {
+		return a.routesZoneName;
+	}
+	if (Object.hasOwn(a.workerScriptNames, key)) {
+		return a.workerScriptNames[key] ?? null;
+	}
+	return null;
 }
 
 /** Loose parse: KEY=value for common prod keys and extras. */
@@ -200,19 +197,10 @@ function prodAnswersFromRecord(r: Record<string, string>, discovered: string[]):
 	a.cloudflareAccountId = parseCfAccountFromEnv(r.CLOUDFLARE_ACCOUNT_ID);
 	a.routes = parseOptionalDeploymentString(r.ROUTES);
 	a.routesZoneName = parseOptionalDeploymentString(r.ROUTES_ZONE_NAME);
-	a.webWorkerName = parseProdWorkerSlot(r.WEB_WORKER_NAME, PROD_DEFAULTS.WEB_WORKER_NAME);
-	a.exampleDoWorkerName = parseProdWorkerSlot(
-		r.EXAMPLE_DO_WORKER_NAME,
-		PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME,
-	);
-	a.coordinatorDoWorkerName = parseProdWorkerSlot(
-		r.COORDINATOR_DO_WORKER_NAME,
-		PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME,
-	);
-	a.processorDoWorkerName = parseProdWorkerSlot(
-		r.PROCESSOR_DO_WORKER_NAME,
-		PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME,
-	);
+	for (const k of getWorkerNameEnvKeys(root)) {
+		const def = PROD_DEFAULTS[k] ?? "";
+		a.workerScriptNames[k] = parseProdWorkerSlot(r[k], def);
+	}
 
 	const known = new Set([
 		"SESSION_SECRET",
@@ -433,7 +421,7 @@ async function interactive(seed?: ProdAnswers): Promise<ProdAnswers> {
 	console.log();
 	console.log(pc.bold("  Production env (.env.production)"));
 	console.log(pc.dim("  Used for deploy:execute, sync-secrets, generate-wrangler --mode=remote."));
-	console.log(pc.dim(formatBanner(PROD_SETUP_BANNER)));
+	console.log(pc.dim(formatBanner(buildProdSetupBanner(root))));
 	console.log(pc.dim("  At menus: q = quit · Esc = cancel.\n"));
 
 	await maybePrefillFromLocal(a);
@@ -476,35 +464,15 @@ async function interactive(seed?: ProdAnswers): Promise<ProdAnswers> {
 		),
 	);
 
-	const wWeb = await inputPrompt({
-		message: `WEB_WORKER_NAME (default ${PROD_DEFAULTS.WEB_WORKER_NAME})`,
-		default: a.webWorkerName ?? PROD_DEFAULTS.WEB_WORKER_NAME,
-	});
-	a.webWorkerName =
-		wWeb.trim() === "" || wWeb.trim() === PROD_DEFAULTS.WEB_WORKER_NAME ? null : wWeb.trim();
-
-	const wEx = await inputPrompt({
-		message: `EXAMPLE_DO_WORKER_NAME (default ${PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME})`,
-		default: a.exampleDoWorkerName ?? PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME,
-	});
-	a.exampleDoWorkerName =
-		wEx.trim() === "" || wEx.trim() === PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME ? null : wEx.trim();
-
-	const wCo = await inputPrompt({
-		message: `COORDINATOR_DO_WORKER_NAME (default ${PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME})`,
-		default: a.coordinatorDoWorkerName ?? PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME,
-	});
-	a.coordinatorDoWorkerName =
-		wCo.trim() === "" || wCo.trim() === PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME
-			? null
-			: wCo.trim();
-
-	const wPr = await inputPrompt({
-		message: `PROCESSOR_DO_WORKER_NAME (default ${PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME})`,
-		default: a.processorDoWorkerName ?? PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME,
-	});
-	a.processorDoWorkerName =
-		wPr.trim() === "" || wPr.trim() === PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME ? null : wPr.trim();
+	for (const entry of getWorkerCatalog(root)) {
+		const def = PROD_DEFAULTS[entry.envKey] ?? "";
+		const w = await inputPrompt({
+			message: `${entry.envKey} — ${entry.label} (default ${def})`,
+			default: a.workerScriptNames[entry.envKey] ?? def,
+		});
+		const t = w.trim();
+		a.workerScriptNames[entry.envKey] = t === "" || t === def ? null : t;
+	}
 
 	const known = new Set([
 		"SESSION_SECRET",
@@ -535,22 +503,11 @@ async function defaultsNonInteractive(): Promise<ProdAnswers> {
 	a.cloudflareAccountId = parseCfAccountFromEnv(process.env.SETUP_CLOUDFLARE_ACCOUNT_ID);
 	a.routes = parseOptionalDeploymentString(process.env.SETUP_ROUTES);
 	a.routesZoneName = parseOptionalDeploymentString(process.env.SETUP_ROUTES_ZONE_NAME);
-	a.webWorkerName = parseProdWorkerSlot(
-		process.env.SETUP_WEB_WORKER_NAME,
-		PROD_DEFAULTS.WEB_WORKER_NAME,
-	);
-	a.exampleDoWorkerName = parseProdWorkerSlot(
-		process.env.SETUP_EXAMPLE_DO_WORKER_NAME,
-		PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME,
-	);
-	a.coordinatorDoWorkerName = parseProdWorkerSlot(
-		process.env.SETUP_COORDINATOR_DO_WORKER_NAME,
-		PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME,
-	);
-	a.processorDoWorkerName = parseProdWorkerSlot(
-		process.env.SETUP_PROCESSOR_DO_WORKER_NAME,
-		PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME,
-	);
+	for (const k of getWorkerNameEnvKeys(root)) {
+		const def = PROD_DEFAULTS[k] ?? "";
+		const raw = process.env[`SETUP_${k}` as keyof NodeJS.ProcessEnv] as string | undefined;
+		a.workerScriptNames[k] = parseProdWorkerSlot(raw, def);
+	}
 
 	const discovered = discoverSecretsRequiredFromTemplates(root);
 	const known = new Set([
@@ -630,9 +587,10 @@ function printSummary(a: ProdAnswers, title = "Current .env.production") {
 	console.log(`    ${pc.dim("Routes")}        ${routesLine}`);
 	const wLabel = (slot: string | null, def: string) =>
 		slot === null ? pc.dim(`default (${def})`) : slot;
-	console.log(
-		`    ${pc.dim("Workers")}       ${wLabel(a.webWorkerName, PROD_DEFAULTS.WEB_WORKER_NAME)}, ${wLabel(a.exampleDoWorkerName, PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME)}, …`,
+	const workerParts = getWorkerCatalog(root).map((e) =>
+		wLabel(a.workerScriptNames[e.envKey], PROD_DEFAULTS[e.envKey] ?? ""),
 	);
+	console.log(`    ${pc.dim("Workers")}       ${workerParts.join(", ")}`);
 	console.log();
 }
 
@@ -642,7 +600,7 @@ async function interactiveUpdateExisting(): Promise<void> {
 	let answers = prodAnswersFromRecord(raw, discovered);
 
 	console.log(pc.dim("  At menus: q = quit · Esc = cancel.\n"));
-	console.log(pc.dim(formatBanner(PROD_SETUP_BANNER)));
+	console.log(pc.dim(formatBanner(buildProdSetupBanner(root))));
 	console.log();
 
 	for (;;) {
@@ -699,32 +657,15 @@ async function interactiveUpdateExisting(): Promise<void> {
 				default: answers.routesZoneName ?? "",
 			});
 			answers.routesZoneName = z0.trim() === "" ? null : z0.trim();
-			const ww = await inputPrompt({
-				message: `WEB_WORKER_NAME (empty or default ${PROD_DEFAULTS.WEB_WORKER_NAME} to omit)`,
-				default: answers.webWorkerName ?? PROD_DEFAULTS.WEB_WORKER_NAME,
-			});
-			answers.webWorkerName =
-				ww.trim() === "" || ww.trim() === PROD_DEFAULTS.WEB_WORKER_NAME ? null : ww.trim();
-			const we = await inputPrompt({
-				message: `EXAMPLE_DO_WORKER_NAME (empty or default ${PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME} to omit)`,
-				default: answers.exampleDoWorkerName ?? PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME,
-			});
-			answers.exampleDoWorkerName =
-				we.trim() === "" || we.trim() === PROD_DEFAULTS.EXAMPLE_DO_WORKER_NAME ? null : we.trim();
-			const wc = await inputPrompt({
-				message: `COORDINATOR_DO_WORKER_NAME (empty or default ${PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME} to omit)`,
-				default: answers.coordinatorDoWorkerName ?? PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME,
-			});
-			answers.coordinatorDoWorkerName =
-				wc.trim() === "" || wc.trim() === PROD_DEFAULTS.COORDINATOR_DO_WORKER_NAME
-					? null
-					: wc.trim();
-			const wp = await inputPrompt({
-				message: `PROCESSOR_DO_WORKER_NAME (empty or default ${PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME} to omit)`,
-				default: answers.processorDoWorkerName ?? PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME,
-			});
-			answers.processorDoWorkerName =
-				wp.trim() === "" || wp.trim() === PROD_DEFAULTS.PROCESSOR_DO_WORKER_NAME ? null : wp.trim();
+			for (const entry of getWorkerCatalog(root)) {
+				const def = PROD_DEFAULTS[entry.envKey] ?? "";
+				const cur = await inputPrompt({
+					message: `${entry.envKey} (empty or default ${def} to omit)`,
+					default: answers.workerScriptNames[entry.envKey] ?? def,
+				});
+				const t = cur.trim();
+				answers.workerScriptNames[entry.envKey] = t === "" || t === def ? null : t;
+			}
 			await writeDest(answers);
 		}
 	}
