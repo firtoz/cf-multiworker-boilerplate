@@ -31,6 +31,8 @@ Every worker’s `wrangler.jsonc` has a top-level `"name"` (Cloudflare worker sc
 | `durable-objects/coordinator-do/wrangler.jsonc` | `cf-starter-coordinator-do` | `cf-starter-processor-do` |
 | `durable-objects/processor-do/wrangler.jsonc` | `cf-starter-processor-do` | `cf-starter-coordinator-do` |
 
+**Circular DO bindings (2-node `script_name` cycles):** Use **`packages/scripts/src/deploy-cyclic-cross-worker.ts`** as each package’s **`deploy`** (see starter **`processor-do`** / **`coordinator-do`**). It **`wrangler deploy --dry-run`**s both sides; **sacred** path = separate full deploys; else **phased** from **pipeline primary** (default: lex larger Worker name; env **`PIPELINE_PRIMARY_SCRIPT`** to override). Turbo should run **primary** before the other package’s **`deploy`**. **`pre-deploy`** only logs cycles via **`bootstrapCircularCrossScriptDOBindings`**.
+
 **Naming pattern (forks):** Derive a short prefix from the project slug (e.g. `my-saas` → `my-saas-web`, `my-saas-example-do`, `my-saas-coordinator-do`, `my-saas-processor-do`). Rename **`apps/web/package.json`** `name` to match the web worker (e.g. `my-saas-web`) and update Turbo `--filter=` references. Update:
 
 - Each file’s `"name"`.

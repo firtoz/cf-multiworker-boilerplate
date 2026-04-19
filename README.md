@@ -1,5 +1,18 @@
 # Cloudflare Multi-Worker Starter Kit
 
+[![GitHub: use this template](https://img.shields.io/badge/GitHub-use%20this%20template-24292e?logo=github)](https://github.com/firtoz/cf-multiworker-starter-kit/generate)
+[![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](https://github.com/firtoz/cf-multiworker-starter-kit/blob/main/README.md#license)
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/workers/)
+[![Durable Objects](https://img.shields.io/badge/Durable%20Objects-1e293b?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/durable-objects/)
+[![Turborepo](https://img.shields.io/badge/Turborepo-EF4444?logo=turbo&logoColor=white)](https://turbo.build/)
+[![React Router](https://img.shields.io/badge/React%20Router-7-121212?logo=react&logoColor=61DAFB)](https://reactrouter.com/)
+[![Bun](https://img.shields.io/badge/Bun-000000?logo=bun&logoColor=fff)](https://bun.sh/)
+[![Hono](https://img.shields.io/badge/Hono-E36002?logo=hono&logoColor=white)](https://hono.dev/)
+
+![Cloudflare Multi-worker Starter Kit — Monorepo for full-stack Cloudflare Workers & Durable Objects, type safety, ready to ship](docs/branding/banner.jpg)
+
 Production-proven Turborepo monorepo starter kit for full-stack Cloudflare Workers apps — Durable Objects, end-to-end type safety, and a battle-tested deploy pipeline.
 
 **Why this repo exists:** I ship several new projects a week and use this starter as my default stack—it keeps changing when real work surfaces gaps (env flows, deploy safety, typegen, monorepo ergonomics). If it saves you setup time, use it as a template or fork; if you want to tighten patterns for everyone, issues and pull requests are welcome—see [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -156,13 +169,23 @@ Uses Bun with a frozen lockfile and Turborepo for parallel/cached tasks.
 | Command | What it does |
 |--------|----------------|
 | **`bun run deploy`** | Runs **`check-prod-env`** first, then after **`cf-starter-web#build:prod`**, runs **`wrangler deploy --dry-run`** for each DO (`wrangler-prod.jsonc`) and the web app (`build/server/wrangler.json`). **No uploads**, no queue creation. |
-| **`bun run deploy:execute`** | Runs **`check-prod-env`**, then **`sync-secrets:prod`**, **`pre-deploy`** (queues + validate consumers), **`build:prod`**, **live `wrangler deploy`** for workspace DOs (order respects cross-worker DO bindings), then deploys the web worker from the production build. |
+| **`bun run deploy:execute`** | Runs **`check-prod-env`**, then **`sync-secrets:prod`**, **`pre-deploy`** (queues + validate consumers), **`build:prod`**, **live `wrangler deploy`** for workspace DOs (each DO package uses **`deploy-cyclic-cross-worker.ts`**: dry-run both sides of a 2-node `script_name` cycle; **sacred** path = one deploy per worker; else **phased** from the **pipeline primary** — default = lexicographically larger Worker name, overridable with **`PIPELINE_PRIMARY_SCRIPT`**), then deploys the web worker from the production build. |
 
 Use **`deploy`** in CI or locally to verify bundles/config without changing Cloudflare state. Use **`deploy:execute`** when you intend to ship.
 
-**Turbo tip:** Most tasks are cached when inputs are unchanged. Only **`dev`** and **`clean`** always skip cache. To force a fresh run (e.g. redeploy same tree), use `turbo run deploy:execute --filter=cf-starter-web --force`.
+### What `deploy:execute` runs (in order)
 
-**If live deploy fails** with errors about bindings to another worker script: ensure dependent workers are deployed first (this repo's Turbo graph orders processor before coordinator where required). See [AGENTS.md](AGENTS.md) deploy section.
+Root **`package.json`** runs **`check-prod-env`** before Turbo. Then Turbo runs the live pipeline:
+
+1. **`generate-wrangler:prod`** — Writes **`wrangler-prod.jsonc`** for each app/DO (from templates + `.env.production`). Required input for secrets and deploys.
+2. **`sync-secrets:prod`** — Reads `secrets.required` in each generated prod config and runs **`wrangler secret put`** for values present in **`.env.production`** (with a local hash cache in **`.wrangler-secret-sync.json`**; use the script’s **`--force`** flag to push every secret). See `packages/scripts/src/sync-wrangler-secrets.ts`.
+3. **`pre-deploy`** — Scans wrangler configs for **queue** names; lists queues with **`wrangler queues list`**, creates missing ones with **`wrangler queues create`**, then **validates queue consumer** settings (e.g. `max_batch_timeout` minimums). It logs cyclic cross-worker **`script_name`** Durable Object graphs via **`bootstrapCircularCrossScriptDOBindings`** (`packages/scripts/src/utils/worker-script-cycle-bootstrap.ts`). **`deploy-cyclic-cross-worker.ts`** (each DO **`deploy`**) decides phased vs single deploy using **`wrangler deploy --dry-run`** on both scripts in a 2-node cycle. See `packages/scripts/src/pre-deploy.ts`.
+4. **`build:prod`** — Production build for **`cf-starter-web`** (React Router / server bundle).
+5. **Live `wrangler deploy` for each Worker** — Turbo runs **`deploy`** on workspace packages **before** the web app’s **`deploy:execute`**. **`durable-objects/*`** use **`deploy-cyclic-cross-worker.ts`** (no-op skip for the non-primary side only when a **phased** run is required). Keep **`coordinator-do#deploy`** **`dependsOn`** **`processor-do#deploy`** so the default pipeline primary (lexicographically larger Worker name, usually **processor**) runs first. **`bun run --cwd packages/scripts cyclic-do-status`** prints JSON health for all 2-node cycles. Finally **`cf-starter-web`** deploys the edge + SSR worker from **`build/server/wrangler.json`**.
+
+Together, this keeps **queues**, **secrets**, and **workers** aligned so deploys succeed without hand-ordering steps.
+
+**Turbo tip:** Most tasks are cached when inputs are unchanged. Only **`dev`** and **`clean`** always skip cache. To force a fresh run (e.g. redeploy same tree), use `turbo run deploy:execute --filter=cf-starter-web --force`.
 
 ## Scripts
 
@@ -182,7 +205,8 @@ Use **`deploy`** in CI or locally to verify bundles/config without changing Clou
 - `bun run deploy:execute` — **Live** deploy pipeline
 
 ### Dependency management
-- `bun run outdated` — Outdated deps across workspaces
+- `bun run outdated` — Outdated deps across workspaces (includes **Wrangler** via the workspace catalog)
+- `bun update wrangler` — From the **repo root**, bumps **Wrangler** to the newest version allowed by **`workspaces.catalog.wrangler`** in root **`package.json`**; **`bun.lock`** pins the exact release. **`packages/scripts`** also depends on **`wrangler`** (same catalog) so **`bunx wrangler`** in **`pre-deploy`** and other scripts uses that install instead of an older **`bunx`** cache
 - `bun run update:interactive` — Interactive updates
 - `bun run clean` — Remove `node_modules` and build artifacts (**Turbo `clean`**)
 

@@ -14,7 +14,8 @@
 		"pre-deploy": "bun ./src/pre-deploy.ts",
 		"sync-secrets:prod": "bun ./src/sync-wrangler-secrets.ts",
 		"wrangler:dry-run:prod": "bun ./src/wrangler-dry-run-prod.ts",
-		"generate-wrangler": "bun ./src/utils/generate-wrangler.ts"
+		"generate-wrangler": "bun ./src/utils/generate-wrangler.ts",
+		"cyclic-do-status": "bun ./src/deploy-cyclic-cross-worker.ts --status"
 	},
 	"dependencies": {
 		"@firtoz/worker-helper": "^1.6.1",
@@ -29,6 +30,7 @@
 		"@types/node": "catalog:",
 		"@typescript/native-preview": "catalog:",
 		"picocolors": "^1.1.1",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"wrangler": "catalog:"
 	}
 }

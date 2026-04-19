@@ -13,7 +13,7 @@
 		"typecheck:prod": "tsgo --noEmit -p ./tsconfig.json",
 		"lint": "biome check --write .",
 		"lint:format": "biome format --write .",
-		"deploy": "bunx wrangler deploy -c wrangler-prod.jsonc"
+		"deploy": "bun ../../packages/scripts/src/deploy-cyclic-cross-worker.ts"
 	},
 	"packageManager": "bun@1.3.0",
 	"devDependencies": {

@@ -9,6 +9,7 @@ apps/web/wrangler-dev.jsonc
 apps/web/wrangler-prod.jsonc
 durable-objects/**/wrangler-dev.jsonc
 durable-objects/**/wrangler-prod.jsonc
+durable-objects/**/wrangler-phased-strip-*.json
 .dev.vars
 
 # Env — real secrets only in `.env.local` / `.env.production` (never commit plain `.env`)
