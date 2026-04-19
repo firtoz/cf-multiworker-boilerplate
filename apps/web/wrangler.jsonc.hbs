@@ -8,15 +8,14 @@
 	"$schema": "../../node_modules/wrangler/config-schema.json",
 	"name": "{{WORKER_NAME}}",
 	{{WORKERS_DEV_BLOCK}}
-	"compatibility_date": "2025-12-17",
+	"compatibility_date": "2026-04-17",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "./workers/app.ts",
 	/* Declares secret bindings for deploy + wrangler types without relying on .env (CI-friendly). See https://developers.cloudflare.com/changelog/post/2026-03-24-secrets-config-property/ */
 	"secrets": {
-		"required": ["SESSION_SECRET"]
-	},
-	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "$VALUE_FROM_CLOUDFLARE"
+		"required": [
+			"SESSION_SECRET",
+		]
 	},
 	"observability": {
 		"enabled": true,

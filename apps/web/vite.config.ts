@@ -8,7 +8,6 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, type Plugin, type UserConfig } from "vite";
 import { imagetools } from "vite-imagetools";
 import devtoolsJson from "vite-plugin-devtools-json";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 type AuxiliaryWorkerConfig = Exclude<PluginConfig["auxiliaryWorkers"], undefined>[number];
 
@@ -91,7 +90,6 @@ export default defineConfig((configEnv) => {
 			// Prevents it from running on auxiliary Durable Object worker environments
 			// @react-router/dev resolves Vite from its own nested dependency; types differ from hoisted vite.
 			...(limitToMainEnvironments(reactRouter() as unknown as Plugin) as Plugin[]),
-			tsconfigPaths(),
 			imagetools({
 				include: "**/*.{heif,avif,jpeg,jpg,png,tiff,webp,gif,svg}?*",
 				exclude: [],
@@ -113,6 +111,9 @@ export default defineConfig((configEnv) => {
 		optimizeDeps: {
 			include: ["react", "react-dom", "react-router"],
 			exclude: [],
+		},
+		resolve: {
+			tsconfigPaths: true,
 		},
 	} as UserConfig;
 });

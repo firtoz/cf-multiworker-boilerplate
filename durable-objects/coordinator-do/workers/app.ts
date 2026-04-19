@@ -23,7 +23,6 @@ type CoordinatorWorkerEnv = {
 	CLOUDFLARE_API_TOKEN: string;
 	CLOUDFLARE_ACCOUNT_ID: string;
 	SESSION_SECRET: string;
-	VALUE_FROM_CLOUDFLARE: string;
 	WEB_WORKER_NAME: string;
 	EXAMPLE_DO_WORKER_NAME: string;
 	COORDINATOR_DO_WORKER_NAME: string;

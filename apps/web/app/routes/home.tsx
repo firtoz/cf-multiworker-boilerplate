@@ -17,7 +17,6 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 type HomeLoaderData = {
-	message: string;
 	doStatus: Promise<string>;
 	doCount: Promise<number>;
 };
@@ -39,7 +38,6 @@ export async function loader(_args: Route.LoaderArgs): Promise<MaybeError<HomeLo
 	})();
 
 	return success({
-		message: env.VALUE_FROM_CLOUDFLARE,
 		doStatus: doStatusPromise,
 		doCount: doCountPromise,
 	});
@@ -54,12 +52,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 		);
 	}
 
-	const { message, doStatus, doCount } = loaderData.result;
+	const { doStatus, doCount } = loaderData.result;
 
 	return (
 		<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6">
 			{/* Welcome section with its own streaming for DO response */}
-			<Welcome message={message} doResponsePromise={doStatus} />
+			<Welcome doResponsePromise={doStatus} />
 
 			{/* DO State card - streams independently */}
 			<div className="max-w-[600px] mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-green-50 dark:bg-green-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl">

@@ -8,12 +8,9 @@
 	"$schema": "../../node_modules/wrangler/config-schema.json",
 	"name": "{{WORKER_NAME}}",
 	{{WORKERS_DEV_BLOCK}}
-	"compatibility_date": "2025-12-17",
+	"compatibility_date": "2026-04-17",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "./workers/app.ts",
-	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "$VALUE_FROM_CLOUDFLARE"
-	},
 	"observability": {
 		"enabled": true,
 		"logs": {

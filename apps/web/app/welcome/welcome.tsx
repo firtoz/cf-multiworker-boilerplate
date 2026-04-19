@@ -59,13 +59,7 @@ function ResourceIcon({ info }: { info: ResourceInfo }) {
 	);
 }
 
-export function Welcome({
-	message,
-	doResponsePromise,
-}: {
-	message: string;
-	doResponsePromise?: Promise<string>;
-}) {
+export function Welcome({ doResponsePromise }: { doResponsePromise?: Promise<string> }) {
 	return (
 		<main className="flex items-center justify-center pt-8 sm:pt-12 lg:pt-16 pb-4 px-4">
 			<div className="flex-1 flex flex-col items-center gap-8 sm:gap-12 lg:gap-16 min-h-0 max-w-full">
@@ -91,9 +85,6 @@ export function Welcome({
 							{resources.map((item) => (
 								<ResourceIcon key={item.href} info={item} />
 							))}
-							<li className="self-stretch p-3 text-sm sm:text-base leading-normal bg-gray-50 dark:bg-gray-800 rounded-lg mt-4 wrap-break-word hyphens-auto">
-								<span className="font-semibold">Environment value:</span> {message}
-							</li>
 							{doResponsePromise && (
 								<Suspense
 									fallback={

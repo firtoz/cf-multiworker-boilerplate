@@ -11,7 +11,7 @@
 		"generate-wrangler:prod": {
 			"inputs": ["wrangler.jsonc.hbs", "$TURBO_ROOT$/.env.production"],
 			"outputs": ["wrangler-prod.jsonc"],
-			"env": ["ROUTES", "ROUTES_ZONE_NAME", "{{workerNameEnvKey name}}", "VALUE_FROM_CLOUDFLARE"]
+			"env": ["ROUTES", "ROUTES_ZONE_NAME", "{{workerNameEnvKey name}}"]
 		},
 		"lint": {
 			"dependsOn": ["typecheck:local"],

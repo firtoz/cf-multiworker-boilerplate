@@ -4,25 +4,15 @@ import process from "node:process";
 import { $ } from "bun";
 import { findNodeAtLocation, parseTree } from "jsonc-parser";
 
-// Check if CLOUDFLARE_API_TOKEN is defined
-if (!process.env.CLOUDFLARE_API_TOKEN) {
-	console.error("Error: CLOUDFLARE_API_TOKEN environment variable is not set.");
-	console.error("Please set CLOUDFLARE_API_TOKEN before deploying to Cloudflare Workers.");
-	console.error("\nCreate an API token at: https://dash.cloudflare.com/profile/api-tokens");
-	console.error('Use the "Edit Cloudflare Workers" template.');
-	console.error("\nKey permissions included:");
-	console.error("  Account / Workers Scripts / Edit");
-	console.error("  Zone / Workers Routes / Edit");
-	console.error("  Account / Workers Observability / Edit");
-	console.error("\nThen set it by:");
-	console.error("  • Adding it to .env.local file:");
-	console.error("     CLOUDFLARE_API_TOKEN=your_token_here");
-	console.error("  • Setting it inline with the deploy command:");
-	console.error("     CLOUDFLARE_API_TOKEN=your_token_here bun run deploy");
-	process.exit(1);
+// Wrangler uses CLOUDFLARE_API_TOKEN when set; otherwise it uses OAuth from `wrangler login`
+// (same as `wrangler deploy`). CI and headless environments usually need a token in secrets.
+if (process.env.CLOUDFLARE_API_TOKEN) {
+	console.log("✓ CLOUDFLARE_API_TOKEN is set");
+} else {
+	console.log(
+		"Note: CLOUDFLARE_API_TOKEN not in env — using Wrangler default auth (OAuth if you ran `wrangler login`).",
+	);
 }
-
-console.log("✓ CLOUDFLARE_API_TOKEN is set");
 
 // Function to find all wrangler.jsonc files and extract queue names
 function findRequiredQueues(): Set<string> {
