@@ -57,14 +57,14 @@ function discoverWranglerConfigsPreferGenerated(
 	const out: string[] = [];
 	for (const dir of memberDirs) {
 		const gen = path.join(dir, generatedBasename);
-		const legacyJsonc = path.join(dir, "wrangler.jsonc");
-		const legacyJson = path.join(dir, "wrangler.json");
+		const plainJsonc = path.join(dir, "wrangler.jsonc");
+		const plainJson = path.join(dir, "wrangler.json");
 		if (fs.existsSync(gen)) {
 			out.push(gen);
-		} else if (fs.existsSync(legacyJsonc)) {
-			out.push(legacyJsonc);
-		} else if (fs.existsSync(legacyJson)) {
-			out.push(legacyJson);
+		} else if (fs.existsSync(plainJsonc)) {
+			out.push(plainJsonc);
+		} else if (fs.existsSync(plainJson)) {
+			out.push(plainJson);
 		}
 	}
 	return out.sort((a, b) => (a < b ? -1 : 1));
@@ -103,12 +103,12 @@ function normalizeDiscoveryList(workspaceRoot: string | null, configs: string[])
 }
 
 /**
- * Only real env files beside this package — never `.env.example` (that file is documentation-only).
- * Order: `.env` then `.env.local` (later overrides).
+ * Optional per-package overrides — only `.env.local` (never plain `.env`; never `.env.example`).
+ * Repo-root `--env-file` in passthrough is the main source for `cf-typegen`.
  */
 function realEnvFilesBesidePackage(cwdDir: string): string[] {
-	const names = [".env", ".env.local"] as const;
-	return names.filter((n) => fs.existsSync(path.join(cwdDir, n)));
+	const n = ".env.local";
+	return fs.existsSync(path.join(cwdDir, n)) ? [n] : [];
 }
 
 /** Wrangler fails if `--env-file` points at a missing path; missing files are skipped (CI may have none). */
@@ -199,15 +199,15 @@ function runWranglerTypes() {
 	const args: string[] = ["types", "-c", primary];
 
 	const primaryResolved = path.resolve(cwd, primary);
-	const legacyJsonc = path.resolve(cwd, "wrangler.jsonc");
-	const legacyJson = path.resolve(cwd, "wrangler.json");
+	const plainJsonc = path.resolve(cwd, "wrangler.jsonc");
+	const plainJson = path.resolve(cwd, "wrangler.json");
 
 	for (const configPath of allConfigs) {
 		const resolvedPath = path.resolve(configPath);
 		if (
 			resolvedPath === primaryResolved ||
-			resolvedPath === legacyJsonc ||
-			resolvedPath === legacyJson
+			resolvedPath === plainJsonc ||
+			resolvedPath === plainJson
 		) {
 			continue;
 		}

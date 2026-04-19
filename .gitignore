@@ -10,14 +10,22 @@ apps/web/wrangler-prod.jsonc
 durable-objects/**/wrangler-dev.jsonc
 durable-objects/**/wrangler-prod.jsonc
 .dev.vars
-.env*
-!.env.example*
+
+# Env — real secrets only in `.env.local` / `.env.production` (never commit plain `.env`)
+.env
+**/.env
+**/.env.local
+**/.env.production
+!.env.example
+!.env.example.*
+!**/.env.example
+!**/.env.example.*
 
 # Turbo
 .turbo
 
-# Environment
-.env.local
+# Wrangler secret sync (local hash cache; not secret values)
+.wrangler-secret-sync.json
 
 # Build outputs
 build/

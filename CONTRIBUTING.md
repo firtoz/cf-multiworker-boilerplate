@@ -9,16 +9,16 @@ Thank you for contributing to this project! This guide will help you get started
    curl -fsSL https://bun.sh/install | bash
    ```
 
-2. **Clone and install dependencies**:
+2. **Clone and install dependencies** — clone the repository, `cd` into the working tree, then:
+
    ```bash
-   git clone <your-repo>
-   cd <your-repo>
    bun install
    ```
 
-3. **Environment** — run **`bun run setup`** (writes **`.env.local`**; if it already exists, you’ll see a **summary** and can **change individual sections** or re-run the full wizard). Non-interactive / CI: **`bun run setup --yes`** (leaves an existing file unchanged unless **`--force`**). Or copy manually: `cp .env.example .env.local`.
+3. **Environment** — run **`bun run setup`** (writes **`.env.local`**; if it already exists, you’ll see a **summary** and can **change individual sections** or re-run the full wizard). Non-interactive / CI: **`bun run setup --yes`** (leaves an existing file unchanged unless **`--force`**). **`.env.example`** is documentation only — use it as a checklist when creating **`.env.local`** by hand.
+4. **Production deploy from your machine** — create **`.env.production`** with **`bun run setup:prod`** (or maintain it by hand), then **`bun run check-prod-env`** before **`bun run deploy`** / **`deploy:execute`**. See root **README** and **AGENTS.md**.
 
-4. **Start development server**:
+5. **Start development server**:
    ```bash
    bun run dev
    ```
@@ -98,8 +98,10 @@ Before submitting a PR:
 
 ## Deploy (from a contributor machine)
 
+- **`bun run setup:prod`** — Creates or updates **`.env.production`** for live deploy (interactive; **`--yes`** / **`--force`** like `setup`).
+- **`bun run check-prod-env`** — Ensures **`.env.production`** exists (also runs implicitly before **`deploy`** / **`deploy:execute`**).
 - **`bun run deploy`** — Validates bundles with Wrangler **dry-run** only (no uploads).
-- **`bun run deploy:execute`** — Full live deploy (queues, workers). Requires credentials and correct worker order for cross-DO bindings; see root **README** and **AGENTS.md**.
+- **`bun run deploy:execute`** — Full live deploy (queues, workers, secret sync). Requires **`.env.production`** and correct worker order for cross-DO bindings; see root **README** and **AGENTS.md**.
 
 ## Performance considerations
 

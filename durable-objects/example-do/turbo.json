@@ -79,7 +79,7 @@
 			"outputs": ["worker-configuration.d.ts"]
 		},
 		"deploy": {
-			"dependsOn": ["scripts#pre-deploy", "typecheck:prod"],
+			"dependsOn": ["scripts#sync-secrets:prod", "scripts#pre-deploy", "typecheck:prod"],
 			"inputs": ["workers/**/*.ts", "wrangler-prod.jsonc", "wrangler.jsonc.hbs"],
 			"outputs": [],
 			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]

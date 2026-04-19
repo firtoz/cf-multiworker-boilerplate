@@ -11,7 +11,8 @@
 		"lint": "biome check --write .",
 		"lint:format": "biome format --write .",
 		"cf-typegen": "bun ./src/cf-typegen.ts",
-		"pre-deploy": "bun --env-file ../../.env.local ./src/pre-deploy.ts",
+		"pre-deploy": "bun ./src/pre-deploy.ts",
+		"sync-secrets:prod": "bun ./src/sync-wrangler-secrets.ts",
 		"wrangler:dry-run:prod": "bun ./src/wrangler-dry-run-prod.ts",
 		"generate-wrangler": "bun ./src/utils/generate-wrangler.ts"
 	},

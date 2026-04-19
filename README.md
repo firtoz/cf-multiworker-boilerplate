@@ -45,7 +45,13 @@ bun run dev
 
 Open the URL Vite prints (usually `http://localhost:5173`; if that port is busy it picks the next, e.g. `5174`)
 
-**Flags:** **`bun run setup --yes`** skips prompts (random **`SESSION_SECRET`**, placeholders for deploy; use when stdin is not a TTY). If **`.env.local` already exists** and you run **`setup` interactively**, you get a **summary** and can **update one section** (secret, demo string, Cloudflare, worker names) or re-run the full wizard. **`bun run setup --force`** replaces the file (after confirm in a TTY; **`--yes --force`** for scripts). **If you skip `setup`:** a real **`SESSION_SECRET`** avoids session surprises. **Before deploy**, set **`CLOUDFLARE_*`** or use **`setup`** again.
+### Production deploy (first time)
+
+1. **`bun run setup:prod`** — Interactive wizard for repo-root **`.env.production`** (**SESSION_SECRET** required; **`CLOUDFLARE_*`** optional if you use **`bunx wrangler login`**; optional ROUTES / zone and worker names). Same UX as **`bun run setup`**; **`--yes`** / **`--force`** behave like local setup (non-interactive vs full replace).
+2. **`bun run check-prod-env`** — Confirms `.env.production` exists (this also runs automatically at the start of **`deploy`** / **`deploy:execute`**).
+3. **`bun run deploy`** — Wrangler **dry-run** only (safe). **`bun run deploy:execute`** — Full live pipeline (secret sync, queues, builds, `wrangler deploy`).
+
+**Flags:** **`bun run setup --yes`** skips prompts (generates **`SESSION_SECRET`**; optional keys follow non-interactive defaults — use when stdin is not a TTY). If **`.env.local` already exists** and you run **`setup` interactively**, you get a **summary** and can **update one section** (secret, Cloudflare, worker names) or re-run the full wizard. **`bun run setup --force`** replaces the file (after confirm in a TTY; **`--yes --force`** for scripts). **Before deploy:** run **`setup:prod`** and use **`bunx wrangler login`** for CLI auth, or add **`CLOUDFLARE_*`** to **`.env.production`** when you need API tokens in the file (e.g. CI).
 
 **After forking:** **`bun run setup`** can set a **prefix for local Wrangler worker script names** (the `*-dev` workers). For production names, `package.json` names, README/UI, and a full rebrand, see [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md).
 
@@ -73,7 +79,10 @@ Skim [AGENTS.md](AGENTS.md) at the repo root. In short:
     ├── do-common/              # Shared types & Zod schemas
     └── scripts/                # Shared tooling
         ├── src/cf-typegen.ts   # Wrangler types across workspace packages
-        ├── src/pre-deploy.ts   # Pre-deploy checks (used by deploy:execute)
+        ├── src/bootstrap-env-prod.ts   # bun run setup:prod → .env.production
+        ├── src/check-prod-deploy-prereqs.ts  # bun run check-prod-env, also gate for deploy / deploy:execute
+        ├── src/load-env-production.ts      # Prod env loader (sync-secrets, pre-deploy)
+        ├── src/pre-deploy.ts   # Queue ensure + checks (used by deploy:execute)
         ├── src/utils/generate-wrangler.ts  # wrangler.jsonc.hbs → wrangler-dev | wrangler-prod
         └── src/wrangler-dry-run-prod.ts    # wrangler deploy --dry-run (used by deploy)
 ```
@@ -104,16 +113,15 @@ bunx turbo gen durable-object
 
 ### Environment variables
 
-- **`.env.example`** (committed) — **Documentation only.** No script reads it; copy values into real env files.
+- **`.env.example`** (committed) — **Documentation** for humans/agents only; **not read** by setup, Wrangler, or builds. Use real env files below.
 - **`.env.local`** (gitignored) — Local dev, `cf-typegen`, and `bun --env-file` for builds.
-- **`.env.production`** (gitignored) — Production deploy: Cloudflare credentials, optional `ROUTES` / worker name overrides. `generate-wrangler --mode=remote` merges only keys listed in **`DEPLOYMENT_KEYS`** in `packages/scripts/src/utils/generate-wrangler.ts` (not the whole file dumped on top of `process.env`).
+- **`.env.production`** (gitignored) — Production deploy: create with **`bun run setup:prod`**. `generate-wrangler --mode=remote` merges only keys listed in **`DEPLOYMENT_KEYS`** in `packages/scripts/src/utils/generate-wrangler.ts` (not the whole file dumped on top of `process.env`).
 
-Minimal root `.env.local`:
+Minimal root `.env.local` (only **`SESSION_SECRET`** is required for local web sessions; omit **`CLOUDFLARE_*`** if you use **`bunx wrangler login`**). Create it with **`bun run setup`** (generates **`SESSION_SECRET`**) or add **`SESSION_SECRET`** yourself (strong random string, min 16 characters).
 
 ```bash
-CLOUDFLARE_API_TOKEN=your_api_token_here
-CLOUDFLARE_ACCOUNT_ID=your_account_id_here
-SESSION_SECRET=random_secret_here
+# CLOUDFLARE_API_TOKEN=
+# CLOUDFLARE_ACCOUNT_ID=
 ```
 
 ### Wrangler config (templates + generated JSONC)
@@ -139,14 +147,14 @@ Uses Bun with a frozen lockfile and Turborepo for parallel/cached tasks.
 ### Prerequisites
 
 1. **API token** — https://dash.cloudflare.com/profile/api-tokens → **Edit Cloudflare Workers** (or equivalent: Workers Scripts, Workers Routes, Observability).
-2. **Root env** — put `CLOUDFLARE_API_TOKEN` (and usually `CLOUDFLARE_ACCOUNT_ID`) in **`.env.local`** for local CLI. For production wrangler generation, use **`.env.production`** as described in [AGENTS.md](AGENTS.md).
+2. **Root env** — For local CLI / `wrangler dev`, use **`.env.local`** (see **`bun run setup`**). For **`deploy`** / **`deploy:execute`**, you need repo-root **`.env.production`** — run **`bun run setup:prod`** or create/edit the file by hand (see **`.env.example`** as a variable checklist). See [AGENTS.md](AGENTS.md).
 
 ### Two commands: dry-run vs live
 
 | Command | What it does |
 |--------|----------------|
-| **`bun run deploy`** | After **`cf-web-app#build:prod`**, runs **`wrangler deploy --dry-run`** for each DO (`wrangler-prod.jsonc`) and the web app (`build/server/wrangler.json`). **No uploads**. |
-| **`bun run deploy:execute`** | Runs **`pre-deploy`** checks, **`build:prod`**, **live `wrangler deploy`** for workspace DOs (order respects cross-worker DO bindings), then deploys the web worker from the production build. |
+| **`bun run deploy`** | Runs **`check-prod-env`** first, then after **`cf-web-app#build:prod`**, runs **`wrangler deploy --dry-run`** for each DO (`wrangler-prod.jsonc`) and the web app (`build/server/wrangler.json`). **No uploads**, no queue creation. |
+| **`bun run deploy:execute`** | Runs **`check-prod-env`**, then **`sync-secrets:prod`**, **`pre-deploy`** (queues + validate consumers), **`build:prod`**, **live `wrangler deploy`** for workspace DOs (order respects cross-worker DO bindings), then deploys the web worker from the production build. |
 
 Use **`deploy`** in CI or locally to verify bundles/config without changing Cloudflare state. Use **`deploy:execute`** when you intend to ship.
 
@@ -166,6 +174,8 @@ Use **`deploy`** in CI or locally to verify bundles/config without changing Clou
 - `bun run lint` — Biome (`check --write`)
 
 ### Deployment
+- `bun run setup:prod` — Interactive **`.env.production`** (prod deploy prerequisite)
+- `bun run check-prod-env` — Fail fast if `.env.production` is missing
 - `bun run deploy` — **Dry-run only** (see table above)
 - `bun run deploy:execute` — **Live** deploy pipeline
 

@@ -8,7 +8,11 @@
 # Cloudflare
 .mf
 .wrangler
-.env*
+
+# Env — only `.env.local` / `.env.production` for overrides; never plain `.env`
+.env
+.env.local
+.env.production
 !.env.example
 
 # Turbo

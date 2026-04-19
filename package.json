@@ -23,6 +23,7 @@
 	},
 	"scripts": {
 		"setup": "bun ./packages/scripts/src/bootstrap-env.ts",
+		"setup:prod": "bun ./packages/scripts/src/bootstrap-env-prod.ts",
 		"build": "turbo run build:local",
 		"dev": "turbo dev",
 		"lint": "turbo lint",
@@ -33,8 +34,9 @@
 		"typegen": "turbo run typegen:local",
 		"typegen:local": "turbo run typegen:local",
 		"typegen:prod": "turbo run typegen:prod",
-		"deploy": "bun --env-file ./.env.local turbo run deploy --filter=cf-web-app",
-		"deploy:execute": "bun --env-file ./.env.local turbo run deploy:execute --filter=cf-web-app",
+		"check-prod-env": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts",
+		"deploy": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts && bun --env-file ./.env.production turbo run deploy --filter=cf-web-app",
+		"deploy:execute": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts && bun --env-file ./.env.production turbo run deploy:execute --filter=cf-web-app",
 		"outdated": "bun outdated --recursive",
 		"update:interactive": "bun update --latest --ir",
 		"clean": "turbo clean && rm -rf node_modules **/node_modules"

@@ -1,7 +1,6 @@
 {
 	"$schema": "./node_modules/turbo/schema.json",
 	"globalDependencies": [
-		".env",
 		".env.local",
 		".env.production",
 		"tsconfig.base.json"
@@ -65,6 +64,9 @@
 			"outputLogs": "new-only"
 		},
 		"pre-deploy": {
+			"outputLogs": "new-only"
+		},
+		"sync-secrets:prod": {
 			"outputLogs": "new-only"
 		},
 		"wrangler:dry-run:prod": {

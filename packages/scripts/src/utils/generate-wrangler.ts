@@ -7,7 +7,7 @@
  * Remote (`--mode=remote`): repo-root `.env.production` merges `DEPLOYMENT_KEYS` and any `*_WORKER_NAME`
  * (merged on top of `process.env`). CI sets the same keys without a file.
  *
- * Local: `LOCAL_DEFAULTS` + optional `cwd/.env` + repo-root `.env.local`, then `process.env`.
+ * Local: `LOCAL_DEFAULTS` + optional `cwd/.env.local` + repo-root `.env.local`, then `process.env`.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -25,7 +25,8 @@ const LOCAL_DEFAULTS: Record<string, string> = {
 	PROCESSOR_DO_WORKER_NAME: "cf-processor-do-dev",
 };
 
-const PROD_DEFAULTS: Record<string, string> = {
+/** Default production worker script names (remote / `generate-wrangler --mode=remote`). */
+export const PROD_DEFAULTS: Record<string, string> = {
 	WEB_WORKER_NAME: "cf-web-app",
 	EXAMPLE_DO_WORKER_NAME: "cf-example-do",
 	COORDINATOR_DO_WORKER_NAME: "cf-coordinator-do",
@@ -33,7 +34,7 @@ const PROD_DEFAULTS: Record<string, string> = {
 };
 
 /** Keys read from repo-root `.env.production` for remote wrangler (same names can be set in CI `process.env`). */
-const DEPLOYMENT_KEYS = [
+export const DEPLOYMENT_KEYS = [
 	"ROUTES",
 	"ROUTES_ZONE_NAME",
 	"WEB_WORKER_NAME",
@@ -144,7 +145,7 @@ function parseMode(): Mode {
 }
 
 /**
- * Comma-separated hostnames (optional legacy `/*` suffix is stripped).
+ * Comma-separated hostnames (optional trailing `/*` is stripped).
  */
 function formatRoutes(routesStr: string, routesZoneName?: string): string {
 	if (!routesStr?.trim()) {
@@ -267,8 +268,8 @@ export async function generateWranglerConfig(): Promise<boolean> {
 	}
 
 	const rootLocal = loadEnvFile(path.join(repoRoot, ".env.local"));
-	const packageDotEnv = loadEnvFile(path.join(cwd, ".env"));
-	const mergedLocal = { ...packageDotEnv, ...rootLocal };
+	const packageLocal = loadEnvFile(path.join(cwd, ".env.local"));
+	const mergedLocal = { ...packageLocal, ...rootLocal };
 
 	let env: Record<string, string>;
 	if (mode === "local") {
@@ -295,7 +296,7 @@ export async function generateWranglerConfig(): Promise<boolean> {
 	template = applyTemplate(template, substitutions);
 
 	if (template.includes("{{")) {
-		console.warn("Warning: template may contain unreplaced {{placeholders}}");
+		console.warn("Warning: template may contain unreplaced {{...}} substitutions");
 	}
 
 	fs.writeFileSync(outputPath, template, "utf8");

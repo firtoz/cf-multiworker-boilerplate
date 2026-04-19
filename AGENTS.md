@@ -94,7 +94,7 @@ Committed source of truth for Wrangler shape is **`wrangler.jsonc.hbs`** per wor
 
 When adding new environment variables to any worker:
 
-1. **Document new variables in repo-root `.env.example`** (committed, human-readable placeholders only). **Scripts never read `.env.example`** — copy keys into **`.env.local`** (dev) and **`.env.production`** (prod) as needed. Those files are gitignored.
+1. **Document new variables in repo-root `.env.example`** (human-readable reference only — never commit secrets; **no script reads this file**). **`generate-wrangler`**, **`cf-typegen`**, **`bun run setup`**, and **`bun run setup:prod`** do **not** load **`.env.example`**. Real values live in **`.env.local`** (dev) and **`.env.production`** (prod); those files are gitignored.
 
 2. **Prod wrangler generation** — `generate-wrangler --mode=remote` merges **only** deployment keys from repo-root `.env.production` (see `DEPLOYMENT_KEYS` in `packages/scripts/src/utils/generate-wrangler.ts`) onto `process.env`.
 
@@ -115,18 +115,20 @@ import { env } from "cloudflare:workers";
 Do not use React Router loader/action `context` to reach Cloudflare `env`; it is not the source of truth here.
 
 **What happens:**
-- Real env files (`.env.local`, `.env.production`, per-package `.env` / `.env.local`) feed `wrangler types` and builds via explicit `--env-file` — not `.env.example`.
+- Real env files (repo-root **`.env.local`** / **`.env.production`**, and optional per-package **`.env.local`**) feed `wrangler types` and builds via explicit `--env-file` — never plain **`.env`**, never **`.env.example`**.
 - Typegen updates `worker-configuration.d.ts` from Wrangler output.
 
 **Important:**
 - `.env.local` and `.env.production` are gitignored
-- **`.env.example` is documentation only** — keep it updated when you add new vars so humans and agents know what to put in `.env.local` / `.env.production`
-- Never commit secrets or API keys to `.env.example` — use placeholder values
+- **`.env.example` is documentation** — keep it updated when you add new vars (names and semantics only). It is **not** read by setup or tooling.
+- Never commit secrets or API keys to `.env.example` — document names and semantics only.
 
 ## Deploy (dry-run vs live)
 
+- **`bun run setup`** writes **`.env.local`** (local dev). **`bun run setup:prod`** writes **`.env.production`** (prod deploy); keep prompts aligned with **`DEPLOYMENT_KEYS`** / **`prod-env-manifest.ts`** when you add env requirements.
+- **Prerequisite** — Repo-root **`.env.production`** must exist for prod deploy commands. Create it with **`bun run setup:prod`** or edit it by hand (see **`.env.example`** as a checklist only). **`bun run check-prod-env`** exits immediately with a concrete checklist if it is missing (same check runs at the start of **`deploy`** / **`deploy:execute`**). **`.env.local` alone is not enough** for those flows. Typical first-time flow: **`setup:prod`** → **`check-prod-env`** → **`deploy`** (dry-run) or **`deploy:execute`** (live).
 - **`bun run deploy`** — Runs `scripts#wrangler:dry-run:prod` (after `cf-web-app#build:prod`): `wrangler deploy --dry-run` for each Durable Object package and the web app. **No live upload**, no `pre-deploy` queue creation.
-- **`bun run deploy:execute`** — Runs **`scripts#pre-deploy`** (queues / checks), **`build:prod`**, **`^deploy`** (live Wrangler deploy for dependency workers), then the web app’s real **`wrangler deploy`**.
+- **`bun run deploy:execute`** — Loads **`.env.production`** via root `package.json` (`--env-file`). Runs **`scripts#sync-secrets:prod`** (uploads values for `secrets.required` in `wrangler-prod.jsonc`, e.g. `SESSION_SECRET`, when they differ from a local hash cache), then **`scripts#pre-deploy`** (queues / checks), **`build:prod`**, **`^deploy`**, then the web app **`wrangler deploy`**. If Cloudflare still reports missing secrets after a successful sync, run `turbo run sync-secrets:prod --filter=scripts -- --force` or fix values in `.env.production`.
 
 ## Type Generation
 

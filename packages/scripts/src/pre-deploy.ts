@@ -3,6 +3,9 @@ import path from "node:path";
 import process from "node:process";
 import { $ } from "bun";
 import { findNodeAtLocation, parseTree } from "jsonc-parser";
+import { loadEnvProductionStrict } from "./load-env-production";
+
+loadEnvProductionStrict();
 
 // Wrangler uses CLOUDFLARE_API_TOKEN when set; otherwise it uses OAuth from `wrangler login`
 // (same as `wrangler deploy`). CI and headless environments usually need a token in secrets.
