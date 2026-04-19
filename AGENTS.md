@@ -27,7 +27,7 @@ Cursor also loads [.cursor/rules/cf-workers-patterns.mdc](.cursor/rules/cf-worke
 
 ## Project initialization (forks)
 
-If this repo is a **fork or template copy** that still has root `package.json` `"name": "cf-multiworker-boilerplate"` and the user wants their own app name, deployable worker names, and docs—follow the **project-init** skill: [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md). The always-applied rule [.cursor/rules/project-init.mdc](.cursor/rules/project-init.mdc) explains when to offer this (and when **not** to, e.g. when working on the upstream boilerplate repo).
+If this repo is a **fork or template copy** that still has root `package.json` `"name": "cf-multiworker-starter-kit"` and the user wants their own app name, deployable worker names, and docs—follow the **project-init** skill: [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md). The always-applied rule [.cursor/rules/project-init.mdc](.cursor/rules/project-init.mdc) explains when to offer this (and when **not** to, e.g. when working on the upstream starter kit repo).
 
 ## For Cloud Agents
 
@@ -127,7 +127,7 @@ Do not use React Router loader/action `context` to reach Cloudflare `env`; it is
 
 - **`bun run setup`** writes **`.env.local`** (local dev). **`bun run setup:prod`** writes **`.env.production`** (prod deploy); adding a worker package with `wrangler.jsonc.hbs` updates the catalog used by **`prod-env-manifest.ts`** and the setup wizards — no manual list of four worker names in bootstrap.
 - **Prerequisite** — Repo-root **`.env.production`** must exist for prod deploy commands. Create it with **`bun run setup:prod`** or edit it by hand (see **`.env.example`** as a checklist only). **`bun run check-prod-env`** exits immediately with a concrete checklist if it is missing (same check runs at the start of **`deploy`** / **`deploy:execute`**). **`.env.local` alone is not enough** for those flows. Typical first-time flow: **`setup:prod`** → **`check-prod-env`** → **`deploy`** (dry-run) or **`deploy:execute`** (live).
-- **`bun run deploy`** — Runs `scripts#wrangler:dry-run:prod` (after `cf-web-app#build:prod`): `wrangler deploy --dry-run` for each Durable Object package and the web app. **No live upload**, no `pre-deploy` queue creation.
+- **`bun run deploy`** — Runs `scripts#wrangler:dry-run:prod` (after `cf-starter-web#build:prod`): `wrangler deploy --dry-run` for each Durable Object package and the web app. **No live upload**, no `pre-deploy` queue creation.
 - **`bun run deploy:execute`** — Loads **`.env.production`** via root `package.json` (`--env-file`). Runs **`scripts#sync-secrets:prod`** (uploads values for `secrets.required` in `wrangler-prod.jsonc`, e.g. `SESSION_SECRET`, when they differ from a local hash cache), then **`scripts#pre-deploy`** (queues / checks), **`build:prod`**, **`^deploy`**, then the web app **`wrangler deploy`**. If Cloudflare still reports missing secrets after a successful sync, run `turbo run sync-secrets:prod --filter=scripts -- --force` or fix values in `.env.production`.
 
 ## Type Generation

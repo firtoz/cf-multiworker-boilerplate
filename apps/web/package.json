@@ -1,5 +1,5 @@
 {
-	"name": "cf-web-app",
+	"name": "cf-starter-web",
 	"private": true,
 	"type": "module",
 	"scripts": {

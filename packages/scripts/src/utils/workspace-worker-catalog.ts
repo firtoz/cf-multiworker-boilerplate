@@ -45,21 +45,25 @@ export function workerNameEnvKeyForPackageDir(packageRelDir: string): string {
 	throw new Error(`Unknown package directory for wrangler template: ${packageRelDir}`);
 }
 
-export function defaultScriptNameForPackage(packageRelDir: string, mode: Mode): string {
+/** Default Cloudflare worker script names for this starter kit (`cf-starter-*`). */
+function defaultProdScriptNameForPackage(packageRelDir: string): string {
 	if (packageRelDir === "apps/web") {
-		return mode === "local" ? "cf-web-app-dev" : "cf-web-app";
+		return "cf-starter-web";
 	}
 	const appM = /^apps\/([^/]+)$/.exec(packageRelDir);
 	if (appM) {
-		const folder = appM[1];
-		return mode === "local" ? `cf-${folder}-dev` : `cf-${folder}`;
+		return `cf-starter-${appM[1]}`;
 	}
 	const m = /^durable-objects\/([^/]+)$/.exec(packageRelDir);
 	if (m) {
-		const folder = m[1];
-		return mode === "local" ? `cf-${folder}-dev` : `cf-${folder}`;
+		return `cf-starter-${m[1]}`;
 	}
 	throw new Error(`Unknown package directory: ${packageRelDir}`);
+}
+
+export function defaultScriptNameForPackage(packageRelDir: string, mode: Mode): string {
+	const prod = defaultProdScriptNameForPackage(packageRelDir);
+	return mode === "local" ? `${prod}-dev` : prod;
 }
 
 function listTemplatePackageDirs(repoRoot: string): string[] {

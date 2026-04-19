@@ -2,6 +2,8 @@
 
 Production-proven Turborepo monorepo starter kit for full-stack Cloudflare Workers apps — Durable Objects, end-to-end type safety, and a battle-tested deploy pipeline.
 
+**Why this repo exists:** I ship several new projects a week and use this starter as my default stack—it keeps changing when real work surfaces gaps (env flows, deploy safety, typegen, monorepo ergonomics). If it saves you setup time, use it as a template or fork; if you want to tighten patterns for everyone, issues and pull requests are welcome—see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Why Use This?
 
 Building on Cloudflare's edge platform is powerful but complex. This starter kit solves the hard parts so you can focus on your app:
@@ -22,7 +24,7 @@ Building on Cloudflare's edge platform is powerful but complex. This starter kit
 ### Use This Template
 
 **Option 1 - GitHub UI:**
-1. Go to [github.com/firtoz/cf-multiworker-starter-kit](https://github.com/firtoz/cf-multiworker-starter-kit)
+1. Open [https://github.com/firtoz/cf-multiworker-starter-kit](https://github.com/firtoz/cf-multiworker-starter-kit)
 2. Click "Use this template" → "Create a new repository"
 
 **Option 2 - GitHub CLI:**
@@ -153,12 +155,12 @@ Uses Bun with a frozen lockfile and Turborepo for parallel/cached tasks.
 
 | Command | What it does |
 |--------|----------------|
-| **`bun run deploy`** | Runs **`check-prod-env`** first, then after **`cf-web-app#build:prod`**, runs **`wrangler deploy --dry-run`** for each DO (`wrangler-prod.jsonc`) and the web app (`build/server/wrangler.json`). **No uploads**, no queue creation. |
+| **`bun run deploy`** | Runs **`check-prod-env`** first, then after **`cf-starter-web#build:prod`**, runs **`wrangler deploy --dry-run`** for each DO (`wrangler-prod.jsonc`) and the web app (`build/server/wrangler.json`). **No uploads**, no queue creation. |
 | **`bun run deploy:execute`** | Runs **`check-prod-env`**, then **`sync-secrets:prod`**, **`pre-deploy`** (queues + validate consumers), **`build:prod`**, **live `wrangler deploy`** for workspace DOs (order respects cross-worker DO bindings), then deploys the web worker from the production build. |
 
 Use **`deploy`** in CI or locally to verify bundles/config without changing Cloudflare state. Use **`deploy:execute`** when you intend to ship.
 
-**Turbo tip:** Most tasks are cached when inputs are unchanged. Only **`dev`** and **`clean`** always skip cache. To force a fresh run (e.g. redeploy same tree), use `turbo run deploy:execute --filter=cf-web-app --force`.
+**Turbo tip:** Most tasks are cached when inputs are unchanged. Only **`dev`** and **`clean`** always skip cache. To force a fresh run (e.g. redeploy same tree), use `turbo run deploy:execute --filter=cf-starter-web --force`.
 
 **If live deploy fails** with errors about bindings to another worker script: ensure dependent workers are deployed first (this repo's Turbo graph orders processor before coordinator where required). See [AGENTS.md](AGENTS.md) deploy section.
 
@@ -229,6 +231,10 @@ If you use pre-commit hooks in your fork, wire them to `bun run lint` / `typeche
 - **[Turborepo](https://turbo.build/repo)** - Monorepo build system
 - **[Biome](https://biomejs.dev/)** - Fast linter & formatter
 - **[Bun](https://bun.sh/)** - Fast package manager & runtime
+
+## Contributing
+
+Bug reports, doc fixes, and improvements that keep the template honest for day-to-day use are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and quality checks before you open a PR.
 
 ## License
 

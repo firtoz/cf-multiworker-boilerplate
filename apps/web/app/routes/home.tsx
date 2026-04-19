@@ -12,7 +12,7 @@ export const route: RoutePath<"/"> = "/";
 export function meta(_args: Route.MetaArgs) {
 	return [
 		{ title: "Cloudflare Multi-Worker App" },
-		{ name: "description", content: "A boilerplate for Cloudflare Workers with React Router" },
+		{ name: "description", content: "A starter kit for Cloudflare Workers with React Router" },
 	];
 }
 

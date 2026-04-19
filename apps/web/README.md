@@ -174,7 +174,7 @@ bun run rr-typegen  # Just React Router types
 
 ## Deploy
 
-From the **repo root** (Turbo filters `cf-web-app`):
+From the **repo root** (Turbo filters `cf-starter-web`):
 
 ```bash
 bun run setup:prod      # repo root: create .env.production (prerequisite for live deploy)

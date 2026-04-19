@@ -1,6 +1,10 @@
 {
-	"name": "cf-multiworker-boilerplate",
+	"name": "cf-multiworker-starter-kit",
 	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/firtoz/cf-multiworker-starter-kit.git"
+	},
 	"workspaces": {
 		"packages": [
 			"apps/*",
@@ -36,8 +40,8 @@
 		"typegen:local": "turbo run typegen:local",
 		"typegen:prod": "turbo run typegen:prod",
 		"check-prod-env": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts",
-		"deploy": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts && bun --env-file ./.env.production turbo run deploy --filter=cf-web-app",
-		"deploy:execute": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts && bun --env-file ./.env.production turbo run deploy:execute --filter=cf-web-app",
+		"deploy": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts && bun --env-file ./.env.production turbo run deploy --filter=cf-starter-web",
+		"deploy:execute": "bun ./packages/scripts/src/check-prod-deploy-prereqs.ts && bun --env-file ./.env.production turbo run deploy:execute --filter=cf-starter-web",
 		"outdated": "bun outdated --recursive",
 		"update:interactive": "bun update --latest --ir",
 		"clean": "turbo clean && rm -rf node_modules **/node_modules"

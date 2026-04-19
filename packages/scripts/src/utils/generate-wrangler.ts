@@ -24,7 +24,7 @@ import {
 
 type Mode = "local" | "remote";
 
-const REPO_ROOT_PACKAGE_NAME = "cf-multiworker-boilerplate";
+const REPO_ROOT_PACKAGE_NAME = "cf-multiworker-starter-kit";
 
 function findRepoRoot(startDir: string): string {
 	let dir = path.resolve(startDir);

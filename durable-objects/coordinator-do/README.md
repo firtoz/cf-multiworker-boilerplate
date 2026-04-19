@@ -155,7 +155,7 @@ To call a new DO from coordinator:
     {
       "name": "ProcessorDo",
       "class_name": "ProcessorDo",
-      "script_name": "cf-processor-do"
+      "script_name": "cf-starter-processor-do"
     },
     {
       "name": "NotifierDo",

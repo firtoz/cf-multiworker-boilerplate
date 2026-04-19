@@ -135,7 +135,7 @@ Prefix a task with `^` to depend on the **same task name** in every package list
 }
 ```
 
-This runs `generate-wrangler:local` in `example-do`, `coordinator-do`, and `processor-do`, then in `cf-web-app`. Same idea for `^typegen:local`, `^generate-wrangler:prod`, and `^deploy` on **`deploy:execute`** (not on dry-run `deploy`).
+This runs `generate-wrangler:local` in `example-do`, `coordinator-do`, and `processor-do`, then in `cf-starter-web`. Same idea for `^typegen:local`, `^generate-wrangler:prod`, and `^deploy` on **`deploy:execute`** (not on dry-run `deploy`).
 
 **Limits:** `^` only follows **declared** workspace deps. Packages that are not dependencies (e.g. sibling workers with only Wrangler `script_name` links) still need explicit `other-pkg#task` in their own `turbo.json`. Verify with:
 
@@ -400,7 +400,7 @@ bun run build --verbose
 
 ### packages/scripts/turbo.json
 - `pre-deploy` - Pre-deployment validation (creates queues / checks consumers; **only** used by `deploy:execute`, not dry-run `deploy`)
-- `wrangler:dry-run:prod` - `wrangler deploy --dry-run` for every worker (depends on `cf-web-app#build:prod`)
+- `wrangler:dry-run:prod` - `wrangler deploy --dry-run` for every worker (depends on `cf-starter-web#build:prod`)
 
 ### apps/web/turbo.json
 - `typegen` - Depends on `cf-typegen`, `rr-typegen`

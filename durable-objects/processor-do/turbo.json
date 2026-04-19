@@ -52,7 +52,7 @@
 		"typegen:local": {
 			"dependsOn": [
 				"generate-wrangler:local",
-				"cf-web-app#generate-wrangler:local",
+				"cf-starter-web#generate-wrangler:local",
 				"example-do#generate-wrangler:local",
 				"coordinator-do#generate-wrangler:local"
 			],
@@ -69,7 +69,7 @@
 		"typegen:prod": {
 			"dependsOn": [
 				"generate-wrangler:prod",
-				"cf-web-app#generate-wrangler:prod",
+				"cf-starter-web#generate-wrangler:prod",
 				"example-do#generate-wrangler:prod",
 				"coordinator-do#generate-wrangler:prod"
 			],

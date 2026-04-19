@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "cf-multiworker-boilerplate",
+      "name": "cf-multiworker-starter-kit",
       "dependencies": {
         "@firtoz/worker-helper": "^1.6.1",
         "uuid": "^13.0.0",
@@ -17,7 +17,7 @@
       },
     },
     "apps/web": {
-      "name": "cf-web-app",
+      "name": "cf-starter-web",
       "dependencies": {
         "@firtoz/hono-fetcher": "catalog:",
         "@firtoz/maybe-error": "^1.6.1",
@@ -621,7 +621,7 @@
 
     "caniuse-lite": ["caniuse-lite@1.0.30001788", "", {}, "sha512-6q8HFp+lOQtcf7wBK+uEenxymVWkGKkjFpCvw5W25cmMwEDU45p1xQFBQv8JDlMMry7eNxyBaR+qxgmTUZkIRQ=="],
 
-    "cf-web-app": ["cf-web-app@workspace:apps/web"],
+    "cf-starter-web": ["cf-starter-web@workspace:apps/web"],
 
     "chalk": ["chalk@4.1.2", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="],
 

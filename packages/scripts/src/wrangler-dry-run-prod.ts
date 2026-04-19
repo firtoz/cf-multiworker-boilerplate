@@ -5,7 +5,7 @@
  * - Durable Object packages use `-c wrangler-prod.jsonc` (from `generate-wrangler:prod`).
  * - Web uses `build/server/wrangler.json` from `react-router build` + `@cloudflare/vite-plugin`.
  *
- * Depends on `cf-web-app#build:prod` so the server bundle and generated prod wranglers exist.
+ * Depends on `cf-starter-web#build:prod` so the server bundle and generated prod wranglers exist.
  */
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -42,7 +42,7 @@ const webDir = path.join(repoRoot, "apps/web");
 const webBuiltWrangler = path.join(webDir, "build/server/wrangler.json");
 if (!existsSync(webBuiltWrangler)) {
 	console.error(
-		"apps/web: missing build/server/wrangler.json. Run cf-web-app#build:prod first (e.g. `turbo run build:prod --filter=cf-web-app`).",
+		"apps/web: missing build/server/wrangler.json. Run cf-starter-web#build:prod first (e.g. `turbo run build:prod --filter=cf-starter-web`).",
 	);
 	process.exit(1);
 }

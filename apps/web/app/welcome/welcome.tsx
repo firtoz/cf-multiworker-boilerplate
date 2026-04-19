@@ -66,7 +66,7 @@ export function Welcome({ doResponsePromise }: { doResponsePromise?: Promise<str
 				<header className="flex flex-col items-center gap-6 sm:gap-9 w-full">
 					<div className="w-full max-w-[500px]">
 						<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center text-blue-600 dark:text-blue-400">
-							Cloudflare Multi-Worker Boilerplate
+							Cloudflare Multi-Worker Starter Kit
 						</h1>
 					</div>
 				</header>
@@ -77,8 +77,8 @@ export function Welcome({ doResponsePromise }: { doResponsePromise?: Promise<str
 						</p>
 						<div className="bg-blue-50 dark:bg-blue-900 p-3 sm:p-4 rounded-lg">
 							<p className="text-sm sm:text-base text-blue-800 dark:text-blue-200">
-								This is a generic boilerplate for Cloudflare multi-worker applications. It includes
-								a web app with React and a Durable Object.
+								This is a starter kit for Cloudflare multi-worker applications. It includes a web
+								app with React and a Durable Object.
 							</p>
 						</div>
 						<ul className="space-y-2">

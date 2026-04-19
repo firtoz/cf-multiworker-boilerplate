@@ -23,7 +23,7 @@
 			"outputs": []
 		},
 		"wrangler:dry-run:prod": {
-			"dependsOn": ["cf-web-app#build:prod"],
+			"dependsOn": ["cf-starter-web#build:prod"],
 			"env": [
 				"CLOUDFLARE_API_TOKEN",
 				"CLOUDFLARE_ACCOUNT_ID",
@@ -45,7 +45,7 @@
 		},
 		"sync-secrets:prod": {
 			"dependsOn": [
-				"cf-web-app#generate-wrangler:prod",
+				"cf-starter-web#generate-wrangler:prod",
 				"example-do#generate-wrangler:prod",
 				"coordinator-do#generate-wrangler:prod",
 				"processor-do#generate-wrangler:prod"
@@ -61,7 +61,7 @@
 			"env": ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]
 		},
 		"pre-deploy": {
-			"dependsOn": ["scripts#sync-secrets:prod", "cf-web-app#generate-wrangler:local"],
+			"dependsOn": ["scripts#sync-secrets:prod", "cf-starter-web#generate-wrangler:local"],
 			"inputs": [
 				"src/pre-deploy.ts",
 				"src/load-env-production.ts",

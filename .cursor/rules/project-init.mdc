@@ -1,22 +1,22 @@
 ---
 alwaysApply: true
 ---
-# Project initialization (forks from this boilerplate)
+# Project initialization (forks from this starter kit)
 
 When the user has not yet personalized a copy of this monorepo, help them before building features.
 
-## When to skip entirely (boilerplate repo itself)
+## When to skip entirely (upstream starter kit repo)
 
-**Do not** prompt for or run project initialization if this checkout is the upstream boilerplate:
+**Do not** prompt for or run project initialization if this checkout is the upstream starter kit:
 
-- Run `git remote get-url origin` (or check remotes). If the URL contains `firtoz/cf-multiworker-boilerplate`, treat this as **development of the boilerplate**. Ignore the rest of this rule and do not apply the `project-init` skill unless the user explicitly asks to rename or template something.
+- Run `git remote get-url origin` (or check remotes). If the URL contains `firtoz/cf-multiworker-starter-kit`, treat this as **development of the starter kit** (canonical repo: `https://github.com/firtoz/cf-multiworker-starter-kit`). Ignore the rest of this rule and do not apply the `project-init` skill unless the user explicitly asks to rename or template something.
 
 ## When initialization applies
 
 If **both** are true:
 
-1. Root [`package.json`](package.json) still has `"name": "cf-multiworker-boilerplate"`.
-2. `origin` is missing **or** does not point at `firtoz/cf-multiworker-boilerplate` (e.g. the user created a repo from the GitHub template).
+1. Root [`package.json`](package.json) still has `"name": "cf-multiworker-starter-kit"`.
+2. `origin` is missing **or** the `origin` URL does not contain `firtoz/cf-multiworker-starter-kit` (e.g. the user forked into their own GitHub account).
 
 Then the project is likely an **uncustomized fork**. Inform the user once per session (or when they ask to deploy or ship) that they should personalize worker names, package names, README, and UI copy so deploys and docs match their app. Offer to walk through it using the **project-init** skill: [`.cursor/skills/project-init/SKILL.md`](.cursor/skills/project-init/SKILL.md).
 
@@ -24,4 +24,4 @@ Do not block unrelated tasks if the user declines; they may be iterating locally
 
 ## After initialization
 
-Once the root `package.json` `name` is no longer `cf-multiworker-boilerplate`, treat the repo as personalized unless the user asks again.
+Once the root `package.json` `name` is no longer `cf-multiworker-starter-kit`, treat the repo as personalized unless the user asks again.
