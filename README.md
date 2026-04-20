@@ -17,6 +17,16 @@ Production-proven Turborepo monorepo starter kit for full-stack Cloudflare Worke
 
 **Why this repo exists:** I ship several new projects a week and use this starter as my default stack—it keeps changing when real work surfaces gaps (env flows, deploy safety, typegen, monorepo ergonomics). If it saves you setup time, use it as a template or fork; if you want to tighten patterns for everyone, issues and pull requests are welcome—see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+<p align="center">
+  <a href="https://peerlist.io/firtoz/project/cloudflare-multiworker-starter-kit" target="_blank" rel="noreferrer">
+    <img
+      src="https://peerlist.io/api/v1/projects/embed/PRJHA9E6LDQG9KQKD1AJB9M7OM6B7B?showUpvote=true&theme=dark"
+      alt="Cloudflare Multi-Worker Starter Kit"
+      height="72"
+    />
+  </a>
+</p>
+
 ## Why Use This?
 
 Building on Cloudflare's edge platform is powerful but complex. This starter kit solves the hard parts so you can focus on your app:
