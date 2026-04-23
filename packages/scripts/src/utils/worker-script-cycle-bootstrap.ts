@@ -120,9 +120,17 @@ export function tarjanScc(vertices: string[], edges: WorkerEdge[]): string[][] {
 		for (const w of adj.get(v) ?? []) {
 			if (!indices.has(w)) {
 				strongConnect(w);
-				lowlink.set(v, Math.min(lowlink.get(v)!, lowlink.get(w)!));
+				const lv = lowlink.get(v);
+				const lw = lowlink.get(w);
+				if (lv !== undefined && lw !== undefined) {
+					lowlink.set(v, Math.min(lv, lw));
+				}
 			} else if (onStack.has(w)) {
-				lowlink.set(v, Math.min(lowlink.get(v)!, indices.get(w)!));
+				const lv = lowlink.get(v);
+				const iw = indices.get(w);
+				if (lv !== undefined && iw !== undefined) {
+					lowlink.set(v, Math.min(lv, iw));
+				}
 			}
 		}
 
@@ -285,9 +293,10 @@ export async function twoNodeCycleFullConfigDryRunOk(
  * Resolve which script’s package should run **phased** deploy when dry-run fails. Override with env
  * **`PIPELINE_PRIMARY_SCRIPT`** (must be one of the two Worker `name`s in the cycle).
  */
-export function resolvePipelinePrimaryForPair(
-	pair: readonly [string, string],
-): { primary: string; secondary: string } {
+export function resolvePipelinePrimaryForPair(pair: readonly [string, string]): {
+	primary: string;
+	secondary: string;
+} {
 	const [a, b] = [...pair].sort((x, y) => x.localeCompare(y)) as [string, string];
 	const override = process.env.PIPELINE_PRIMARY_SCRIPT?.trim();
 	if (override && (override === a || override === b)) {

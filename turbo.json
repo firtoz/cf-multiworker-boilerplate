@@ -1,10 +1,6 @@
 {
 	"$schema": "./node_modules/turbo/schema.json",
-	"globalDependencies": [
-		".env.local",
-		".env.production",
-		"tsconfig.base.json"
-	],
+	"globalDependencies": [".env.local", ".env.production", "tsconfig.base.json"],
 	"ui": "tui",
 	"tasks": {
 		"build": {

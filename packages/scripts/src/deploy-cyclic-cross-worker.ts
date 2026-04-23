@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 	const raw = fs.readFileSync(prodPath, "utf8");
 	const workerName = parseJsonc<{ name?: string }>(raw).name;
 	if (typeof workerName !== "string" || !workerName) {
-		console.error("wrangler-prod.jsonc must have a string top-level \"name\".");
+		console.error('wrangler-prod.jsonc must have a string top-level "name".');
 		process.exit(1);
 	}
 
@@ -80,7 +80,9 @@ async function main(): Promise<void> {
 	const myPair = pairs.find((p) => p.includes(workerName));
 
 	if (!myPair) {
-		console.log(`\nNo 2-node cross-script DO cycle includes "${workerName}" — single full deploy.\n`);
+		console.log(
+			`\nNo 2-node cross-script DO cycle includes "${workerName}" — single full deploy.\n`,
+		);
 		await runWranglerDeploy(packageDir, prodPath);
 		return;
 	}

@@ -1,8 +1,25 @@
 import { env } from "cloudflare:workers";
 import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
 import { fail, type MaybeError, success } from "@firtoz/maybe-error";
-import { formAction, type RoutePath, useDynamicSubmitter } from "@firtoz/router-toolkit";
-import { Fragment, memo, Suspense, useCallback, useEffect, useId, useMemo, useState } from "react";
+import {
+	formAction,
+	type RoutePath,
+	type SubmitterSettledData,
+	SubmitterSupersededError,
+	SubmitterUnmountedError,
+	useDynamicSubmitter,
+} from "@firtoz/router-toolkit";
+import {
+	Fragment,
+	memo,
+	type SubmitEvent,
+	Suspense,
+	useCallback,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Await, href, Link, useRevalidator } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -181,9 +198,12 @@ export const action = formAction({
 	},
 });
 
+type QueueRouteModule = typeof import("./queue");
+
 export default function Queue({ loaderData }: Route.ComponentProps) {
 	const revalidator = useRevalidator();
-	const submitter = useDynamicSubmitter<typeof import("./queue")>("/queue");
+	const submitter = useDynamicSubmitter<QueueRouteModule>("/queue");
+	const submitSeq = useRef(0);
 
 	const formatTime = useCallback((timestamp: number) => {
 		return new Date(timestamp).toLocaleTimeString();
@@ -191,17 +211,17 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 
 	const delayId = useId();
 
+	const [busy, setBusy] = useState(false);
+	const [actionResult, setActionResult] = useState<SubmitterSettledData<QueueRouteModule> | null>(
+		null,
+	);
+
 	// Track which fields have been modified since the error was displayed
 	const [modifiedFields, setModifiedFields] = useState<Set<string>>(new Set());
 	// Track messages for each item
 	const [messages, setMessages] = useState<string[]>(["Process this data"]);
-
-	useEffect(() => {
-		// Reset modified fields when form is submitted
-		if (submitter.state === "submitting") {
-			setModifiedFields(new Set());
-		}
-	}, [submitter.state]);
+	const [delay, setDelay] = useState(0);
+	const [directMode, setDirectMode] = useState(false);
 
 	// Clear error for a specific field when it's modified
 	const handleFieldChange = useCallback((fieldName: string) => {
@@ -218,6 +238,42 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 		setMessages((prev) => prev.filter((_, i) => i !== index));
 	}, []);
 
+	const handleSubmit = useCallback(
+		async (e: SubmitEvent<HTMLFormElement>) => {
+			e.preventDefault();
+			const id = ++submitSeq.current;
+			setModifiedFields(new Set());
+			setBusy(true);
+			try {
+				const data = await submitter.submitJson({
+					delay,
+					messages,
+					directMode,
+				});
+				if (id !== submitSeq.current) {
+					return;
+				}
+				setActionResult(data);
+				if (data.success) {
+					revalidator.revalidate();
+				}
+			} catch (err) {
+				if (err instanceof SubmitterSupersededError || err instanceof SubmitterUnmountedError) {
+					return;
+				}
+				if (id !== submitSeq.current) {
+					return;
+				}
+				console.error("Queue submit failed:", err);
+			} finally {
+				if (id === submitSeq.current) {
+					setBusy(false);
+				}
+			}
+		},
+		[delay, directMode, messages, revalidator, submitter],
+	);
+
 	// Compute field errors once - returns mapped object of field -> errors[]
 	const fieldErrors = useMemo(() => {
 		const errors: Record<keyof z.infer<typeof formSchema>, string[]> = {
@@ -226,17 +282,17 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 			directMode: [],
 		};
 
-		if (submitter.state !== "idle") {
+		if (busy) {
 			return errors;
 		}
 
 		if (
-			submitter.data &&
-			!submitter.data.success &&
-			submitter.data.error.type === "validation" &&
-			submitter.data.error.error.properties
+			actionResult &&
+			!actionResult.success &&
+			actionResult.error.type === "validation" &&
+			actionResult.error.error.properties
 		) {
-			const properties = submitter.data.error.error.properties;
+			const properties = actionResult.error.error.properties;
 			for (const [fieldName, fieldError] of Object.entries(properties) as [
 				[
 					keyof z.infer<typeof formSchema>,
@@ -253,7 +309,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 		}
 
 		return errors;
-	}, [modifiedFields, submitter.data, submitter.state]);
+	}, [actionResult, busy, modifiedFields]);
 
 	if (!loaderData.success) {
 		return (
@@ -333,24 +389,24 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 			</div>
 
 			{/* Success/error messages - static, based on form submission */}
-			{submitter.data?.success && submitter.data.result && (
+			{actionResult?.success && actionResult.result && (
 				<div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg">
 					<p className="text-sm sm:text-base font-semibold text-green-800 dark:text-green-200 break-all">
 						✓{" "}
-						{submitter.data.result.count === 1
-							? `Work item added to queue: ${submitter.data.result.items?.[0]?.id}`
-							: `${submitter.data.result.count} work items added to queue`}
+						{actionResult.result.count === 1
+							? `Work item added to queue: ${actionResult.result.items?.[0]?.id}`
+							: `${actionResult.result.count} work items added to queue`}
 					</p>
 				</div>
 			)}
 
-			{submitter.data && !submitter.data.success && submitter.data.error.type === "handler" && (
+			{actionResult && !actionResult.success && actionResult.error.type === "handler" && (
 				<div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
 					<p className="text-sm sm:text-base font-semibold text-red-800 dark:text-red-200 mb-2">
 						✗ Error:
 					</p>
 					<p className="text-sm sm:text-base text-red-700 dark:text-red-300">
-						{submitter.data.error.error}
+						{actionResult.error.error}
 					</p>
 				</div>
 			)}
@@ -361,7 +417,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 					<h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-gray-900 dark:text-gray-100">
 						Add Work to Queue
 					</h2>
-					<submitter.Form method="post" className="space-y-4">
+					<form method="post" onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-3">
 							{messages.map((msg, idx) => (
 								<MessageInput
@@ -375,7 +431,7 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 									}}
 									onRemove={() => removeMessage(idx)}
 									onAdd={addMessage}
-									disabled={submitter.state === "submitting"}
+									disabled={busy}
 									isLast={idx === messages.length - 1}
 									canRemove={messages.length > 1}
 								/>
@@ -392,17 +448,20 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 								type="number"
 								name="delay"
 								id={delayId}
-								disabled={submitter.state === "submitting"}
-								onChange={() => handleFieldChange("delay")}
+								disabled={busy}
+								value={delay}
+								onChange={(e) => {
+									setDelay(e.target.valueAsNumber || 0);
+									handleFieldChange("delay");
+								}}
 								className={cn(
 									"w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500",
 									{
-										"opacity-50": submitter.state === "submitting",
+										"opacity-50": busy,
 										"border-red-500 dark:border-red-500": fieldErrors.delay?.length > 0,
 										"border-gray-300 dark:border-gray-600": !fieldErrors.delay?.length,
 									},
 								)}
-								defaultValue="0"
 							/>
 							{fieldErrors.delay?.length ? (
 								fieldErrors.delay.map((error, i) => (
@@ -421,7 +480,12 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 								<input
 									type="checkbox"
 									name="directMode"
-									disabled={submitter.state === "submitting"}
+									checked={directMode}
+									onChange={(e) => {
+										setDirectMode(e.target.checked);
+										handleFieldChange("directMode");
+									}}
+									disabled={busy}
 									className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
 								/>
 								<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -435,15 +499,15 @@ export default function Queue({ loaderData }: Route.ComponentProps) {
 						</div>
 						<button
 							type="submit"
-							disabled={submitter.state === "submitting"}
+							disabled={busy}
 							className={cn(
 								"w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white py-2 px-4 rounded-md font-medium transition-colors",
-								{ "opacity-50 cursor-not-allowed": submitter.state === "submitting" },
+								{ "opacity-50 cursor-not-allowed": busy },
 							)}
 						>
-							{submitter.state === "submitting" ? "Adding..." : "Add to Queue"}
+							{busy ? "Adding..." : "Add to Queue"}
 						</button>
-					</submitter.Form>
+					</form>
 				</div>
 
 				{/* Queue Status - only this streams */}

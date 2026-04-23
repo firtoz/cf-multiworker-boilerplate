@@ -4,13 +4,10 @@ import * as path from "node:path";
 import type { PlopTypes } from "@turbo/gen";
 
 export default function generator(plop: PlopTypes.NodePlopAPI): void {
-	plop.setHelper(
-		"workerNameEnvKey",
-		(name: string) => {
-			const kebab = plop.getHelper("kebabCase")(name) as string;
-			return `${kebab.replace(/-/g, "_").toUpperCase()}_WORKER_NAME`;
-		},
-	);
+	plop.setHelper("workerNameEnvKey", (name: string) => {
+		const kebab = plop.getHelper("kebabCase")(name) as string;
+		return `${kebab.replace(/-/g, "_").toUpperCase()}_WORKER_NAME`;
+	});
 
 	plop.setGenerator("durable-object", {
 		description:
@@ -19,8 +16,7 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 			{
 				type: "input",
 				name: "name",
-				message:
-					"What is the name of the Durable Object (e.g., 'user-session')?",
+				message: "What is the name of the Durable Object (e.g., 'user-session')?",
 				validate: (input: string) => {
 					if (input.includes(" ")) {
 						return "name cannot include spaces";
@@ -76,10 +72,9 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 					execSync(`cd durable-objects/${kebab} && bun run generate-wrangler:local`, {
 						stdio: "inherit",
 					});
-					execSync(
-						`cd durable-objects/${kebab} && bunx wrangler types -c wrangler-dev.jsonc`,
-						{ stdio: "inherit" },
-					);
+					execSync(`cd durable-objects/${kebab} && bunx wrangler types -c wrangler-dev.jsonc`, {
+						stdio: "inherit",
+					});
 					return `Generated wrangler-dev.jsonc and worker-configuration.d.ts for ${data.name}`;
 				} catch (error) {
 					if (error instanceof Error) {

@@ -1,11 +1,11 @@
 ---
 name: form-submissions
-description: Form submission patterns using useDynamicSubmitter and formAction. Use when implementing forms, handling form submissions, or processing form data in React Router routes.
+description: Form submission patterns using useDynamicSubmitter, await submitJson, and formAction. Use when implementing forms, handling form submissions, or processing form data in React Router routes.
 ---
 
-# Form Submissions with useDynamicSubmitter
+# Form Submissions with `useDynamicSubmitter` (v9+)
 
-Always use `submitter.submitJson()` instead of React Router's `<Form>` component.
+Always use **`await submitter.submitJson(...)`** (or `await submitter.submit(...)`) instead of React Router's `<Form>` for programmatic submissions. In **v9**, the object from `useDynamicSubmitter` is **stable** and does **not** expose reactive `state` / `data` — use **local `useState`** (or `useDynamicSubmitterFetcher`, see below) for UI that depends on loading or last result.
 
 ## Loaders use `MaybeError` too
 
@@ -37,56 +37,88 @@ export const action = formAction({
   handler: async ({ request }, formData) => {
     // formData is typed and validated by Zod
     await updateSettings(formData);
-    
+
     // Return success() for successful operations
     return success();
-    
+
     // Throw for redirects
     // throw redirect("/somewhere");
   },
 });
 ```
 
-### 3. Component Implementation
+### 3. Component Implementation (default: promise + local state)
 
-Use controlled inputs with React state.
+Use controlled inputs with React state. Track **busy** and **last result** yourself; `await` the submitter. Use a **sequence ref** (flight counter) if overlapping submits are possible, so a slower response does not overwrite a newer one. In `catch`, ignore **`SubmitterSupersededError`** and **`SubmitterUnmountedError`**.
 
 ```typescript
+import {
+  SubmitterSupersededError,
+  SubmitterUnmountedError,
+  type SubmitterSettledData,
+  useDynamicSubmitter,
+} from "@firtoz/router-toolkit";
+import { useCallback, useRef, useState } from "react";
+
+type RouteMod = typeof import("./my-route");
+
 export default function MyForm() {
-  const submitter = useDynamicSubmitter<typeof import("./my-route")>("/my-route");
+  const submitter = useDynamicSubmitter<RouteMod>("/my-route");
+  const submitSeq = useRef(0);
+  const [busy, setBusy] = useState(false);
+  const [actionResult, setActionResult] = useState<SubmitterSettledData<RouteMod> | null>(null);
   const [field1, setField1] = useState("");
   const [field2, setField2] = useState("");
 
-  const handleSubmit = () => {
-    submitter.submitJson({
-      field1,
-      field2,
-    });
-  };
+  const handleSubmit = useCallback(async () => {
+    const id = ++submitSeq.current;
+    setBusy(true);
+    try {
+      const data = await submitter.submitJson({ field1, field2 });
+      if (id !== submitSeq.current) return;
+      setActionResult(data);
+    } catch (err) {
+      if (err instanceof SubmitterSupersededError || err instanceof SubmitterUnmountedError) {
+        return;
+      }
+      if (id !== submitSeq.current) return;
+      throw err;
+    } finally {
+      if (id === submitSeq.current) setBusy(false);
+    }
+  }, [field1, field2, submitter]);
 
   return (
     <div>
       <Input value={field1} onChange={(e) => setField1(e.target.value)} />
       <Input value={field2} onChange={(e) => setField2(e.target.value)} />
-      <Button onClick={handleSubmit} disabled={submitter.state === "submitting"}>
-        {submitter.state === "submitting" ? "Saving..." : "Save"}
+      <Button onClick={() => void handleSubmit()} disabled={busy}>
+        {busy ? "Saving..." : "Save"}
       </Button>
     </div>
   );
 }
 ```
 
+**Validation and handler errors** from `formAction` arrive on the **resolved** value: `!data.success` with `data.error.type === "validation"` (see `data.error.error.properties` for zod-form-data field errors) or `data.error.type === "handler"`. Only treat the promise as failed when the **network** or router throws, not when the action returns `fail(...)`.
+
+## Optional: `useDynamicSubmitterFetcher`
+
+Use **`useDynamicSubmitterFetcher(submitter)`** when you need **reactive** `fetcher.state` / `fetcher.data` (e.g. a declarative form that still uses `submitter.Form` and disables the button from `fetcher.state === "submitting"`). Prefer the promise + local state pattern for new work unless you have a clear need for fetcher-driven render updates.
+
 ## Key Points
 
 ### Don't Use
-- ❌ `<Form>` from react-router
+
+- ❌ `<Form>` from react-router for type-safe `formAction` flows (use submitter + JSON or the submitter’s `Form` with fetcher if needed)
+- ❌ `submitter.state` / `submitter.data` on the v9 `useDynamicSubmitter` return value (not reactive)
 
 ### Do Use
+
 - ✅ Controlled inputs with React state (`value` + `onChange`)
-- ✅ `useDynamicSubmitter` for form submission
-- ✅ `submitter.submitJson()` with data object
-- ✅ Check `submitter.state` for loading states
-- ✅ Access results via `submitter.data`
+- ✅ `useDynamicSubmitter` for the typed `submitJson` / `submit` / `Form` / `fetcherKey`
+- ✅ `await submitter.submitJson({ ... })` and local state for results and loading
+- ✅ `SubmitterSettledData` (or the resolved shape) for typing the last action payload
 - ✅ Export `route`, `formSchema`, and wrap `action` with `formAction()`
 - ✅ Return `success()` from action handlers for successful operations
 - ✅ `throw` (don't return) redirects and responses
@@ -94,8 +126,8 @@ export default function MyForm() {
 ## Benefits
 
 This approach provides:
+
 - Full TypeScript type safety for form data
 - Automatic Zod validation
-- Better control over form state
+- Clear loading and result handling aligned with v9’s promise-first submitter
 - Consistent patterns across the codebase
-- Access to submission state and results in one place

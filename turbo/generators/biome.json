@@ -1,8 +1,9 @@
 {
+	"root": false,
 	"$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
 	"extends": ["../../biome.json"],
 	"files": {
 		"ignoreUnknown": true,
-		"includes": ["**", "!**/*.hbs", "!**/node_modules"]
+		"includes": ["!**/*.hbs", "!**/node_modules"]
 	}
 }
