@@ -9,6 +9,7 @@
 		"typegen:local": {
 			"inputs": [
 				"drizzle.config.ts",
+				"drizzle/**",
 				"src/**/*.ts",
 				"tsconfig.json",
 				"package.json",
@@ -19,6 +20,7 @@
 		"typegen:prod": {
 			"inputs": [
 				"drizzle.config.ts",
+				"drizzle/**",
 				"src/**/*.ts",
 				"tsconfig.json",
 				"package.json",
@@ -30,6 +32,7 @@
 			"dependsOn": ["typegen:local"],
 			"inputs": [
 				"drizzle.config.ts",
+				"drizzle/**",
 				"src/**/*.ts",
 				"tsconfig.json",
 				"package.json",
@@ -41,11 +44,17 @@
 			"dependsOn": ["typegen:prod"],
 			"inputs": [
 				"drizzle.config.ts",
+				"drizzle/**",
 				"src/**/*.ts",
 				"tsconfig.json",
 				"package.json",
 				"$TURBO_ROOT$/tsconfig.base.json"
 			],
+			"outputs": []
+		},
+		"deploy": {
+			"dependsOn": ["typecheck:prod"],
+			"cache": true,
 			"outputs": []
 		},
 		"d1:migrate:local": {

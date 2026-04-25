@@ -1,5 +1,6 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { createRequestHandler } from "react-router";
+import type { CloudflareEnv } from "../env.d.ts";
 
 /**
  * Extend the AppLoadContext interface from react-router
@@ -8,7 +9,7 @@ import { createRequestHandler } from "react-router";
 declare module "react-router" {
 	export interface AppLoadContext {
 		cloudflare: {
-			env: Env;
+			env: CloudflareEnv;
 			ctx: ExecutionContext;
 		};
 	}
@@ -34,7 +35,7 @@ function sanitizeChatRoomId(raw: string): string {
 /**
  * Web Application Worker Entrypoint: Socka WebSocket → Chatroom DO `/websocket`, else React Router.
  */
-export default class WebAppWorker extends WorkerEntrypoint<Env> {
+export default class WebAppWorker extends WorkerEntrypoint<CloudflareEnv> {
 	async fetch(request: Request): Promise<Response> {
 		const url = new URL(request.url);
 		if (url.pathname === WORKER_SERVICES_PATH) {

@@ -1,11 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 import { Hono } from "hono";
+import type { CloudflareEnv } from "../env";
 
 /**
  * Minimal Durable Object used to validate a second cross-script DO + Vite auxiliary worker.
  */
 export class PingDo extends DurableObject {
-	readonly app = new Hono().get("/ping", (c) =>
+	readonly app = new Hono<{ Bindings: CloudflareEnv }>().get("/ping", (c) =>
 		c.json({
 			pong: true,
 			id: c.req.header("x-do-id") ?? "unknown",

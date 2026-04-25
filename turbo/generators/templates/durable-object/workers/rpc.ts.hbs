@@ -1,0 +1,5 @@
+/**
+ * Portable binding type for `DurableObjectNamespace<…>` (no `../env` imports).
+ * Narrow with `Pick<YourDurableObjectClass, "app" | "method">` when you expose RPC beyond defaults.
+ */
+export type {{ pascalCase name }}DoRpc = Rpc.DurableObjectBranded;

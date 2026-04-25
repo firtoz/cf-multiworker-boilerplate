@@ -1,14 +1,14 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { Hono } from "hono";
+import type { CloudflareEnv } from "../env";
 
-const app = new Hono();
+const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 /**
  * Other worker calls the ping **service** (WorkerEntrypoint), not the Ping DO.
  */
 app.get("/ping", async (c) => {
-	const env = c.env as Env;
-	const body = await env.PING.pingServiceAck();
+	const body = await c.env.PING.pingServiceAck();
 	return c.text(`other-worker: PING.pingServiceAck() → ${body}`);
 });
 

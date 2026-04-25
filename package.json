@@ -12,30 +12,36 @@
 			"durable-objects/*"
 		],
 		"catalog": {
-			"@typescript/native-preview": "^7.0.0-dev.20260423.1",
+			"@typescript/native-preview": "^7.0.0-dev.20260425.1",
 			"@biomejs/biome": "^2.4.13",
-			"@firtoz/hono-fetcher": "^2.7.1",
+			"@firtoz/hono-fetcher": "^2.7.2",
 			"@hono/zod-validator": "^0.7.6",
 			"@types/node": "^25.6.0",
 			"alchemy": "^0.93.0",
-			"hono": "^4.12.14",
+			"hono": "^4.12.15",
 			"typescript": "^6.0.3",
 			"uuid": "^14.0.0",
-			"wrangler": "^4.84.1",
+			"wrangler": "4.84.1",
+			"miniflare": "4.20260421.0",
 			"zod": "^4.3.6",
 			"dotenv": "^17.4.0"
 		}
 	},
+	"overrides": {
+		"miniflare": "4.20260421.0"
+	},
 	"scripts": {
-		"dev": "turbo run dev",
-		"deploy": "turbo run deploy",
+		"setup": "bun run --cwd packages/scripts setup",
+		"setup:prod": "bun run --cwd packages/scripts setup:prod",
+		"dev": "turbo run dev --filter=cf-starter-web --filter=chatroom-do --filter=ping-do --filter=other-worker",
+		"deploy": "turbo run deploy --filter=cf-starter-web",
 		"destroy": "turbo run destroy",
 		"build": "turbo run build:local",
 		"lint": "turbo lint",
 		"lint:format": "turbo lint:format",
 		"typecheck": "turbo run typecheck:local",
 		"typecheck:local": "turbo run typecheck:local",
-		"typecheck:root": "bunx tsc --noEmit -p .",
+		"typecheck:root": "tsgo --noEmit -p .",
 		"typecheck:prod": "turbo run typecheck:prod",
 		"typegen": "turbo run typegen:local",
 		"typegen:local": "turbo run typegen:local",
@@ -49,11 +55,13 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.13",
-		"@cloudflare/workers-types": "^4.20260424.1",
+		"@cloudflare/workers-types": "^4.20260425.1",
+		"@typescript/native-preview": "catalog:",
 		"@turbo/gen": "^2.9.6",
 		"@types/bun": "^1.3.13",
 		"alchemy": "catalog:",
 		"jsonc-parser": "^3.3.1",
+		"miniflare": "catalog:",
 		"turbo": "^2.9.6"
 	},
 	"packageManager": "bun@1.3.0",

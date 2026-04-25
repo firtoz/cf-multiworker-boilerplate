@@ -61,25 +61,30 @@ cd my-project
 
 ```bash
 bun install
+bun run setup
 ```
+
+In a **normal terminal**, **`bun run setup`** asks to confirm before appending random **`SESSION_SECRET`** and **`ALCHEMY_PASSWORD`** to repo-root **`.env.local`**. Pipes, **`CI=true`**, and **`bun run setup -- --yes`** skip the prompt and write immediately (used by CI and agent bootstrap). For production-style env on disk, use **`bun run setup:prod`** (same interactive / **`--yes`** rules for **`.env.production`**).
 
 **First-time Alchemy + Cloudflare (everyone on a new machine):**
 
 1. **`bun alchemy configure`** — Create the **default** profile and connect **Cloudflare** (OAuth is fine; at “Customize scopes?” **No** is the usual choice).
 2. **`bun alchemy login`** — Refreshes OAuth tokens when needed.
-3. **Repo-root `.env.local`** (gitignored) — At minimum set **`SESSION_SECRET`** (strong random string). Optionally set **`CLOUDFLARE_API_TOKEN`** and **`CLOUDFLARE_ACCOUNT_ID`** instead of relying on the profile; see [Alchemy’s Cloudflare auth guide](https://alchemy.run/guides/cloudflare/).
-4. **`ALCHEMY_PASSWORD`** — Optional for local dev: this repo uses a **documented dev default** in **`alchemy.run.ts`** so `alchemy.secret()` (e.g. **`SESSION_SECRET`** in state) can serialize. For **production, CI, or any shared/long-lived state**, set a **strong, stable** `ALCHEMY_PASSWORD` in `.env.local` / `.env.production` or your secret store. See [encryption password](https://alchemy.run/concepts/secret/#encryption-password).
+3. **`.env.local`** — After **`bun run setup`**, both secrets exist; optional **`CLOUDFLARE_API_TOKEN`** and **`CLOUDFLARE_ACCOUNT_ID`** if you do not use the profile; see [Alchemy’s Cloudflare auth guide](https://alchemy.run/guides/cloudflare/). See [`.env.example`](.env.example) for all keys.
+4. **`ALCHEMY_PASSWORD` / `SESSION_SECRET`** — **Required**; no in-repo defaults. [`cf-starter-alchemy`](packages/cf-starter-alchemy) reads **`ALCHEMY_PASSWORD`**; the web [alchemy.run.ts](apps/web/alchemy.run.ts) uses **`SESSION_SECRET`**. [encryption password](https://alchemy.run/concepts/secret/#encryption-password).
+
+`alchemy dev` / `react-router` load repo-root **`.env.local`** via `bun --env-file` in each package’s **`dev`** script.
 
 Then:
 
 ```bash
-# Loads .env.local; Turbo starts the web Alchemy dev session plus worker Wrangler dev sessions
+# Turbo starts one alchemy dev --app <id> per app (web + worker packages); each process loads ../../.env.local
 bun run dev
 ```
 
-Open the URL Vite/Alchemy prints (usually `http://localhost:5173`; if that port is busy it picks the next, e.g. `5174`). `bun run dev` runs `turbo run dev`, so the web package starts Alchemy dev and worker packages start local Wrangler sessions for direct service-binding smoke tests.
+Open the URL Vite/Alchemy prints (usually `http://localhost:5173`; if that port is busy it picks the next, e.g. `5174`). `bun run dev` uses a [filtered `turbo run dev`](https://alchemy.run/guides/turborepo/) so **`cf-starter-web`** and each durable-object package run **`alchemy dev --app …`** in parallel (TUI panes), not Wrangler.
 
-If you see **no Cloudflare credentials**, run **`bun alchemy configure`** / **`bun alchemy login`** or add **`CLOUDFLARE_API_TOKEN`** to `.env.local`. If you see **cannot serialize secret without password**, set **`ALCHEMY_PASSWORD`** or pull latest (a dev fallback password is set in **`alchemy.run.ts`**).
+If you see **no Cloudflare credentials**, run **`bun alchemy configure`** / **`bun alchemy login`** or add **`CLOUDFLARE_API_TOKEN`** to **`.env.local`**. If Alchemy says secrets are missing, run **`bun run setup`** or set **`SESSION_SECRET` / `ALCHEMY_PASSWORD`** by hand in **`.env.local`**.
 
 ### Production deploy
 
@@ -89,31 +94,25 @@ From the repo root:
 bun run deploy
 ```
 
-which runs **`turbo run deploy`**. Each deployable package runs `alchemy deploy --app <package-id>` in dependency order. Use repo-root **`.env.production`** (or CI secrets) for **`SESSION_SECRET`**, **`CLOUDFLARE_*`**, **`ALCHEMY_PASSWORD`**, etc., as in **`.env.example`**. Read [Alchemy State](https://alchemy.run/concepts/state/) before wiring shared CI.
+which runs **`turbo run deploy --filter=cf-starter-web`** (pulls in dependent worker **`deploy`** tasks). Each package runs **`alchemy deploy --app <package-id>`**. Use repo-root **`.env.production`** (or CI secrets) for **`SESSION_SECRET`**, **`CLOUDFLARE_*`**, **`ALCHEMY_PASSWORD`**, etc., as in **`.env.example`**. Read [Alchemy State](https://alchemy.run/concepts/state/) before wiring shared CI.
 
 **After forking:** Rebrand docs/UI and choose stable worker names in each package’s **`alchemy.run.ts`** before first deploy — see [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md).
 
 ### Build a real product from the starter
 
 1. **Personalize** — rename the root package/app copy, update user-facing copy, and pick stable script names in package `alchemy.run.ts` files before your first production deploy.
-2. **Add stateful features** — run `bunx turbo gen durable-object`, implement routes on the generated `readonly app`, then run `bun run dev`.
-3. **Consume from web** — add the provider as a workspace dependency, import its `./alchemy` worker resource in `apps/web/alchemy.run.ts`, bind `providerWorker.bindings.YourDo`, then use `env.YourDo` or `honoDoFetcherWithName(env.YourDo, "name")` in loaders/actions.
+2. **Add stateful features** — run `bunx turbo gen durable-object`, implement logic on the Durable Object’s Hono `app`, then run `bun run dev`. After generating a new package, complete [After `turbo gen durable-object`](#after-turbo-gendurable-object) (root `dev` filter, web bindings, rpc).
+3. **Consume from web** — add the provider as a workspace dependency, import its `./alchemy` worker resource in `apps/web/alchemy.run.ts`, pass resources into `ReactRouter(…, { bindings })`, then use `import { env } from "cloudflare:workers"` in worker code (see [.cursor/skills/cf-starter-gotchas/SKILL.md](.cursor/skills/cf-starter-gotchas/SKILL.md)) or `honoDoFetcherWithName` in loaders as needed.
 4. **Add data** — update `packages/db/src/schema.ts`, run `bun run db:generate`, and let the web package Alchemy app manage D1.
 5. **Ship** — set `.env.production` / CI secrets, set a stable `ALCHEMY_PASSWORD`, run `bun run typecheck`, `bun run lint`, `bun run build`, then `bun run deploy`.
 
 ### Conventions (humans & AI coding agents)
 
-Skim [AGENTS.md](AGENTS.md) at the repo root. In short:
-
-- **Cloudflare `env`:** `import { env } from "cloudflare:workers";` — do not use React Router context (e.g. `context.cloudflare.env`) for bindings.
-- **New routes:** register in `apps/web/app/routes.ts`, run `bun run typegen`, and in each route module export `route` with `RoutePath<"...">` from `@firtoz/router-toolkit` (see `apps/web/app/routes/home.tsx`).
-- **While building:** run `bun run typegen`, `bun run typecheck`, and `bun run lint` from the repo root whenever you change routes, **`alchemy.run.ts`**, **`env.d.ts`**, or env — not only at the end.
-- **Loaders / actions:** prefer `Promise<MaybeError<...>>` with `success` / `fail` so UI and submitters narrow cleanly (see `apps/web/app/routes/home.tsx`).
+Use **[AGENTS.md](AGENTS.md)** at the repo root (short index to skills) and the **[.cursor/skills/](.cursor/skills/)** entries it links (gotchas, workflow, env, Turbo, workers). For the web app only, [apps/web/AGENTS.md](apps/web/AGENTS.md).
 
 ## Project Structure
 
 ```
-├── alchemy/                    # Shared Alchemy password helper
 ├── apps/
 │   └── web/                    # React Router 7 app (D1 binding for site data)
 │       ├── alchemy.run.ts      # Web Alchemy app and imported worker bindings
@@ -124,18 +123,19 @@ Skim [AGENTS.md](AGENTS.md) at the repo root. In short:
 │   ├── ping-do/                # Hono DO + service-binding example
 │   └── other-worker/           # Plain worker service-binding example
 └── packages/
+    ├── cf-starter-alchemy/     # Shared `alchemyPassword` for `alchemy()` / secrets
     ├── db/                     # cf-starter-db — Drizzle + D1 schema/migrations
     ├── chat-contract/          # Shared Socka / chat types for web + DO
-    └── scripts/                # Stub workspace package (historical name); infra lives in Alchemy
+    └── scripts/                # Workspace scripts package (e.g. build helpers)
 ```
 
-For deeper conventions (env files, `^task` dependencies, caching), see **[AGENTS.md](AGENTS.md)** and [.cursor/skills/turborepo/SKILL.md](.cursor/skills/turborepo/SKILL.md).
+For deeper conventions (env files, `^task` dependencies, caching), see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md), [.cursor/skills/cf-workers-env-local/SKILL.md](.cursor/skills/cf-workers-env-local/SKILL.md), and [.cursor/skills/turborepo/SKILL.md](.cursor/skills/turborepo/SKILL.md).
 
 ## Key Features
 
 ### 1. Type-Safe Durable Object Calls
 
-Bindings are declared in each package’s **`alchemy.run.ts`** and flow into **`env.d.ts`** (see [AGENTS.md](AGENTS.md)). Use the Workers virtual module:
+Bindings are declared in each package’s **`alchemy.run.ts`** and flow into **`env.d.ts`** (see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)). Use the Workers virtual module:
 
 ```typescript
 import { env } from "cloudflare:workers";
@@ -152,14 +152,30 @@ bunx turbo gen durable-object
 bun run dev
 ```
 
-The generator creates a package-local `alchemy.run.ts`. To expose typed Hono routes, keep routes on the DO’s public `readonly app` and consume them with `honoDoFetcherWithName`.
+The generator scaffolds `durable-objects/<name>/` with a package-local `alchemy.run.ts`, `env.d.ts`, `workers/rpc.ts` (portable `DurableObjectNamespace` RPC type), and `workers/app.ts` using `new Hono<{ Bindings: CloudflareEnv }>()`. Implement routes on the DO’s public `app` and consume them with `honoDoFetcherWithName` from the web app when you add HTTP access.
+
+#### After `turbo gen durable-object`
+
+The generator does not wire the monorepo for you. For each new package:
+
+1. **Root [package.json](package.json) `dev`** — Add `--filter=<your-package>` so the app joins the root `turbo run dev` TUI. Each app still uses `alchemy dev --app <id>` in its own `package.json` (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/); web = `cf-starter-web`).
+
+2. **[turbo.json](turbo.json) `destroy`** — Add `<your-package>#destroy` with `dependsOn: ["cf-starter-web#destroy"]` (match `ping-do#destroy`).
+
+3. **Web** — [apps/web/package.json](apps/web/package.json) `"<your-package>": "workspace:*"`, `bun install`, then wire [apps/web/alchemy.run.ts](apps/web/alchemy.run.ts) from `"<your-package>/alchemy"`.
+
+4. **Types** — `bun run typegen` and `bun run typecheck` from the repo root. Don’t add sibling `workers/app.ts` to the web `include` to “fix” types—see [cf-starter-gotchas](.cursor/skills/cf-starter-gotchas/SKILL.md) **#14** and [cf-web-alchemy-bindings](.cursor/skills/cf-web-alchemy-bindings/SKILL.md).
+
+5. **Cross-worker** — `WorkerRef` / `WorkerStub` + `workers/rpc.ts`; see [cf-starter-gotchas](.cursor/skills/cf-starter-gotchas/SKILL.md) **#14** and [cf-worker-rpc-turbo](.cursor/skills/cf-worker-rpc-turbo/SKILL.md).
+
+Full package and Hono checklists: [cf-durable-object-package](.cursor/skills/cf-durable-object-package/SKILL.md).
 
 ## Configuration
 
 ### Environment variables
 
 - **`.env.example`** (committed) — **Documentation** for humans/agents; Alchemy and other tools use real gitignored env files, not this file wholesale.
-- **`.env.local`** (gitignored) — Loaded by Bun/root dev scripts. Set **`SESSION_SECRET`**, optional **`CLOUDFLARE_*`**, optional **`ALCHEMY_PASSWORD`** (see [Quick Start](#install--run)).
+- **`.env.local`** (gitignored) — Loaded by **`bun run setup`** and by package **`dev`** scripts via **`bun --env-file`**. Set **`SESSION_SECRET`**, **`ALCHEMY_PASSWORD`**, and optional **`CLOUDFLARE_*`** (see [Quick Start](#install--run)).
 - **`.env.production`** (gitignored) — Use for **`bun run deploy`** / CI when you want prod-shaped values in a file.
 
 After schema changes, run **`bun run db:generate`** so SQL lands in **`packages/db/drizzle/`**. The web package Alchemy app owns the **`D1Database`** for local dev and production deploy. The **`d1:migrate:*`** package scripts are informational.
@@ -176,12 +192,12 @@ Uses Bun with a frozen lockfile and Turborepo for parallel/cached tasks.
 
 ## Deployment
 
-Production is **`bun run deploy`** → **`turbo run deploy`**. Each deployable package runs **`alchemy deploy --app <package-id>`**. Use **`bun alchemy configure`** / **`bun alchemy login`** or **`CLOUDFLARE_API_TOKEN`** (and **`CLOUDFLARE_ACCOUNT_ID`** when needed) as in [Alchemy’s Cloudflare guide](https://alchemy.run/guides/cloudflare/). Set **`ALCHEMY_PASSWORD`** for real deployments and shared state so encrypted secrets in Alchemy state stay meaningful. See [AGENTS.md](AGENTS.md) and [State](https://alchemy.run/concepts/state/) for CI.
+Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-web`**. Each package in the graph runs **`alchemy deploy --app <package-id>`**. Use **`bun alchemy configure`** / **`bun alchemy login`** or **`CLOUDFLARE_API_TOKEN`** (and **`CLOUDFLARE_ACCOUNT_ID`** when needed) as in [Alchemy’s Cloudflare guide](https://alchemy.run/guides/cloudflare/). Set **`ALCHEMY_PASSWORD`** for real deployments and shared state so encrypted secrets in Alchemy state stay meaningful. See [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md) and [State](https://alchemy.run/concepts/state/) for CI.
 
 ## Scripts
 
 ### Development
-- `bun run dev` — `turbo run dev` (web Alchemy dev + worker Wrangler dev sessions)
+- `bun run dev` — Filtered `turbo run dev`: **`alchemy dev --app web`** plus **`alchemy dev --app`** each worker package (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/))
 - `bun run build` — `turbo run build:local`
 - `bun run typecheck` — `typecheck:local` across packages
 - `bun run typecheck:prod` — Prod-shaped types/config
@@ -191,7 +207,7 @@ Production is **`bun run deploy`** → **`turbo run deploy`**. Each deployable p
 - `bun run d1:migrate:local` / `d1:migrate:remote` — No-ops that print how Alchemy applies D1 migrations (optional manual **`wrangler d1`** still possible)
 
 ### Deployment
-- `bun run deploy` — `turbo run deploy`
+- `bun run deploy` — `turbo run deploy --filter=cf-starter-web` (web app + `^deploy` graph)
 - `bun run destroy` — `turbo run destroy`
 
 ### Dependency management
@@ -211,7 +227,7 @@ This starter kit follows modern 2026 best practices:
 ### Type safety
 - **Shared TypeScript config**: `tsconfig.base.json` across packages
 - **Strict TypeScript**: Additional checks where enabled (`noUncheckedIndexedAccess`, etc.)
-- **Types**: **`env.d.ts`** per worker package (Alchemy-derived; see [AGENTS.md](AGENTS.md)); React Router types under `.react-router/` (gitignored)
+- **Types**: **`env.d.ts`** per worker package (Alchemy-derived; see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)); React Router types under `.react-router/` (gitignored)
 
 ### Code quality
 - **Biome** for lint + format

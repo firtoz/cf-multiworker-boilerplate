@@ -1,6 +1,6 @@
 import alchemy from "alchemy";
 import { DurableObjectNamespace, Worker } from "alchemy/cloudflare";
-import { alchemyPassword } from "../../alchemy/password";
+import { alchemyPassword } from "cf-starter-alchemy";
 
 const app = await alchemy("chatroom-do", { password: alchemyPassword });
 

@@ -3,7 +3,7 @@
 	"extends": ["//"],
 	"tasks": {
 		"dev": {
-			"dependsOn": ["typegen:local"],
+			"dependsOn": ["scripts#dev:preflight", "typegen:local"],
 			"inputs": [
 				"workers/**/*.ts",
 				"src/**/*.ts",
@@ -74,8 +74,19 @@
 			"outputs": []
 		},
 		"deploy": {
-			"dependsOn": ["typecheck:prod"],
-			"cache": false,
+			"dependsOn": ["typecheck:prod", "cf-starter-chat-contract#typecheck:prod"],
+			"cache": true,
+			"inputs": [
+				"alchemy.run.ts",
+				"wrangler.jsonc",
+				"workers/**/*.ts",
+				"src/**/*.ts",
+				"drizzle/**",
+				"drizzle.config.ts",
+				"package.json",
+				"tsconfig.json",
+				"env.d.ts"
+			],
 			"outputs": []
 		},
 		"destroy": {

@@ -1,7 +1,7 @@
 import alchemy from "alchemy";
 import { DurableObjectNamespace, Worker, WorkerRef, WorkerStub } from "alchemy/cloudflare";
-import { alchemyPassword } from "../../alchemy/password";
-import type { OtherWorkerRpc } from "../other-worker/workers/rpc";
+import { alchemyPassword } from "cf-starter-alchemy";
+import type { OtherWorkerRpc } from "other-worker/alchemy";
 import type { PingDoRpc } from "./workers/ping-do";
 
 const app = await alchemy("ping-do", { password: alchemyPassword });

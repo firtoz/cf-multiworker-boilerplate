@@ -3,12 +3,13 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		"./alchemy": "./alchemy.run.ts"
+		"./alchemy": "./alchemy.run.ts",
+		"./workers/rpc": "./workers/rpc.ts"
 	},
 	"scripts": {
-		"deploy": "alchemy deploy --app other-worker",
-		"destroy": "alchemy destroy --app other-worker",
-		"dev": "wrangler dev --config wrangler.jsonc --show-interactive-dev-session=false",
+		"deploy": "CF_STARTER_ALCHEMY_MODE=deploy bun --env-file ../../.env.production alchemy deploy --app other-worker",
+		"destroy": "CF_STARTER_ALCHEMY_MODE=destroy bun --env-file ../../.env.production alchemy destroy --app other-worker",
+		"dev": "CF_STARTER_ALCHEMY_MODE=dev bun --env-file ../../.env.local alchemy dev --app other-worker",
 		"typegen:local": "node -e \"process.exit(0)\"",
 		"typegen:prod": "node -e \"process.exit(0)\"",
 		"typecheck:local": "tsgo --noEmit -p ./tsconfig.json",
@@ -21,7 +22,8 @@
 		"hono": "catalog:"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260423.0",
+		"cf-starter-alchemy": "workspace:*",
+		"@cloudflare/workers-types": "^4.20260425.1",
 		"@typescript/native-preview": "catalog:",
 		"@biomejs/biome": "catalog:",
 		"@types/node": "catalog:",

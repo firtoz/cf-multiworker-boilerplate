@@ -1,8 +1,15 @@
 {
 	"name": "scripts",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"build": "node -e \"process.exit(0)\"",
-		"build:local": "node -e \"process.exit(0)\""
+		"build:local": "node -e \"process.exit(0)\"",
+		"dev:preflight": "bun ./dev-preflight.ts",
+		"setup": "bun ./setup-env.ts",
+		"setup:prod": "bun ./setup-env.ts --prod"
+	},
+	"devDependencies": {
+		"@clack/prompts": "^1.2.0"
 	}
 }

@@ -1,6 +1,6 @@
 {
 	"$schema": "./node_modules/turbo/schema.json",
-	"globalDependencies": [".env.local", ".env.production", "tsconfig.base.json"],
+	"globalDependencies": [".env.local", ".env.production", "tsconfig.base.json", "packages/cf-starter-alchemy/password.ts"],
 	"ui": "tui",
 	"tasks": {
 		"build": {
@@ -33,14 +33,18 @@
 		"rr-typegen": {
 			"outputLogs": "new-only"
 		},
+		"dev:preflight": {
+			"cache": false,
+			"interactive": true,
+			"outputLogs": "full"
+		},
 		"dev": {
 			"cache": false,
 			"persistent": true,
 			"outputLogs": "new-only"
 		},
 		"deploy": {
-			"dependsOn": ["^deploy"],
-			"cache": false,
+			"cache": true,
 			"outputLogs": "new-only"
 		},
 		"destroy": {

@@ -1,16 +1,12 @@
 {
-	"name": "cf-starter-chat-contract",
+	"name": "cf-starter-alchemy",
 	"private": true,
 	"type": "module",
 	"exports": {
 		".": {
-			"types": "./src/contract.ts",
-			"default": "./src/contract.ts"
+			"types": "./password.ts",
+			"default": "./password.ts"
 		}
-	},
-	"dependencies": {
-		"@firtoz/socka": "^3.0.2",
-		"zod": "catalog:"
 	},
 	"scripts": {
 		"deploy": "node -e \"process.exit(0)\"",
@@ -20,6 +16,7 @@
 		"typecheck:prod": "tsgo --noEmit -p ."
 	},
 	"devDependencies": {
+		"@types/node": "catalog:",
 		"@typescript/native-preview": "catalog:",
 		"typescript": "catalog:"
 	}

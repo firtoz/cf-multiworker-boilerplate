@@ -10,7 +10,7 @@ Skim this on every task that touches workers, env, routes, or bindings.
 - **Use** the Workers virtual module: `import { env } from "cloudflare:workers";`
 - **Do not** read bindings from React Router or loader/action context (e.g. `context.cloudflare.env`). That pattern is wrong here; types and runtime expect `cloudflare:workers`.
 
-After changing `alchemy.run.ts` bindings, `apps/web/env.d.ts` (or a durable-object `env.d.ts`), or `.env.local` / `.env.production`, run `bun run typegen` from the repo root (see root `AGENTS.md`).
+After changing `alchemy.run.ts` bindings, `apps/web/env.d.ts` (or a durable-object `env.d.ts`), or `.env.local` / `.env.production`, run `bun run typegen` from the repo root (see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)).
 
 ## Package Alchemy apps
 
@@ -45,3 +45,7 @@ Prefer **typed success/error** from [`@firtoz/maybe-error`](https://www.npmjs.co
 - **Actions:** use `formAction` from `@firtoz/router-toolkit` (handler already returns `Promise<MaybeError<...>>`). For non-`formAction` actions, still return `success` / `fail` the same way.
 
 See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) and [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).
+
+## More context
+
+Longer lists: [.cursor/skills/cf-starter-gotchas/SKILL.md](.cursor/skills/cf-starter-gotchas/SKILL.md), [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md). Index: [AGENTS.md](../../AGENTS.md).

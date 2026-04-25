@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import alchemy from "alchemy/cloudflare/react-router";
@@ -43,6 +44,11 @@ export default defineConfig((configEnv) => {
 			exclude: [],
 		},
 		resolve: {
+			// Rolldown (Vite 8 production build) does not apply tsconfigPaths the same as esbuild dev;
+			// explicit alias matches apps/web/tsconfig.cloudflare.json paths "~/*" -> "./app/*".
+			alias: {
+				"~": fileURLToPath(new URL("./app", import.meta.url)),
+			},
 			tsconfigPaths: true,
 		},
 	} as UserConfig;

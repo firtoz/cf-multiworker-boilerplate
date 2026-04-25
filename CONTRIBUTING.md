@@ -15,8 +15,8 @@ Thank you for contributing to this project! This guide will help you get started
    bun install
    ```
 
-3. **Environment** — create repo-root **`.env.local`** (gitignored) with at least **`SESSION_SECRET`**. **`.env.example`** is documentation only — use it as a checklist when creating **`.env.local`** by hand.
-4. **Production deploy from your machine** — create **`.env.production`** (or maintain CI secrets), set a stable **`ALCHEMY_PASSWORD`**, then run **`bun run deploy`**. See root **README** and **AGENTS.md**.
+3. **Environment** — after **`bun install`**, run **`bun run setup`** from the repo root to create or complete **`.env.local`** with **`SESSION_SECRET`** and **`ALCHEMY_PASSWORD`** (no in-repo defaults). For deploy-shaped files on disk, **`bun run setup:prod`**. **`.env.example`** is documentation only.
+4. **Production deploy from your machine** — create **`.env.production`** (or maintain CI secrets), set a stable **`ALCHEMY_PASSWORD`**, then run **`bun run deploy`**. See root **README**, **[AGENTS.md](AGENTS.md)** (index), and **[.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)**.
 
 5. **Start development server**:
    ```bash
@@ -51,11 +51,11 @@ Thank you for contributing to this project! This guide will help you get started
 ```
 ├── apps/web/              # React Router 7 web app
 ├── durable-objects/       # Durable Object workers
-├── alchemy/              # Descriptor helpers, generated wiring, shared resources
 ├── packages/
+│   ├── cf-starter-alchemy/  # Shared Alchemy password helper (import in alchemy.run.ts)
 │   ├── db/                # D1 + Drizzle (cf-starter-db)
 │   ├── chat-contract/     # Shared chat / Socka types
-│   └── scripts/          # Build and deployment scripts
+│   └── scripts/            # Workspace scripts package
 └── turbo/generators/     # Code generators
 ```
 

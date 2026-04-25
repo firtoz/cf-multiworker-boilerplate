@@ -8,7 +8,7 @@ description: Alchemy + env files — repo-root `.env.local` (dev) and `.env.prod
 ## When to use this skill
 
 - Adding, renaming, or documenting environment variables for the web worker, chatroom worker, or D1.
-- Local dev shows missing vars for Alchemy / Wrangler.
+- Local dev shows missing vars for Alchemy (each app uses **`alchemy dev --app <id>`**; see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/)).
 - Choosing **local** (`typegen:local` / `typecheck:local`) vs **prod** (`typegen:prod` / `typecheck:prod`) for CI.
 - Explaining **repo-root** `.env.local` + `.env.production` vs optional per-package `.env.local`.
 
@@ -20,7 +20,7 @@ description: Alchemy + env files — repo-root `.env.local` (dev) and `.env.prod
 
 3. **Infra source of truth** — Package-local **`alchemy.run.ts`** files. Changing bindings means updating the relevant package app. `env.d.ts` files use the exported package worker resource's `Env`.
 
-4. **Turbo graph** — Root **`bun run dev`**, **`bun run deploy`**, and **`bun run destroy`** run Turbo. Web dev uses **`alchemy dev --app web`**; worker dev scripts may use Wrangler for local service-binding discovery.
+4. **Turbo graph** — Root **`bun run dev`** runs a **filtered** Turbo **`dev`** so only web + worker packages run **`alchemy dev --app …`** (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/)). **`bun run deploy`** / **`destroy`** use their Turbo graphs; package scripts use Alchemy CLI with **`--app`**. Optional **`wrangler.jsonc`** in a package is for config/tooling, not the primary local dev path.
 
 5. **Per-package `.env.local`** — Optional; include in Turbo **`inputs`** where a package’s tasks need it (e.g. chatroom-do). Never substitute **`.env.example`** for real values.
 
@@ -30,11 +30,11 @@ description: Alchemy + env files — repo-root `.env.local` (dev) and `.env.prod
 .env.example              # documentation only
 .env.local                # gitignored dev — loaded by root `bun run dev` / package dev scripts
 .env.production           # gitignored prod / CI secrets as needed
-alchemy/
-  password.ts             # shared Alchemy encryption password fallback
+packages/cf-starter-alchemy/
+  password.ts             # `alchemyPassword` — import { alchemyPassword } from "cf-starter-alchemy" in alchemy.run.ts
 apps/web/
-  alchemy.run.ts                 # web Alchemy app
-  env.d.ts                       # Alchemy-derived Env (see root AGENTS.md)
+  alchemy.run.ts          # web Alchemy app
+  env.d.ts                # Alchemy-derived Env (see cf-starter-workflow / cf-web-alchemy-bindings)
 ```
 
 ## Checklist after changing env or bindings
@@ -46,6 +46,7 @@ apps/web/
 
 ## Related docs
 
-- Root [`AGENTS.md`](../../../AGENTS.md) — Environment variables, type generation, Alchemy entry.
+- [`cf-starter-workflow`](../cf-starter-workflow/SKILL.md) — typegen cadence, deploy, checklist.
+- [`cf-starter-gotchas`](../cf-starter-gotchas/SKILL.md) — stack-specific gotchas.
 - [`project-init`](../project-init/SKILL.md) — renaming resources after forking the template.
 - [Alchemy Getting Started](https://alchemy.run/getting-started/) — `alchemy dev` / `deploy`, `alchemy login`.

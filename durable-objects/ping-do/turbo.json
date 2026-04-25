@@ -3,7 +3,7 @@
 	"extends": ["//"],
 	"tasks": {
 		"dev": {
-			"dependsOn": ["typegen:local"],
+			"dependsOn": ["scripts#dev:preflight", "typegen:local"],
 			"inputs": ["workers/**/*.ts", "wrangler.jsonc", "$TURBO_ROOT$/.env.local", "package.json"],
 			"persistent": true,
 			"cache": false
@@ -20,6 +20,7 @@
 		"typecheck:local": {
 			"dependsOn": ["typegen:local"],
 			"inputs": [
+				"alchemy.run.ts",
 				"workers/**/*.ts",
 				"tsconfig.json",
 				"package.json",
@@ -31,6 +32,7 @@
 		"typecheck:prod": {
 			"dependsOn": ["typegen:prod"],
 			"inputs": [
+				"alchemy.run.ts",
 				"workers/**/*.ts",
 				"tsconfig.json",
 				"package.json",
@@ -50,8 +52,16 @@
 			"outputs": []
 		},
 		"deploy": {
-			"dependsOn": ["typecheck:prod"],
-			"cache": false,
+			"dependsOn": ["typecheck:prod", "other-worker#typecheck:prod"],
+			"cache": true,
+			"inputs": [
+				"alchemy.run.ts",
+				"wrangler.jsonc",
+				"workers/**/*.ts",
+				"package.json",
+				"tsconfig.json",
+				"env.d.ts"
+			],
 			"outputs": []
 		},
 		"destroy": {

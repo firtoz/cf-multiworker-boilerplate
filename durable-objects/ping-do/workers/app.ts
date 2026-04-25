@@ -1,21 +1,23 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { Hono } from "hono";
+import type { pingWorker } from "../alchemy.run";
 import { PingDo } from "./ping-do";
 
 export { PingDo };
 
-const app = new Hono();
+type CloudflareEnv = (typeof pingWorker)["Env"];
+
+const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.get("/other", async (c) => {
-	const env = c.env as Env;
-	const body = await env.OTHER.otherServiceAck();
+	const body = await c.env.OTHER.otherServiceAck();
 	return c.text(`ping-do worker: /other → OTHER.otherServiceAck() → ${body}`);
 });
 
 /** Ping WorkerEntrypoint fetch (service binding target for `other-worker`). */
 app.get("/ping-service-ack", (c) => c.text("ping-service-ack"));
 
-export default class PingDoWorker extends WorkerEntrypoint<Env> {
+export default class PingDoWorker extends WorkerEntrypoint<CloudflareEnv> {
 	readonly app = app;
 
 	async pingServiceAck(): Promise<string> {

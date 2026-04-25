@@ -1,10 +1,11 @@
 import alchemy from "alchemy";
 import { DurableObjectNamespace, Worker } from "alchemy/cloudflare";
-import { alchemyPassword } from "../../alchemy/password";
+import { alchemyPassword } from "cf-starter-alchemy";
+import type { {{ pascalCase name }}DoRpc } from "./workers/rpc";
 
 const app = await alchemy("{{ kebabCase name }}", { password: alchemyPassword });
 
-export const {{ pascalCase name }} = await DurableObjectNamespace<Rpc.DurableObjectBranded>("{{ kebabCase name }}-{{ pascalCase name }}-class", {
+export const {{ pascalCase name }} = await DurableObjectNamespace<{{ pascalCase name }}DoRpc>("{{ kebabCase name }}-{{ pascalCase name }}-class", {
 	className: "{{ pascalCase name }}",
 });
 

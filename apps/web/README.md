@@ -104,7 +104,7 @@ const response = await api.get({ url: "/ping" });
 
 ### 5. Add Environment Variables
 
-**Development:** Add to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see root **AGENTS.md** and [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md):
+**Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`SESSION_SECRET`** and **`ALCHEMY_PASSWORD`** if missing), or add to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
 ```bash
 MY_SECRET=dev-value
 ```
@@ -149,4 +149,4 @@ From the **repo root**:
 bun run deploy
 ```
 
-This runs the Turbo deploy graph; each deployable package runs **`alchemy deploy --app <package-id>`**. See root **`AGENTS.md`** and **`README.md`**.
+This runs the Turbo deploy graph; each deployable package runs **`alchemy deploy --app <package-id>`**. See [.cursor/skills/cf-starter-workflow/SKILL.md](../../.cursor/skills/cf-starter-workflow/SKILL.md), root **`AGENTS.md`**, and root **`README.md`**.

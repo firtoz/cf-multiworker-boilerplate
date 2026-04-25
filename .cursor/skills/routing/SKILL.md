@@ -15,7 +15,7 @@ This project uses React Router v7 with file-based routing configured in `apps/we
 bun run typegen
 ```
 
-Run from repo root (turbo routes to the web app). **Without this, TypeScript imports will fail.** The typegen command generates the `+types` files that route components need.
+Run from repo root (turbo routes to the web app). **Without this, TypeScript imports will fail.** The typegen command generates the `+types` files that route components need. Full `typegen` / `typecheck` cadence: [cf-starter-workflow](../cf-starter-workflow/SKILL.md).
 
 ## Adding a New Route
 
@@ -107,7 +107,7 @@ Creating a route file without registering it in `routes.ts` will result in a 404
 
 ## Environment Variables
 
-When adding new environment variables (see root AGENTS.md):
+When adding new environment variables (see [cf-workers-env-local](../cf-workers-env-local/SKILL.md)):
 
 1. Document the variable in repo-root `.env.example` (human checklist only — setup and tooling do not read it)
 2. Add the variable to `.env.local` (and `.env.production` if needed for prod) with real values

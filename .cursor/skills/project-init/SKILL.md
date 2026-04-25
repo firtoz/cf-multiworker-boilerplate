@@ -9,7 +9,9 @@ Use this skill when someone is building **their** app on top of this starter kit
 
 **Guard:** If `git remote get-url origin` contains `firtoz/cf-multiworker-starter-kit`, do **not** run this flow unless the user explicitly requests renaming or templating work.
 
-**Note:** Root [AGENTS.md](../../AGENTS.md) describes package-local **`alchemy.run.ts`** files as the infra source of truth. For forks, rename package IDs / stable worker script names and bindings in those package apps. Run **`bun run typegen`** after changes.
+**Note:** [cf-starter-workflow](../cf-starter-workflow/SKILL.md) and [cf-starter-gotchas](../cf-starter-gotchas/SKILL.md) cover package-local `alchemy.run.ts` as the infra source of truth. For forks, rename package IDs / stable worker script names and bindings in those package apps. Run `bun run typegen` after changes.
+
+**Adding** a new Durable Object package or binding workers (after or alongside fork setup): use the focused skills (short checklists, not a single mega-doc)—[cf-durable-object-package](../cf-durable-object-package/SKILL.md) (Alchemy + Hono in `durable-objects/`), [cf-web-alchemy-bindings](../cf-web-alchemy-bindings/SKILL.md) (`cf-starter-web` `alchemy.run.ts` and workspace deps), [cf-worker-rpc-turbo](../cf-worker-rpc-turbo/SKILL.md) (`workers/rpc`, Turbo `dev`/`destroy`, cross-worker types).
 
 ## 1. Gather information
 

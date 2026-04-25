@@ -108,7 +108,7 @@
 			"outputs": []
 		},
 		"dev": {
-			"dependsOn": ["typegen:local"],
+			"dependsOn": ["scripts#dev:preflight", "typegen:local"],
 			"persistent": true,
 			"cache": false
 		},
@@ -144,7 +144,15 @@
 		},
 		"deploy": {
 			"dependsOn": ["build:prod", "^deploy"],
-			"cache": false,
+			"cache": true,
+			"inputs": [
+				"alchemy.run.ts",
+				"app/**/*.ts",
+				"app/**/*.tsx",
+				"workers/**/*.ts",
+				"build/**",
+				"package.json"
+			],
 			"outputs": []
 		},
 		"destroy": {

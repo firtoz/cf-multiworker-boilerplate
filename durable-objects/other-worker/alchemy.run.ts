@@ -1,7 +1,9 @@
 import alchemy from "alchemy";
 import { Worker, WorkerRef, WorkerStub } from "alchemy/cloudflare";
-import { alchemyPassword } from "../../alchemy/password";
-import type { PingWorkerRpc } from "../ping-do/workers/rpc";
+import { alchemyPassword } from "cf-starter-alchemy";
+import type { PingWorkerRpc } from "ping-do/workers/rpc";
+
+export type { OtherWorkerRpc } from "./workers/rpc";
 
 const app = await alchemy("other-worker", { password: alchemyPassword });
 

@@ -7,9 +7,9 @@
 	},
 	"scripts": {
 		"db:generate": "drizzle-kit generate",
-		"deploy": "alchemy deploy --app chatroom-do",
-		"destroy": "alchemy destroy --app chatroom-do",
-		"dev": "wrangler dev --config wrangler.jsonc --show-interactive-dev-session=false",
+		"deploy": "CF_STARTER_ALCHEMY_MODE=deploy bun --env-file ../../.env.production alchemy deploy --app chatroom-do",
+		"destroy": "CF_STARTER_ALCHEMY_MODE=destroy bun --env-file ../../.env.production alchemy destroy --app chatroom-do",
+		"dev": "CF_STARTER_ALCHEMY_MODE=dev bun --env-file ../../.env.local alchemy dev --app chatroom-do",
 		"typegen:local": "node -e \"process.exit(0)\"",
 		"typegen:prod": "node -e \"process.exit(0)\"",
 		"typecheck:local": "tsgo --noEmit -p ./tsconfig.json",
@@ -19,15 +19,16 @@
 	},
 	"packageManager": "bun@1.3.0",
 	"dependencies": {
-		"@firtoz/socka": "^3.0.1",
-		"@firtoz/websocket-do": "^13.0.1",
+		"@firtoz/socka": "^3.0.2",
+		"@firtoz/websocket-do": "^13.0.2",
 		"cf-starter-chat-contract": "workspace:*",
 		"drizzle-orm": "^0.45.2",
 		"hono": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260423.0",
+		"cf-starter-alchemy": "workspace:*",
+		"@cloudflare/workers-types": "^4.20260425.1",
 		"@typescript/native-preview": "catalog:",
 		"@biomejs/biome": "catalog:",
 		"@types/node": "catalog:",

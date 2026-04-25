@@ -1,12 +1,13 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import { Hono } from "hono";
+import type { CloudflareEnv } from "../env";
 
 /**
  * {{ description }}
  * {{ pascalCase name }} Durable Object with Hono routing
  */
 export class {{ pascalCase name }} extends DurableObject<Env> {
-	readonly app = new Hono()
+	readonly app = new Hono<{ Bindings: CloudflareEnv }>()
 		// Health check
 		.get("/", (c) =>
 			c.json({

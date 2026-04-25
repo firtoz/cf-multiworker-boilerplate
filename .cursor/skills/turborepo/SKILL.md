@@ -18,27 +18,19 @@ Use when:
 
 ## Running Turbo Commands
 
-**Always run turbo commands from the workspace root.**
+**Run repo-root scripts from the workspace root** (e.g. `bun run typecheck`, `bun run build`, `bun run lint`, `bun run dev` defined in the root [package.json](../../../package.json)) so Turbo orchestrates the graph.
 
 ```bash
-# ✅ CORRECT - From workspace root
-cd /workspace
-bun run build        # Turbo builds all packages in correct order
-bun run typecheck    # Turbo typechecks all packages
-bun run lint         # Turbo lints all packages
+# From repo root — Turbo picks packages, order, and cache
+bun run typecheck
+bun run build
 
-# ❌ WRONG - From subdirectory
-cd /workspace/apps/web
-bun run build        # This bypasses turbo orchestration
+# Avoid: cd apps/web && bun run typecheck — bypasses the monorepo task graph
 ```
 
-Turbo automatically:
-- Determines which packages need to run
-- Figures out the correct order based on dependencies
-- Parallelizes independent tasks
-- Caches results for unchanged packages
+**Root `bun run dev`** is intentionally **filtered** (`--filter=cf-starter-web` and each worker package) so only real Alchemy apps start. You don’t pass `--filter` for every *task*—only this **dev** script is narrowed to specific apps. Other root scripts (typecheck, build, lint) use Turbo’s default package scope.
 
-You don't need `--cwd` or `--filter` flags - turbo handles everything.
+Turbo: resolves package order, parallelizes, caches. **Turbo `inputs`** (per-package) are not the same as **TypeScript `include`** in a `tsconfig`—see [cf-starter-web `turbo.json`](../../../apps/web/turbo.json) vs [tsconfig.cloudflare.json](../../../apps/web/tsconfig.cloudflare.json).
 
 ## Core Principles
 
@@ -56,9 +48,7 @@ You don't need `--cwd` or `--filter` flags - turbo handles everything.
 
 **D1 / migrations:** D1 is managed by the web package **`apps/web/alchemy.run.ts`** via **`D1Database`** **`migrationsDir`**. **`packages/db`** **`d1:migrate:*`** scripts are informational no-ops; **`d1:migrate:*`** Turbo tasks stay for optional manual **`wrangler d1`** workflows.
 
-**Package Alchemy apps:** Each deployable package owns **`alchemy.run.ts`** and package deploy/destroy scripts call **`alchemy deploy/destroy --app <package-id>`**. Root scripts call Turbo graphs. Worker dev scripts may use Wrangler when local service-binding discovery needs direct worker sessions. Keep deploy/destroy uncached, matching Alchemy’s Turborepo guide.
-
-**`tsconfig.cloudflare.json`:** may still `include` paths into DO sources for **TypeScript** resolution; that is separate from Turbo `inputs` (see above).
+**Package Alchemy apps:** Each deployable package owns **`alchemy.run.ts`** and package **`dev` / `deploy` / `destroy`** use **`alchemy dev|deploy|destroy --app <package-id>`** (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/)). Root **`bun run dev`** filters Turbo to web + worker apps so library packages do not get a no-op **`dev`**. Deploy tasks are **cacheable** with explicit `inputs` / `dependsOn` in this repo; **`destroy`** stays **`cache: false`**. Optional manual **`wrangler d1`** remains for D1 if needed.
 
 ### 1. Task Dependencies Should Use Outputs, Not Inputs
 
@@ -308,7 +298,7 @@ Tasks are defined in three places:
 ```
 
 ### What stays uncached
-Only **`dev`** (persistent dev server) and **`clean`** (destructive) set `cache: false` in root `turbo.json`. **`d1:migrate:*`** in **`packages/db`** also sets **`cache: false`**. Most other tasks are **cacheable** when inputs (and declared **`env`**) match. Run **`turbo run <task> --force`** to bypass cache when types look stale.
+**`dev`** (persistent) and **`clean`** and **`destroy`** (destructive) use **`cache: false`** in this repo. **`d1:migrate:*`** in **`packages/db`** also. **`deploy`** is **cacheable** with package-local **`inputs` / `dependsOn`**; use **`turbo run deploy --force`** when you need a real re-run. Run **`turbo run <task> --force`** to bypass cache when types look stale.
 
 ```json
 "dev": {
@@ -350,7 +340,7 @@ Only **`dev`** (persistent dev server) and **`clean`** (destructive) set `cache:
 
 ### This repo — project-specific pitfalls
 
-These are also spelled out in the repo root **`AGENTS.md`** (*Fork / template gotchas*): index route + forms, `formSchema`, Alchemy D1 migrations, stale **`typegen`** → **`--force`**, empty local bindings until **`bun run dev`**, Biome `--write`, dev port. For **Turbo-only** rules (package-local **`inputs`**, **`^typecheck`** on web **`typegen`**, no **`^typecheck`** on DO **`typegen`** to avoid cycles), see **Core principles** at the top of this file.
+The same gotchas (index route + forms, `formSchema`, Alchemy D1, stale `typegen` → `--force`, local D1 until `bun run dev`, Biome, dev port) are in [cf-starter-gotchas](../cf-starter-gotchas/SKILL.md). For **Turbo-only** rules (package-local `inputs`, `^typecheck` on web `typegen`, no `^typecheck` on DO `typegen` to avoid cycles), see **Core principles** at the top of this file.
 
 ### ❌ Don't: Reference Other Package's Files Directly
 ```json
@@ -423,7 +413,7 @@ bun run build --verbose
 - **`typecheck:local` / `typecheck:prod`** — `dependsOn`: this package’s `typegen`, then `^typecheck`
 - **`lint`** — `dependsOn`: **`typecheck:local`**
 - **`build:local` / `build:prod`** — `dependsOn`: **`typecheck`**
-- **`dev`** — `dependsOn`: **`typegen:local`**; root **`bun run dev`** runs Turbo **`dev`** so package Alchemy sessions start together
+- **`dev`** — `dependsOn`: **`typegen:local`**; root **`bun run dev`** runs a **filtered** Turbo **`dev`** (web + worker apps only) so each runs **`alchemy dev --app …`**
 
 ### packages/db/turbo.json
 - `db:generate` — Drizzle SQL from `src/`
@@ -431,7 +421,7 @@ bun run build --verbose
 - `d1:migrate:local` / `d1:migrate:remote` — **`cache: false`**; scripts print that Alchemy applies migrations
 
 ### Durable objects (e.g. `chatroom-do`)
-- `turbo.json` with `typegen` / `typecheck` / `lint`; no **`generate-wrangler`** or Turbo **`deploy`**
+- `turbo.json` with `typegen` / `typecheck` / `lint` / **`deploy`** (and **`dev`** → **`alchemy dev --app …`** in **`package.json`**); no **`generate-wrangler`**
 
 ### Key Dependency Chains (simplified)
 
@@ -439,7 +429,7 @@ bun run build --verbose
 ^typecheck in deps (db, contract, chatroom) → cf-starter-web#typegen (rr-typegen + upstream typechecks)
 typecheck:web → typegen:web, ^typecheck:deps
 lint / build → typecheck
-dev → turbo starts web Alchemy + worker Wrangler sessions
+dev → filtered turbo starts `alchemy dev --app` for web + each worker package
 ```
 
 ## Resources

@@ -1,35 +1,27 @@
 import alchemy from "alchemy";
-import {
-	D1Database,
-	type DurableObjectNamespace,
-	ReactRouter,
-	type ReactRouter as ReactRouterResource,
-} from "alchemy/cloudflare";
+import { D1Database, ReactRouter } from "alchemy/cloudflare";
+import { alchemyPassword } from "cf-starter-alchemy";
 import { chatroomWorker } from "chatroom-do/alchemy";
 import { otherWorker } from "other-worker/alchemy";
 import { pingWorker } from "ping-do/alchemy";
-import type { PingDoRpc } from "ping-do/workers/ping-do";
-import { alchemyPassword } from "../../alchemy/password";
 
 const app = await alchemy("web", { password: alchemyPassword });
 
 const db = await D1Database("main-db", {
+	adopt: true,
 	migrationsDir: new URL("../../packages/db/drizzle", import.meta.url).pathname,
 });
-const sessionSecret = alchemy.secret(process.env["SESSION_SECRET"] ?? "dev-only-change-me");
+const sessionSecretRaw = process.env["SESSION_SECRET"];
+if (sessionSecretRaw == null || sessionSecretRaw === "") {
+	throw new Error(
+		"SESSION_SECRET is not set. Run `bun run setup` (or `bun run setup:prod`) at the repository root, or set SESSION_SECRET in the environment (e.g. .env.local / .env.production).",
+	);
+}
+const sessionSecret = alchemy.secret(sessionSecretRaw);
 const ChatroomDo = chatroomWorker.bindings.ChatroomDo;
-const PingDo: DurableObjectNamespace<PingDoRpc> = pingWorker.bindings.PingDo;
+const PingDo = pingWorker.bindings.PingDo;
 
-type WebBindings = {
-	DB: typeof db;
-	SESSION_SECRET: typeof sessionSecret;
-	ChatroomDo: typeof ChatroomDo;
-	PingDo: typeof PingDo;
-	PING: typeof pingWorker;
-	OTHER: typeof otherWorker;
-};
-
-export const web: ReactRouterResource<WebBindings> = await ReactRouter("cf-starter-web", {
+export const web = await ReactRouter("cf-starter-web", {
 	name: "cf-starter-web",
 	main: "workers/app.ts",
 	compatibility: "node",

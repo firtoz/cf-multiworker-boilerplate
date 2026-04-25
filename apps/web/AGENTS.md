@@ -2,6 +2,8 @@
 
 This file contains important guidelines for AI agents working on the React Router 7 web application.
 
+**TL;DR:** Use **`import { env } from "cloudflare:workers"`** for bindings. **`bun run typecheck`** (repo root) runs [tsconfig.cloudflare.json](tsconfig.cloudflare.json) and [tsconfig.node.json](tsconfig.node.json) so both the app and Vite/Tailwind configs are checked.
+
 ## Worker `env` (bindings)
 
 Use the Cloudflare Workers virtual module only:
@@ -10,7 +12,7 @@ Use the Cloudflare Workers virtual module only:
 import { env } from "cloudflare:workers";
 ```
 
-Do **not** use `context.cloudflare.env` (or similar) from React Router for bindings — types and runtime expect `cloudflare:workers`. See root [AGENTS.md](../../AGENTS.md).
+Do **not** use `context.cloudflare.env` (or similar) from React Router for bindings — types and runtime expect `cloudflare:workers`. See root [AGENTS.md](../../AGENTS.md) (skill index) and [.cursor/skills/cf-starter-gotchas/SKILL.md](../../.cursor/skills/cf-starter-gotchas/SKILL.md).
 
 ## Package Alchemy app
 
@@ -61,6 +63,8 @@ When you want to add or edit routes:
 
 **While implementing features**, run `bun run typegen`, `bun run typecheck`, and `bun run lint` from the **monorepo root** whenever routes, package Alchemy apps, or env change — not only when finishing a task.
 
+**Typecheck** runs **two** projects: [tsconfig.cloudflare.json](tsconfig.cloudflare.json) (app, workers, Alchemy) and [tsconfig.node.json](tsconfig.node.json) (Vite / Tailwind). [package.json](package.json) uses **`concurrently`** with **`--success all`** so both `tsgo` passes run and the step fails if **either** fails (e.g. you still see Node/Vite errors when the Cloudflare project is already red).
+
 ## Loaders and actions: `Promise<MaybeError<...>>`
 
 - **Loaders:** return `Promise<MaybeError<YourData>>` using `success` / `fail` from `@firtoz/maybe-error`. In the component, branch on `loaderData.success` then use `loaderData.result`.
@@ -68,7 +72,7 @@ When you want to add or edit routes:
 
 ## General Guidelines
 
-Follow the main project `AGENTS.md` at the root level for:
-- Linting requirements
-- Environment variable management
-- Worker configuration rules
+Follow the root [AGENTS.md](../../AGENTS.md) skill index and [cf-starter-workflow](../../.cursor/skills/cf-starter-workflow/SKILL.md) for:
+- Linting and completion checklist
+- Environment variable management ([cf-workers-env-local](../../.cursor/skills/cf-workers-env-local/SKILL.md))
+- Alchemy / worker package conventions ([cf-starter-gotchas](../../.cursor/skills/cf-starter-gotchas/SKILL.md) and the `cf-` skills linked there)
