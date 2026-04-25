@@ -2,10 +2,11 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"noEmit": true,
+		"target": "ES2022",
 		"types": ["bun"],
 		"module": "es2022",
 		"moduleResolution": "bundler"
 	},
-	"include": ["dev-preflight.ts"],
+	"include": ["*.ts"],
 	"exclude": ["node_modules"]
 }

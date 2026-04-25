@@ -18,6 +18,7 @@
         "jsonc-parser": "^3.3.1",
         "miniflare": "catalog:",
         "turbo": "^2.9.6",
+        "typescript": "catalog:",
       },
     },
     "apps/web": {

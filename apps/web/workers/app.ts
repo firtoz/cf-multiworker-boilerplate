@@ -16,8 +16,7 @@ declare module "react-router" {
 }
 
 const requestHandler = createRequestHandler(
-	// @ts-expect-error - Virtual module is not typed
-	() => import("virtual:react-router/server-build"),
+	() => import("virtual:react-router/server-build") as Promise<import("react-router").ServerBuild>,
 	import.meta.env["MODE"],
 );
 
