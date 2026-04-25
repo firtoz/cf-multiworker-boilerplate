@@ -1,0 +1,34 @@
+{
+	"name": "ping-do",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./alchemy": "./alchemy.run.ts",
+		"./workers/ping-do": "./workers/ping-do.ts",
+		"./workers/rpc": "./workers/rpc.ts"
+	},
+	"scripts": {
+		"deploy": "alchemy deploy --app ping-do",
+		"destroy": "alchemy destroy --app ping-do",
+		"dev": "wrangler dev --config wrangler.jsonc --show-interactive-dev-session=false",
+		"typegen:local": "node -e \"process.exit(0)\"",
+		"typegen:prod": "node -e \"process.exit(0)\"",
+		"typecheck:local": "tsgo --noEmit -p ./tsconfig.json",
+		"typecheck:prod": "tsgo --noEmit -p ./tsconfig.json",
+		"lint": "biome check --write .",
+		"lint:format": "biome format --write ."
+	},
+	"packageManager": "bun@1.3.0",
+	"dependencies": {
+		"hono": "catalog:"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20260423.0",
+		"@typescript/native-preview": "catalog:",
+		"@biomejs/biome": "catalog:",
+		"@types/node": "catalog:",
+		"alchemy": "catalog:",
+		"typescript": "catalog:",
+		"wrangler": "catalog:"
+	}
+}

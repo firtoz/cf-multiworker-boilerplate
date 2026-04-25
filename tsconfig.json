@@ -1,8 +1,20 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	// Ensures editors at the repo root still load packages/scripts compiler options (see bun run typecheck:root).
-	"extends": "./packages/scripts/tsconfig.json",
+	"extends": "./tsconfig.base.json",
 	"compilerOptions": {
-		"noEmit": true
-	}
+		"noEmit": true,
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"target": "ES2022",
+		"types": ["bun", "@cloudflare/workers-types/experimental"],
+		"lib": ["ES2022"]
+	},
+	"include": [
+		"alchemy/**/*.ts",
+		"apps/*/alchemy.run.ts",
+		"apps/*/env.d.ts",
+		"durable-objects/*/alchemy.run.ts",
+		"durable-objects/*/env.d.ts"
+	],
+	"exclude": ["node_modules", "**/build/**"]
 }

@@ -11,7 +11,7 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 
 	plop.setGenerator("durable-object", {
 		description:
-			"Generate a new Durable Object (wrangler.jsonc.hbs, scripts, turbo). After generation, wire this package into sibling packages' typegen dependsOn and apps/web bindings if other workers need to call it.",
+			"Generate a typed Hono Durable Object package with its own package-local Alchemy app.",
 		prompts: [
 			{
 				type: "input",
@@ -44,7 +44,6 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 				globOptions: { dot: true },
 				verbose: true,
 			},
-			// Custom action to rename .gitignore.hbs to .gitignore since stripExtensions doesn't work with this dotfile
 			(answers, _config, _plopfileApi) => {
 				const data = answers as { name: string; description: string };
 				const kebabName = plop.getHelper("kebabCase")(data.name);
@@ -65,29 +64,10 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 					return `Failed to rename .gitignore.hbs: ${error}`;
 				}
 			},
-			(answers, _config, _plopfileApi) => {
-				const data = answers as { name: string; description: string };
-				const kebab = plop.getHelper("kebabCase")(data.name) as string;
-				try {
-					execSync(`cd durable-objects/${kebab} && bun run generate-wrangler:local`, {
-						stdio: "inherit",
-					});
-					execSync(`cd durable-objects/${kebab} && bunx wrangler types -c wrangler-dev.jsonc`, {
-						stdio: "inherit",
-					});
-					return `Generated wrangler-dev.jsonc and worker-configuration.d.ts for ${data.name}`;
-				} catch (error) {
-					if (error instanceof Error) {
-						return `Failed to generate wrangler/types: ${error.message}`;
-					}
-					return `Failed to generate wrangler/types: ${error}`;
-				}
-			},
-			(answers, _config, _plopfileApi) => {
-				const data = answers as { name: string; description: string };
+			() => {
 				try {
 					execSync("bun install", { stdio: "inherit" });
-					return `Installed dependencies for ${data.name} durable object`;
+					return "Installed dependencies";
 				} catch (error) {
 					if (error instanceof Error) {
 						return `Failed to install dependencies: ${error.message}`;

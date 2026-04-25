@@ -12,10 +12,11 @@ import { env } from "cloudflare:workers";
 
 Do **not** use `context.cloudflare.env` (or similar) from React Router for bindings — types and runtime expect `cloudflare:workers`. See root [AGENTS.md](../../AGENTS.md).
 
-## Wrangler config (dev vs prod)
+## Package Alchemy app
 
-- Source: commit **`wrangler.jsonc.hbs`**. Generated **`wrangler-dev.jsonc`** / **`wrangler-prod.jsonc`** are gitignored; Vite / `react-router dev` uses **`wrangler-dev.jsonc`** (see `vite.config.ts` and `WRANGLER_CONFIG_FILE` for production builds).
-- Regenerate: `bun run generate-wrangler:local` from `apps/web`, or run **`bun run typegen`** from the repo root so Turbo runs generators in order.
+- Source: **`apps/web/alchemy.run.ts`** for web bindings and imported Worker/DO resources.
+- Provider packages export resources through their package **`./alchemy`** export.
+- Root scripts use Turbo; web dev/deploy/destroy calls `alchemy ... --app web`.
 
 ## Routes
 
@@ -29,7 +30,6 @@ When you want to add or edit routes:
 
 2. **Add or modify route files**: Create or edit files in `app/routes/`
    - `app/routes/home.tsx` - Home page route
-   - `app/routes/queue.tsx` - Queue demo route
    - Add new routes following the same pattern
 
 3. **Run typegen**: This generates the TypeScript types for your routes
@@ -59,7 +59,7 @@ When you want to add or edit routes:
 - Skip running `typegen` after adding/modifying routes
 - Read Cloudflare bindings from React Router `context` instead of `import { env } from "cloudflare:workers"`
 
-**While implementing features**, run `bun run typegen`, `bun run typecheck`, and `bun run lint` from the **monorepo root** whenever routes, wrangler, or env change — not only when finishing a task.
+**While implementing features**, run `bun run typegen`, `bun run typecheck`, and `bun run lint` from the **monorepo root** whenever routes, package Alchemy apps, or env change — not only when finishing a task.
 
 ## Loaders and actions: `Promise<MaybeError<...>>`
 

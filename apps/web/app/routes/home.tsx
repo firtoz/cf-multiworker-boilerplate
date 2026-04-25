@@ -1,9 +1,6 @@
-import { env } from "cloudflare:workers";
-import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
 import { type MaybeError, success } from "@firtoz/maybe-error";
 import type { RoutePath } from "@firtoz/router-toolkit";
-import { Suspense } from "react";
-import { Await, href, Link } from "react-router";
+import { href, Link } from "react-router";
 import { Welcome } from "../welcome/welcome";
 import type { Route } from "./+types/home";
 
@@ -16,31 +13,8 @@ export function meta(_args: Route.MetaArgs) {
 	];
 }
 
-type HomeLoaderData = {
-	doStatus: Promise<string>;
-	doCount: Promise<number>;
-};
-
-export async function loader(_args: Route.LoaderArgs): Promise<MaybeError<HomeLoaderData>> {
-	// Example of using a Durable Object with type-safe fetcher
-	const api = honoDoFetcherWithName(env.ExampleDo, "example");
-
-	// Return separate promises for more granular streaming
-	const doStatusPromise = (async () => {
-		const statusResponse = await api.get({ url: "/" });
-		return JSON.stringify(await statusResponse.json(), null, 2);
-	})();
-
-	const doCountPromise = (async () => {
-		const countResponse = await api.post({ url: "/count" });
-		const countData = await countResponse.json();
-		return countData.count;
-	})();
-
-	return success({
-		doStatus: doStatusPromise,
-		doCount: doCountPromise,
-	});
+export async function loader(_args: Route.LoaderArgs): Promise<MaybeError<Record<string, never>>> {
+	return success({});
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -52,58 +26,29 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 		);
 	}
 
-	const { doStatus, doCount } = loaderData.result;
-
 	return (
 		<div className="container mx-auto px-4 py-4 sm:px-6 sm:py-6">
-			{/* Welcome section with its own streaming for DO response */}
-			<Welcome doResponsePromise={doStatus} />
+			<Welcome />
 
-			{/* DO State card - streams independently */}
-			<div className="max-w-[600px] mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-green-50 dark:bg-green-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl">
-				<h2 className="text-xl sm:text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
-					📊 Example DO State
-				</h2>
-				<p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-2">
-					The ExampleDo has been accessed:
-				</p>
-				<Suspense
-					fallback={
-						<div className="animate-pulse">
-							<div className="h-12 bg-green-200 dark:bg-green-800 rounded mb-4" />
-						</div>
-					}
-				>
-					<Await resolve={doCount}>
-						{(count) => (
-							<>
-								<p className="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400 mb-3 sm:mb-4">
-									{count} times
-								</p>
-								<p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-									This count is stored in the Durable Object's persistent storage and increments on
-									each page load.
-								</p>
-							</>
-						)}
-					</Await>
-				</Suspense>
-			</div>
-
-			{/* Static content - shows immediately */}
 			<div className="max-w-[600px] mx-auto mt-6 sm:mt-8 p-4 sm:p-6 bg-blue-50 dark:bg-blue-900/30 border border-gray-200 dark:border-gray-700 rounded-2xl sm:rounded-3xl">
 				<h2 className="text-xl sm:text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
-					🚀 Multi-Worker Demo
+					What&apos;s in this starter
 				</h2>
 				<p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-4">
-					See Durable Objects communicating in action with our work queue demo.
+					Try a{" "}
+					<Link className="text-blue-600 dark:text-blue-400 underline" to={href("/visitors")}>
+						D1 visitor counter
+					</Link>{" "}
+					(SQL at the edge) and{" "}
+					<Link className="text-blue-600 dark:text-blue-400 underline" to={href("/chat")}>
+						multi-room chat
+					</Link>{" "}
+					(Socka + Durable Object SQLite + 15m activity TTL), and a{" "}
+					<Link className="text-blue-600 dark:text-blue-400 underline" to={href("/ping-do")}>
+						second cross-script DO
+					</Link>{" "}
+					(smoke test for multi-auxiliary Vite dev).
 				</p>
-				<Link
-					to={href("/queue")}
-					className="inline-block w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-				>
-					View Work Queue Demo →
-				</Link>
 			</div>
 		</div>
 	);

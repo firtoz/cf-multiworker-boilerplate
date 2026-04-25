@@ -9,7 +9,7 @@ Use this skill when someone is building **their** app on top of this starter kit
 
 **Guard:** If `git remote get-url origin` contains `firtoz/cf-multiworker-starter-kit`, do **not** run this flow unless the user explicitly requests renaming or templating work.
 
-**Note:** Root [AGENTS.md](../../AGENTS.md) says to avoid hand-editing `wrangler.jsonc` in general. **This skill is the exception** for forks: renaming workers and bindings for deployment is intentional; still run `bun run typegen` after wrangler changes.
+**Note:** Root [AGENTS.md](../../AGENTS.md) describes package-local **`alchemy.run.ts`** files as the infra source of truth. For forks, rename package IDs / stable worker script names and bindings in those package apps. Run **`bun run typegen`** after changes.
 
 ## 1. Gather information
 
@@ -17,40 +17,32 @@ Ask the user (or infer from context):
 
 - **Project slug** — npm-safe name, e.g. `my-saas-app` (used for root `package.json` `name` and naming).
 - **One-line description** — for README, meta tags, and home hero copy.
-- **Example DO** — keep `durable-objects/example-do` or plan to remove it and its bindings (if removed, update `apps/web` bindings, deps, and routes that use `ExampleDo`).
-- **Queue demo** — keep `coordinator-do` / `processor-do` / `/queue` or plan to strip them (larger refactor; update all bindings, queues, routes, and docs).
+- **Chatroom DO** — `durable-objects/chatroom-do` (WebSocket / Socka + DO SQLite) is wired from `apps/web` as `ChatroomDo`; rename script + `CHATROOM_DO_WORKER_NAME` in fork flows.
+- **D1** — `packages/db` + `D1_DATABASE_NAME` / optional `D1_DATABASE_ID` in **`.env.local`** / **`.env.production`**; run migrations after renames.
 
-## 2. Wrangler worker names and cross-references
+## 2. Alchemy worker names and cross-script Durable Objects
 
-Every worker’s `wrangler.jsonc` has a top-level `"name"` (Cloudflare worker script name). Workers that call other DOs use `"script_name"` pointing at those names. **All names must stay consistent** across files.
+Each package **`alchemy.run.ts`** defines script names, Durable Objects, service refs, and imports. Cross-package resources are exported through package **`"./alchemy"`** exports and imported by consumers.
 
-| File | Default `name` | `script_name` references |
-|------|----------------|----------------------------|
-| `apps/web/wrangler.jsonc` | `cf-starter-web` | `cf-starter-example-do`, `cf-starter-coordinator-do` |
-| `durable-objects/example-do/wrangler.jsonc` | `cf-starter-example-do` | — |
-| `durable-objects/coordinator-do/wrangler.jsonc` | `cf-starter-coordinator-do` | `cf-starter-processor-do` |
-| `durable-objects/processor-do/wrangler.jsonc` | `cf-starter-processor-do` | `cf-starter-coordinator-do` |
+| Resource (default) | Role |
+|--------------------|------|
+| `durable-objects/chatroom-do/alchemy.run.ts` | Exports **`ChatroomDo`** with same-script DO + SQLite |
+| `apps/web/alchemy.run.ts` | SSR app; **`ChatroomDo`** / **`PingDo`** are imported from package **`./alchemy`** exports |
 
-**Circular DO bindings (2-node `script_name` cycles):** Use **`packages/scripts/src/deploy-cyclic-cross-worker.ts`** as each package’s **`deploy`** (see starter **`processor-do`** / **`coordinator-do`**). It **`wrangler deploy --dry-run`**s both sides; **sacred** path = separate full deploys; else **phased** from **pipeline primary** (default: lex larger Worker name; env **`PIPELINE_PRIMARY_SCRIPT`** to override). Turbo should run **primary** before the other package’s **`deploy`**. **`pre-deploy`** only logs cycles via **`bootstrapCircularCrossScriptDOBindings`**.
+**Naming pattern (forks):** Derive a short prefix from the project slug (e.g. `my-saas` → package id `my-saas-chatroom-do`, web id `my-saas-web`). Use stable worker `name` values in package Alchemy apps when other workers refer to a script through `WorkerRef`. Keep **`className: "ChatroomDo"`** consistent with the exported DO class unless you rename the class in TypeScript (advanced).
 
-**Naming pattern (forks):** Derive a short prefix from the project slug (e.g. `my-saas` → `my-saas-web`, `my-saas-example-do`, `my-saas-coordinator-do`, `my-saas-processor-do`). Rename **`apps/web/package.json`** `name` to match the web worker (e.g. `my-saas-web`) and update Turbo `--filter=` references. Update:
+**Cross-script DO caveat:** Consumers import provider resources from package **`./alchemy`** exports. Migrations belong on the worker script that **defines** the class (`sqlite: true` on that **`DurableObjectNamespace`** where applicable).
 
-- Each file’s `"name"`.
-- Every `"script_name"` value that referenced an old name.
-- Keep **`name`** / **`class_name`** / **binding `name`** fields consistent with TypeScript class names (`ExampleDo`, `CoordinatorDo`, `ProcessorDo`) unless the user is also renaming classes (advanced).
+**D1:** `D1Database("main-db", { migrationsDir: … })` in **`apps/web/alchemy.run.ts`** points at **`packages/db/drizzle`**. After schema changes, run **`bun run db:generate`**; deploy uses **`bun run deploy`** / Turbo per Alchemy’s D1 flow.
 
-**Queues:** In `durable-objects/coordinator-do/wrangler.jsonc` and `durable-objects/processor-do/wrangler.jsonc`, rename queue identifiers (`work-queue`, `work-queue-dlq`) to a project-specific prefix, e.g. `my-saas-work-queue`, `my-saas-work-queue-dlq`, so they do not collide with other accounts’ queues.
-
-**D1:** If commented D1 blocks use example names, align `database_name` with the new project when you enable D1.
-
-After edits: `bun run typegen` from the repo root.
+After edits: **`bun run typegen`** from the repo root. `env.d.ts` follows exported package worker resources.
 
 ## 3. Package names (`package.json`)
 
 - **Root** [`package.json`](../../package.json): set `"name"` to the project slug (replaces `cf-multiworker-starter-kit`).
-- **`apps/web/package.json`**: set `"name"` to match the web worker (e.g. `my-saas-web` if that matches `apps/web/wrangler.jsonc` `name`).
+- **`apps/web/package.json`**: set `"name"` to match your web package naming (e.g. `my-saas-web`); align **`ReactRouter(...)`** first argument in **`alchemy.run.ts`** with the script name you want in Cloudflare.
 - **Each DO package** under `durable-objects/*/package.json`: align names with folders or team conventions.
-- **`workspace:*` dependencies:** If you rename a workspace package (e.g. `example-do`), update every consumer (`apps/web/package.json`, other packages) and `bun install` from root.
+- **`workspace:*` dependencies:** If you rename a workspace package (e.g. `chatroom-do`), update every consumer (`apps/web/package.json`, other packages) and `bun install` from root.
 
 ## 4. README
 
@@ -64,7 +56,7 @@ Rewrite [`README.md`](../../README.md) for the **product**, not the template:
 
 - [`apps/web/app/welcome/welcome.tsx`](../../apps/web/app/welcome/welcome.tsx) — page title and intro paragraph.
 - [`apps/web/app/routes/home.tsx`](../../apps/web/app/routes/home.tsx) — `meta` title and description.
-- [`apps/web/app/routes/queue.tsx`](../../apps/web/app/routes/queue.tsx) — `meta` title (`Work Queue - Multi-Worker Demo`) if the queue route remains.
+- [`apps/web/app/routes/chat.tsx`](../../apps/web/app/routes/chat.tsx) — `meta` title if you keep the chat demo.
 
 ## 6. CONTRIBUTING
 

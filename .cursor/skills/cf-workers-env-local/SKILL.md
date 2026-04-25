@@ -1,49 +1,51 @@
 ---
 name: cf-workers-env-local
-description: Wrangler env files — repo-root `.env.local` (dev) and `.env.production` (deploy), optional per-package `.env.local`, and generated wrangler JSONC. Use when adding secrets or non-secret vars, debugging missing env in wrangler dev, or local vs prod typegen. Never use a plain `.env` file. `.env.example` is human documentation only — no script reads it.
+description: Alchemy + env files — repo-root `.env.local` (dev) and `.env.production` (deploy/CI), optional per-package `.env.local`, and package-local Alchemy apps. Use when adding secrets or non-secret vars, debugging missing env in local dev, or local vs prod typegen. Never use a plain `.env` file. `.env.example` is human documentation only — no script reads it for all keys.
 ---
 
-# Wrangler — env files and generated config
+# Alchemy — env files and package apps
 
 ## When to use this skill
 
-- Adding, renaming, or documenting environment variables for any Worker or Durable Object package.
-- Local dev shows missing vars for `$VAR` substitution in generated Wrangler JSONC.
-- Choosing **local** (`typegen:local` / `typecheck:local`) vs **prod** (`typegen:prod` / `typecheck:prod`) for CI or pre-deploy.
+- Adding, renaming, or documenting environment variables for the web worker, chatroom worker, or D1.
+- Local dev shows missing vars for Alchemy / Wrangler.
+- Choosing **local** (`typegen:local` / `typecheck:local`) vs **prod** (`typegen:prod` / `typecheck:prod`) for CI.
 - Explaining **repo-root** `.env.local` + `.env.production` vs optional per-package `.env.local`.
 
 ## Ground rules
 
-1. **`.env.example` (repo root, and optional `apps/web/.env.example`)** — **Human documentation only**. **No script reads it** — not setup, not Wrangler, not typegen. **`generate-wrangler`**, **`cf-typegen`**, and builds use real env files only.
+1. **`.env.example` (repo root, optional `apps/web/.env.example`)** — **Human documentation only** for most keys. Root **`bun run dev`** and package dev scripts read the real **`.env.local`**; Alchemy docs cover [Secrets](https://alchemy.run/providers/cloudflare/secret/) and [State](https://alchemy.run/concepts/state/).
 
-2. **Real env** — **`generate-wrangler --mode=remote`** merges **only** keys in **`DEPLOYMENT_KEYS`** in `packages/scripts/src/utils/generate-wrangler.ts` from repo-root **`.env.production`** onto `process.env`. **`cf-typegen`** passes **`--env-file`** to Wrangler for repo-root **`.env.local`** / **`.env.production`**, and optionally per-package **`.env.local`** beside the package when present. **Do not use a plain `.env` file.**
+2. **Real env** — Put dev values in **`.env.local`** (gitignored). Use **`.env.production`** for deploy/CI secrets and Cloudflare credentials as your pipeline expects. **Do not use a plain `.env` file.**
 
-3. **Generated Wrangler files** — Each worker package uses **`wrangler.jsonc.hbs`**. **`wrangler-dev.jsonc`** / **`wrangler-prod.jsonc`** are generated and gitignored. Edit the template and real env files, then run **`bun run typegen`** from the repo root.
+3. **Infra source of truth** — Package-local **`alchemy.run.ts`** files. Changing bindings means updating the relevant package app. `env.d.ts` files use the exported package worker resource's `Env`.
 
-4. **Per-package `.env.local`** — Optional; `cf-typegen` includes it if it exists next to that package (never `.env.example`).
+4. **Turbo graph** — Root **`bun run dev`**, **`bun run deploy`**, and **`bun run destroy`** run Turbo. Web dev uses **`alchemy dev --app web`**; worker dev scripts may use Wrangler for local service-binding discovery.
 
-5. **`cf-typegen`** — `packages/scripts/src/cf-typegen.ts`; requires `--apps-web-config=wrangler-dev.jsonc` or `wrangler-prod.jsonc`.
+5. **Per-package `.env.local`** — Optional; include in Turbo **`inputs`** where a package’s tasks need it (e.g. chatroom-do). Never substitute **`.env.example`** for real values.
 
 ## Typical layout
 
 ```
-.env.example              # documentation only (not read by tooling)
-.env.local                # gitignored dev — read by cf-typegen / builds via --env-file
-.env.production           # gitignored prod — deployment keys + generate-wrangler remote
+.env.example              # documentation only
+.env.local                # gitignored dev — loaded by root `bun run dev` / package dev scripts
+.env.production           # gitignored prod / CI secrets as needed
+alchemy/
+  password.ts             # shared Alchemy encryption password fallback
 apps/web/
-  wrangler.jsonc.hbs
-  wrangler-dev.jsonc
-  wrangler-prod.jsonc
+  alchemy.run.ts                 # web Alchemy app
+  env.d.ts                       # Alchemy-derived Env (see root AGENTS.md)
 ```
 
-## Checklist after changing env or wrangler shape
+## Checklist after changing env or bindings
 
-- Update **repo-root `.env.example`** so contributors know which keys exist (documentation).
-- If you change **`DEPLOYMENT_KEYS`**, add **`secrets.required`** in any **`wrangler.jsonc.hbs`**, or add prod-only deploy keys: update **`packages/scripts/src/utils/prod-env-manifest.ts`** (and prompts in **`bootstrap-env-prod.ts`**), **`sync-wrangler-secrets.ts`** / **`load-env-production.ts`** messages if needed, then **`bun run setup:prod`** smoke-test.
+- Update **repo-root `.env.example`** so contributors know which keys exist.
+- Update the relevant package **`alchemy.run.ts`**.
 - Run **`bun run typegen`** from the **repo root**.
-- For production parity before deploy: **`turbo run typegen:prod`** then **`turbo run typecheck:prod`**.
+- For production parity: **`turbo run typegen:prod`** then **`turbo run typecheck:prod`** if prod env differs.
 
 ## Related docs
 
-- Root [`AGENTS.md`](../../../AGENTS.md) — Environment variables, type generation, wrangler templates.
-- [`project-init`](../project-init/SKILL.md) — renaming workers and packages after forking the template.
+- Root [`AGENTS.md`](../../../AGENTS.md) — Environment variables, type generation, Alchemy entry.
+- [`project-init`](../project-init/SKILL.md) — renaming resources after forking the template.
+- [Alchemy Getting Started](https://alchemy.run/getting-started/) — `alchemy dev` / `deploy`, `alchemy login`.

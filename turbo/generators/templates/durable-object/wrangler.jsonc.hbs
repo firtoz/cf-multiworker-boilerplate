@@ -1,37 +1,10 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- *
- * Generated: bun run generate-wrangler:local → wrangler-dev.jsonc; generate-wrangler:prod → wrangler-prod.jsonc
- */
 {
-	"$schema": "../../node_modules/wrangler/config-schema.json",
-	"name": "{{WORKER_NAME}}",
-	{{WORKERS_DEV_BLOCK}}
-	"compatibility_date": "2026-04-17",
+	"name": "{{ kebabCase name }}",
+	"main": "workers/app.ts",
+	"compatibility_date": "2026-03-10",
 	"compatibility_flags": ["nodejs_compat"],
-	"main": "./workers/app.ts",
-	"observability": {
-		"enabled": true,
-		"logs": {
-			"enabled": true
-		}
-	},
-	"placement": {
-		"mode": "smart"
-	},
 	"durable_objects": {
-		"bindings": [
-			{
-				"name": "{{ pascalCase name }}",
-				"class_name": "{{ pascalCase name }}"
-			}
-		]
+		"bindings": [{ "name": "{{ pascalCase name }}", "class_name": "{{ pascalCase name }}" }]
 	},
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": ["{{ pascalCase name }}"]
-		}
-	]
+	"migrations": [{ "tag": "v1", "new_classes": ["{{ pascalCase name }}"] }]
 }

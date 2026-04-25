@@ -1,0 +1,22 @@
+import alchemy from "alchemy";
+import { DurableObjectNamespace, Worker } from "alchemy/cloudflare";
+import { alchemyPassword } from "../../alchemy/password";
+
+const app = await alchemy("{{ kebabCase name }}", { password: alchemyPassword });
+
+export const {{ pascalCase name }} = await DurableObjectNamespace<Rpc.DurableObjectBranded>("{{ kebabCase name }}-{{ pascalCase name }}-class", {
+	className: "{{ pascalCase name }}",
+});
+
+export const {{ camelCase name }}Worker = await Worker("{{ kebabCase name }}", {
+	entrypoint: new URL("./workers/app.ts", import.meta.url).pathname,
+	compatibility: "node",
+	placement: { mode: "smart" },
+	bindings: {
+		{{ pascalCase name }},
+	},
+});
+
+console.log({ worker: "{{ kebabCase name }}", scriptName: {{ camelCase name }}Worker.name });
+
+await app.finalize();

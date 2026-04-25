@@ -10,7 +10,15 @@ Skim this on every task that touches workers, env, routes, or bindings.
 - **Use** the Workers virtual module: `import { env } from "cloudflare:workers";`
 - **Do not** read bindings from React Router or loader/action context (e.g. `context.cloudflare.env`). That pattern is wrong here; types and runtime expect `cloudflare:workers`.
 
-After changing wrangler bindings or `.env.local` / `.env.production`, run `bun run typegen` from the repo root (see root `AGENTS.md`).
+After changing `alchemy.run.ts` bindings, `apps/web/env.d.ts` (or a durable-object `env.d.ts`), or `.env.local` / `.env.production`, run `bun run typegen` from the repo root (see root `AGENTS.md`).
+
+## Package Alchemy apps
+
+- Add new Workers/DOs through package-local `alchemy.run.ts` files and export consumed resources through `./alchemy`.
+- Root `dev`, `deploy`, and `destroy` run Turbo graphs; package scripts call `alchemy dev/deploy/destroy --app <package-id>`.
+- DO providers export namespaces/workers; consumers import those resources in their own `alchemy.run.ts`.
+- Put typed Hono routes on a public `readonly app` so consumers can use `honoDoFetcherWithName(env.MyDo, "name")`.
+- Use explicit `DurableObjectNamespace<MyDoRpc>` / `WorkerRef<MyWorkerRpc>` types for typed RPC/Hono surfaces. Use a branded-only namespace when a heavy base class causes recursive inference.
 
 ## Route modules (`apps/web/app/routes/`)
 
@@ -23,7 +31,7 @@ After changing wrangler bindings or `.env.local` / `.env.production`, run `bun r
 
 Run from the **repository root** often while building (not only at the end):
 
-- `bun run typegen` — after `routes.ts` changes, new routes, wrangler/env changes
+- `bun run typegen` — after `routes.ts` changes, new routes, Alchemy/env changes
 - `bun run typecheck` — after substantive edits
 - `bun run lint` — before considering work done
 

@@ -15,8 +15,8 @@ Thank you for contributing to this project! This guide will help you get started
    bun install
    ```
 
-3. **Environment** — run **`bun run setup`** (writes **`.env.local`**; if it already exists, you’ll see a **summary** and can **change individual sections** or re-run the full wizard). Non-interactive / CI: **`bun run setup --yes`** (leaves an existing file unchanged unless **`--force`**). **`.env.example`** is documentation only — use it as a checklist when creating **`.env.local`** by hand.
-4. **Production deploy from your machine** — create **`.env.production`** with **`bun run setup:prod`** (or maintain it by hand), then **`bun run check-prod-env`** before **`bun run deploy`** / **`deploy:execute`**. See root **README** and **AGENTS.md**.
+3. **Environment** — create repo-root **`.env.local`** (gitignored) with at least **`SESSION_SECRET`**. **`.env.example`** is documentation only — use it as a checklist when creating **`.env.local`** by hand.
+4. **Production deploy from your machine** — create **`.env.production`** (or maintain CI secrets), set a stable **`ALCHEMY_PASSWORD`**, then run **`bun run deploy`**. See root **README** and **AGENTS.md**.
 
 5. **Start development server**:
    ```bash
@@ -51,8 +51,10 @@ Thank you for contributing to this project! This guide will help you get started
 ```
 ├── apps/web/              # React Router 7 web app
 ├── durable-objects/       # Durable Object workers
+├── alchemy/              # Descriptor helpers, generated wiring, shared resources
 ├── packages/
-│   ├── do-common/        # Shared types and schemas
+│   ├── db/                # D1 + Drizzle (cf-starter-db)
+│   ├── chat-contract/     # Shared chat / Socka types
 │   └── scripts/          # Build and deployment scripts
 └── turbo/generators/     # Code generators
 ```
@@ -65,14 +67,16 @@ bunx turbo gen durable-object
 
 Follow the prompts and the generator will:
 - Create the DO structure
-- Set up wrangler config
+- Create package-local `alchemy.run.ts`
 - Configure TypeScript
 - Add Biome config
 
 After generation:
-1. Wire the DO in **`apps/web/wrangler.jsonc.hbs`** (and any cross-worker `script_name` references in other `wrangler.jsonc.hbs` files)
-2. Run `bun run typegen` (or `generate-wrangler:local` / `:prod` per package) so generated JSONC and types exist
-3. Implement your DO logic in `workers/app.ts`
+1. Implement routes/RPC on the generated class’s public **`readonly app`** in **`workers/app.ts`**.
+2. If the web app consumes the DO, export the provider resource from the package **`./alchemy`** export, import it in **`apps/web/alchemy.run.ts`**, and add a **`workspace:*`** dependency in **`apps/web/package.json`** if Turbo should run that package’s checks before web.
+3. Run **`bun run typegen`** and **`bun run typecheck`** from the repo root.
+
+Root **`bun run deploy`** uses Turbo to deploy package Alchemy apps in dependency order.
 
 ## Testing
 
@@ -98,10 +102,8 @@ Before submitting a PR:
 
 ## Deploy (from a contributor machine)
 
-- **`bun run setup:prod`** — Creates or updates **`.env.production`** for live deploy (interactive; **`--yes`** / **`--force`** like `setup`).
-- **`bun run check-prod-env`** — Ensures **`.env.production`** exists (also runs implicitly before **`deploy`** / **`deploy:execute`**).
-- **`bun run deploy`** — Validates bundles with Wrangler **dry-run** only (no uploads).
-- **`bun run deploy:execute`** — Full live deploy (queues, workers, secret sync). Requires **`.env.production`** and correct worker order for cross-DO bindings; see root **README** and **AGENTS.md**.
+- **`bun run deploy`** — Runs **`turbo run deploy`**; deployable packages call **`alchemy deploy --app <package-id>`**. Requires production credentials and a stable **`ALCHEMY_PASSWORD`**.
+- **`bun run destroy`** — Runs **`turbo run destroy`**. Turbo marks destroy/deploy uncached.
 
 ## Performance considerations
 

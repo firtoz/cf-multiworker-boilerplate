@@ -1,0 +1,62 @@
+{
+	"$schema": "../../node_modules/turbo/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"db:generate": {
+			"inputs": ["drizzle.config.ts", "src/**/*.ts"],
+			"outputs": ["drizzle/**"]
+		},
+		"typegen:local": {
+			"inputs": [
+				"drizzle.config.ts",
+				"src/**/*.ts",
+				"tsconfig.json",
+				"package.json",
+				"$TURBO_ROOT$/tsconfig.base.json"
+			],
+			"outputs": []
+		},
+		"typegen:prod": {
+			"inputs": [
+				"drizzle.config.ts",
+				"src/**/*.ts",
+				"tsconfig.json",
+				"package.json",
+				"$TURBO_ROOT$/tsconfig.base.json"
+			],
+			"outputs": []
+		},
+		"typecheck:local": {
+			"dependsOn": ["typegen:local"],
+			"inputs": [
+				"drizzle.config.ts",
+				"src/**/*.ts",
+				"tsconfig.json",
+				"package.json",
+				"$TURBO_ROOT$/tsconfig.base.json"
+			],
+			"outputs": []
+		},
+		"typecheck:prod": {
+			"dependsOn": ["typegen:prod"],
+			"inputs": [
+				"drizzle.config.ts",
+				"src/**/*.ts",
+				"tsconfig.json",
+				"package.json",
+				"$TURBO_ROOT$/tsconfig.base.json"
+			],
+			"outputs": []
+		},
+		"d1:migrate:local": {
+			"inputs": ["drizzle.config.ts", "src/**/*.ts", "drizzle/**"],
+			"outputs": [],
+			"cache": false
+		},
+		"d1:migrate:remote": {
+			"inputs": ["drizzle.config.ts", "src/**/*.ts", "drizzle/**"],
+			"outputs": [],
+			"cache": false
+		}
+	}
+}

@@ -4,22 +4,20 @@ React Router 7 application deployed on Cloudflare Workers.
 
 ## Dependencies
 
-**Durable Objects Used:**
-- `example-do` - Example counter (used in home route)
-- `coordinator-do` - Queue orchestrator (used in queue route)
+**Durable Objects / services:** `chatroom-do` (WebSockets / Socka; `/chat` and `/api/ws/*` in `workers/app.ts`), `ping-do` (typed Hono DO example), and `other-worker` (service binding example).
 
-**Packages:**
-- `do-common` - Shared types for DO communication
+**Packages:** `cf-starter-db` (D1 + Drizzle for `/visitors`), `cf-starter-chat-contract` (shared Socka types).
 
-**How bindings work:** Check `wrangler.jsonc` → `durable_objects.bindings` to see which DOs are available as `env.DoName`.
+**How bindings work:** **`apps/web/alchemy.run.ts`** declares app bindings and imports worker/DO resources from dependency packages' `./alchemy` exports. Types: **`env.d.ts`** (`typeof web["Env"]`). After route edits, **`bun run typegen`** from the repo root.
 
 ## Key Files
 
-- `app/routes/` - Route components (home.tsx, queue.tsx)
+- `app/routes/` - Route components (home, visitors, chat, …)
 - `app/root.tsx` - Root layout with dark mode support
 - `app/entry.server.tsx` - SSR entry + 103 Early Hints for CSS
-- `workers/app.ts` - Cloudflare Worker wrapper for React Router
-- `wrangler.jsonc` - **IMPORTANT**: All DO bindings, queues, env vars
+- `workers/app.ts` - Cloudflare Worker (SSR + WebSocket forward to `ChatroomDo`)
+- `alchemy.run.ts` - Web Alchemy app, D1 binding, and imported worker/DO bindings
+- `env.d.ts` - Cloudflare `env` types from the exported `web` resource
 
 ## Common Tasks
 
@@ -28,20 +26,16 @@ React Router 7 application deployed on Cloudflare Workers.
 ```tsx
 // app/routes/my-feature.tsx
 import { env } from "cloudflare:workers";
-import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
+import { incrementSiteVisits } from "cf-starter-db";
 import type { Route } from "./+types/my-feature";
 
 export async function loader() {
-  // Type-safe DO call
-  const api = honoDoFetcherWithName(env.CoordinatorDo, "main-coordinator");
-  const response = await api.get({ url: "/queue" });
-  const data = await response.json();
-  
-  return { items: data.queue };
+  const count = await incrementSiteVisits(env.DB);
+  return { count };
 }
 
 export default function MyFeature({ loaderData }: Route.ComponentProps) {
-  return <div>{loaderData.items.length} items</div>;
+  return <div>Visits: {loaderData.count}</div>;
 }
 ```
 
@@ -61,79 +55,61 @@ const schema = zfd.formData({
   count: zfd.numeric(z.number().min(1).max(100)),
 });
 
-// Handle form submission
+// Handle form submission (use a non-index route for POST+formAction — see /visitors)
 export const action = formAction({
   schema,
   handler: async (_args, data) => {
-    const api = honoDoFetcherWithName(env.CoordinatorDo, "main");
-    
-    try {
-      const response = await api.post({
-        url: "/submit",
-        body: data,
-      });
-      return success(await response.json());
-    } catch (error) {
-      return fail("Submission failed");
-    }
+    void data;
+    return success({ ok: true });
   },
 });
 ```
 
-### 3. Add a New DO Binding
+### 3. Consume a Generated DO
 
-**Step 1:** Add binding to `wrangler.jsonc`:
-```jsonc
-"durable_objects": {
-  "bindings": [
-    // ... existing bindings ...
-    {
-      "name": "MyNewDo",           // Name in env.MyNewDo
-      "class_name": "MyNewDo",      // Class name from DO worker
-      "script_name": "cf-my-new-do" // Worker name from DO's wrangler.jsonc
-    }
-  ]
-}
+**Step 1:** Add the provider package as a web dependency if Turbo should check it first:
+
+```json
+"my-new-do": "workspace:*"
 ```
 
-**Step 2:** Generate types (from project root):
+**Step 2:** Export the provider resource from that package's `alchemy.run.ts`, then import it in `apps/web/alchemy.run.ts`:
+
+```ts
+import { MyNewDo } from "my-new-do/alchemy";
+```
+
+**Step 3:** Refresh route types (from project root):
+
 ```bash
 bun run typegen
 ```
 
-**Step 3:** Use in routes:
+**Step 4:** Use in routes:
+
 ```tsx
 import { env } from "cloudflare:workers";
+import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
 
-const stub = env.MyNewDo.getByName("instance-id");
-const response = await stub.fetch("https://fake-host/endpoint");
+using api = honoDoFetcherWithName(env.PingDo, "demo");
+const response = await api.get({ url: "/ping" });
 ```
 
 ### 4. Rename the Project
 
-1. Update `wrangler.jsonc` → `name` field
-2. Update DO bindings to match new DO script names
-3. Update `package.json` → `name` field
-4. Run `bun run typegen` from root
+1. Update package names and user-facing copy.
+2. Choose stable worker names in each package’s `alchemy.run.ts` when another worker refers to it by service binding.
+3. Update `package.json` → `name` field.
+4. Run `bun run typegen` from root.
 
 ### 5. Add Environment Variables
 
-**Development:** Add to `.env`:
+**Development:** Add to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see root **AGENTS.md** and [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md):
 ```bash
 MY_SECRET=dev-value
 ```
 
-**Production:** Add to `wrangler.jsonc`:
-```jsonc
-"vars": {
-  "MY_PUBLIC_VAR": "public-value"
-}
-```
-
-Or use secrets:
-```bash
-bunx wrangler secret put MY_SECRET
-```
+**Production:** Add to repo-root **`.env.production`** or your CI secret store. Wire the value in the relevant package `alchemy.run.ts` using `alchemy.secret(...)` when needed.
 
 Access in code:
 ```tsx
@@ -151,35 +127,26 @@ Vite prints the local URL in the terminal (`Local:` — default port 5173, or th
 
 ## Type Generation
 
-After changing `wrangler.jsonc` or route files, run from project root:
+After changing package **`alchemy.run.ts`**, **`env.d.ts`**, or route files, run from the **repo root**:
 
 ```bash
 bun run typegen
 ```
 
-This:
-1. Runs `cf-typegen` which:
-   - Runs `wrangler types` with real env files (`--env-file` to repo-root `.env.local` / `.env.production`, plus optional per-package `.env.local` — never plain `.env`, never `.env.example`)
-   - Generates `worker-configuration.d.ts`
-   - Auto-converts DO type comments to proper imports
-2. Runs `react-router typegen` to generate route types
-3. Gives you full IntelliSense for `env.DoName` and route loaders/actions
+This runs **`react-router typegen`** (via Turbo) for route types. Cloudflare **`env`** types come from **`env.d.ts`** + package-local Alchemy resources ([Alchemy type-safe bindings](https://alchemy.run/concepts/bindings/#type-safe-bindings)); there is no `wrangler types` step in this stack.
 
-Or run locally in this directory:
+In this package only:
+
 ```bash
-bun run typegen  # Runs both cf-typegen and rr-typegen
-bun run cf-typegen  # Just Cloudflare types
-bun run rr-typegen  # Just React Router types
+bun run rr-typegen  # React Router typegen
 ```
 
 ## Deploy
 
-From the **repo root** (Turbo filters `cf-starter-web`):
+From the **repo root**:
 
 ```bash
-bun run setup:prod      # repo root: create .env.production (prerequisite for live deploy)
-bun run deploy          # repo root: wrangler deploy --dry-run only (no live upload)
-bun run deploy:execute  # repo root: full monorepo pipeline (sync-secrets, pre-deploy, build, live deploys)
+bun run deploy
 ```
 
-The web package’s `deploy:execute` script is only the final **`wrangler deploy`** step; use the **repo root** commands above so Turbo runs DO workers and secret sync in order. See root **`AGENTS.md`** and **`README.md`**.
+This runs the Turbo deploy graph; each deployable package runs **`alchemy deploy --app <package-id>`**. See root **`AGENTS.md`** and **`README.md`**.

@@ -1,13 +1,12 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
-import type { DOWithHonoApp } from "@firtoz/hono-fetcher";
 import { Hono } from "hono";
 
 /**
  * {{ description }}
  * {{ pascalCase name }} Durable Object with Hono routing
  */
-export class {{ pascalCase name }} extends DurableObject implements DOWithHonoApp {
-	app = new Hono<{ Bindings: Env }>()
+export class {{ pascalCase name }} extends DurableObject<Env> {
+	readonly app = new Hono()
 		// Health check
 		.get("/", (c) =>
 			c.json({
@@ -20,8 +19,8 @@ export class {{ pascalCase name }} extends DurableObject implements DOWithHonoAp
 	/**
 	 * Handle HTTP requests to this Durable Object
 	 */
-	fetch(request: Request): Response | Promise<Response> {
-		return this.app.fetch(request, this.env);
+	override async fetch(request: Request): Promise<Response> {
+		return this.app.fetch(request, this.env, this.ctx);
 	}
 }
 

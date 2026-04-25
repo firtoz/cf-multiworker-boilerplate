@@ -42,15 +42,32 @@ You don't need `--cwd` or `--filter` flags - turbo handles everything.
 
 ## Core Principles
 
+### `cf-starter-web` — package-local `inputs`, `^` for cross-package work
+
+**Rule:** Each package’s `turbo.json` **`inputs`** should list **only files inside that package** (plus shared root env / `tsconfig.base.json` when your `tsconfig` extends it). **Do not** add `$TURBO_ROOT$/packages/foo/**` or `../../durable-objects/**` to **`apps/web`** to fake cache invalidation.
+
+**How invalidation should work:** list other workspace packages in **`package.json`** `dependencies` / `devDependencies`. Use **`^task`** so Turbo runs the same task in all those packages; when a dependency’s **outputs** or **input hash** change, **dependents re-run** without listing foreign paths.
+
+**`cf-starter-web#typegen:*`:** `dependsOn` is **`^typecheck:*`** plus **`rr-typegen`** (React Router typegen). Upstream packages (**`cf-starter-db`**, **`cf-starter-chat-contract`**, **`chatroom-do`**) run **`typegen` → `typecheck`** locally; the web app waits on **`^typecheck`** so library types are ready before **`tsgo`**.
+
+**`cf-starter-web#typecheck:*`:** `dependsOn` **`typegen`**, then **`^typecheck`**, so the app typechecks after route types exist and workspace deps have typechecked.
+
+**Durable Object packages (e.g. `chatroom-do`):** do **not** set **`typegen`** to depend on **`^typecheck:local`** (cycle risk). Use **`^typegen:local`** for upstreams (e.g. **`cf-starter-chat-contract`**) instead.
+
+**D1 / migrations:** D1 is managed by the web package **`apps/web/alchemy.run.ts`** via **`D1Database`** **`migrationsDir`**. **`packages/db`** **`d1:migrate:*`** scripts are informational no-ops; **`d1:migrate:*`** Turbo tasks stay for optional manual **`wrangler d1`** workflows.
+
+**Package Alchemy apps:** Each deployable package owns **`alchemy.run.ts`** and package deploy/destroy scripts call **`alchemy deploy/destroy --app <package-id>`**. Root scripts call Turbo graphs. Worker dev scripts may use Wrangler when local service-binding discovery needs direct worker sessions. Keep deploy/destroy uncached, matching Alchemy’s Turborepo guide.
+
+**`tsconfig.cloudflare.json`:** may still `include` paths into DO sources for **TypeScript** resolution; that is separate from Turbo `inputs` (see above).
+
 ### 1. Task Dependencies Should Use Outputs, Not Inputs
 
 **Bad:**
 ```json
 // apps/web/turbo.json
-"cf-typegen": {
+"rr-typegen": {
   "inputs": [
-    "wrangler.jsonc",
-    "$TURBO_ROOT$/packages/scripts/src/cf-typegen.ts"  // ❌ Direct file reference
+    "$TURBO_ROOT$/packages/some-tool/src/generator.ts"  // ❌ Direct file reference
   ]
 }
 ```
@@ -58,15 +75,16 @@ You don't need `--cwd` or `--filter` flags - turbo handles everything.
 **Good:**
 ```json
 // apps/web/turbo.json
-"cf-typegen": {
-  "dependsOn": ["scripts#build"],  // ✅ Depends on package task
+"rr-typegen": {
+  "dependsOn": ["some-tool#build"],  // ✅ Depends on package task when needed
   "inputs": [
-    "wrangler.jsonc"  // ✅ Only this package's files
+    "app/routes.ts",
+    "react-router.config.ts"  // ✅ Only this package's files
   ]
 }
 ```
 
-**Why:** If task B depends on task A, B should depend on A's outputs, not A's inputs. Turbo handles the transitive dependency chain automatically.
+**Why:** If task B depends on task A, B should depend on A's outputs (or **`package#task`**), not A's source paths as loose **`inputs`**. Turbo handles the transitive dependency chain automatically.
 
 ### 2. Cross-Package Dependencies via `package#task`
 
@@ -74,14 +92,14 @@ When a package needs files from another package to be ready:
 
 **Step 1:** Source package defines a `build` task
 ```json
-// packages/scripts/package.json
+// packages/my-tool/package.json
 {
   "scripts": {
-    "build": "echo '✓ scripts package ready'"  // Can be a no-op
+    "build": "echo '✓ my-tool ready'"  // Can be a no-op
   }
 }
 
-// packages/scripts/turbo.json
+// packages/my-tool/turbo.json
 {
   "tasks": {
     "build": {
@@ -97,9 +115,8 @@ When a package needs files from another package to be ready:
 // apps/web/turbo.json
 {
   "tasks": {
-    "generate-wrangler": {
-      "dependsOn": ["scripts#build"],  // ✅ Cross-package dependency
-      "inputs": ["wrangler.jsonc.hbs", "$TURBO_ROOT$/.env.local"]
+    "typegen:local": {
+      "dependsOn": ["my-tool#build", "^typecheck:local", "rr-typegen"]
     }
   }
 }
@@ -120,10 +137,10 @@ Prefix a task with `^` to depend on the **same task name** in every package list
 ```json
 // apps/web/package.json
 {
-  "dependencies": { "example-do": "workspace:*" },
-  "devDependencies": {
-    "coordinator-do": "workspace:*",
-    "processor-do": "workspace:*"
+  "dependencies": {
+    "cf-starter-db": "workspace:*",
+    "cf-starter-chat-contract": "workspace:*",
+    "chatroom-do": "workspace:*"
   }
 }
 ```
@@ -131,11 +148,11 @@ Prefix a task with `^` to depend on the **same task name** in every package list
 ```json
 // apps/web/turbo.json
 "typegen:local": {
-  "dependsOn": ["^generate-wrangler:local", "generate-wrangler:local"]
+  "dependsOn": ["^typecheck:local", "rr-typegen"]
 }
 ```
 
-This runs `generate-wrangler:local` in `example-do`, `coordinator-do`, and `processor-do`, then in `cf-starter-web`. Same idea for `^typegen:local`, `^generate-wrangler:prod`, and `^deploy` on **`deploy:execute`** (not on dry-run `deploy`).
+This runs `typecheck:local` in `chatroom-do`, `cf-starter-db`, and other workspace deps before the web app’s `typegen:local`. Deploy is **`bun alchemy deploy`** at the repo root, not a Turbo `deploy:execute` graph.
 
 **Limits:** `^` only follows **declared** workspace deps. Packages that are not dependencies (e.g. sibling workers with only Wrangler `script_name` links) still need explicit `other-pkg#task` in their own `turbo.json`. Verify with:
 
@@ -291,7 +308,7 @@ Tasks are defined in three places:
 ```
 
 ### What stays uncached
-Only **`dev`** (persistent dev server) and **`clean`** (destructive) set `cache: false` in root `turbo.json`. Everything else—including `lint`, `pre-deploy`, `deploy`, `deploy:execute`, and per-worker `deploy`—is **cacheable** when task inputs (and declared `env` for deploy paths) match. Run `turbo run <task> --force` if you need to bypass cache (e.g. redeploy without changing files).
+Only **`dev`** (persistent dev server) and **`clean`** (destructive) set `cache: false` in root `turbo.json`. **`d1:migrate:*`** in **`packages/db`** also sets **`cache: false`**. Most other tasks are **cacheable** when inputs (and declared **`env`**) match. Run **`turbo run <task> --force`** to bypass cache when types look stale.
 
 ```json
 "dev": {
@@ -321,16 +338,19 @@ Only **`dev`** (persistent dev server) and **`clean`** (destructive) set `cache:
 
 ### Mixed Dependencies
 ```json
-"deploy": {
+"build:prod": {
   "dependsOn": [
-    "^build",              // Dependencies' build
-    "build",                // Own build
-    "scripts#pre-deploy"   // Specific package task
+    "^build",       // Dependencies' build
+    "typecheck:prod" // Own gate before Vite production build
   ]
 }
 ```
 
 ## Common Mistakes
+
+### This repo — project-specific pitfalls
+
+These are also spelled out in the repo root **`AGENTS.md`** (*Fork / template gotchas*): index route + forms, `formSchema`, Alchemy D1 migrations, stale **`typegen`** → **`--force`**, empty local bindings until **`bun run dev`**, Biome `--write`, dev port. For **Turbo-only** rules (package-local **`inputs`**, **`^typecheck`** on web **`typegen`**, no **`^typecheck`** on DO **`typegen`** to avoid cycles), see **Core principles** at the top of this file.
 
 ### ❌ Don't: Reference Other Package's Files Directly
 ```json
@@ -395,35 +415,31 @@ bun run build --verbose
 
 ### Root turbo.json
 - Global settings: `globalDependencies`, `ui`, task defaults
-- Tasks: `build`, `typecheck`, `typegen`, `cf-typegen`, `rr-typegen`, `dev`, `lint`, `pre-deploy`, `wrangler:dry-run:prod`, `deploy`, `deploy:execute`, `clean`
-- `globalEnv`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SESSION_SECRET`
-
-### packages/scripts/turbo.json
-- `pre-deploy` - Pre-deployment validation (creates queues / checks consumers; **only** used by `deploy:execute`, not dry-run `deploy`)
-- `wrangler:dry-run:prod` - `wrangler deploy --dry-run` for every worker (depends on `cf-starter-web#build:prod`)
+- Tasks: `build`, `build:local`, `build:prod`, `typecheck`, `typegen`, `rr-typegen`, `dev`, `lint`, `clean`, `db:generate`, `d1:migrate:local`, `d1:migrate:remote` (output log defaults only — no deploy graph)
+- `globalEnv`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SESSION_SECRET`, `CI`, `ALCHEMY_PASSWORD`, `STAGE`
 
 ### apps/web/turbo.json
-- `typegen` - Depends on `cf-typegen`, `rr-typegen`
-- `cf-typegen` - Cloudflare Worker types (worker-configuration.d.ts)
-- `rr-typegen` - React Router route types
-- `lint` - Depends on `typecheck`
-- `typecheck` - Depends on `typegen`
-- `build` - Depends on `typecheck`
-- `deploy` - **`scripts#wrangler:dry-run:prod` only** (no live deploy, no queue creation)
-- `deploy:execute` - `scripts#pre-deploy`, `build:prod`, `^deploy` (live DO + web deploy)
+- **`typegen:local` / `typegen:prod`** — `dependsOn`: `^typecheck`, **`rr-typegen`**; **inputs** include app sources, Vite / React Router config, package **`alchemy.run.ts`**, **`env.d.ts`**
+- **`typecheck:local` / `typecheck:prod`** — `dependsOn`: this package’s `typegen`, then `^typecheck`
+- **`lint`** — `dependsOn`: **`typecheck:local`**
+- **`build:local` / `build:prod`** — `dependsOn`: **`typecheck`**
+- **`dev`** — `dependsOn`: **`typegen:local`**; root **`bun run dev`** runs Turbo **`dev`** so package Alchemy sessions start together
 
-### Durable objects (example-do, coordinator-do, processor-do)
-- Each has its own turbo.json with `deploy` and other tasks as needed.
+### packages/db/turbo.json
+- `db:generate` — Drizzle SQL from `src/`
+- `typegen` / `typecheck` — `tsc` chain for `cf-starter-db`
+- `d1:migrate:local` / `d1:migrate:remote` — **`cache: false`**; scripts print that Alchemy applies migrations
 
-### Key Dependency Chains
+### Durable objects (e.g. `chatroom-do`)
+- `turbo.json` with `typegen` / `typecheck` / `lint`; no **`generate-wrangler`** or Turbo **`deploy`**
+
+### Key Dependency Chains (simplified)
 
 ```
-typegen → cf-typegen, rr-typegen
-typecheck → typegen
-lint → typecheck
-build → typecheck
-deploy → scripts#wrangler:dry-run:prod (after build:prod)
-deploy:execute → scripts#pre-deploy, build:prod, live deploy for DOs + web
+^typecheck in deps (db, contract, chatroom) → cf-starter-web#typegen (rr-typegen + upstream typechecks)
+typecheck:web → typegen:web, ^typecheck:deps
+lint / build → typecheck
+dev → turbo starts web Alchemy + worker Wrangler sessions
 ```
 
 ## Resources

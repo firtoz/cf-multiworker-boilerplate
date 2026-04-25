@@ -1,0 +1,12 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"rootDir": ".",
+		"noEmit": true,
+		"types": ["@cloudflare/workers-types/2023-07-01"]
+	},
+	"include": ["src/**/*.ts", "drizzle.config.ts"]
+}

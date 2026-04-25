@@ -11,9 +11,13 @@
 		"app/**/.client/**/*.tsx",
 		"workers/**/*.ts",
 		"db/**/*",
-		"worker-configuration.d.ts"
+		"env.d.ts",
+		"alchemy.run.ts",
+		"../../alchemy/**/*.ts",
+		"../../durable-objects/*/alchemy.run.ts",
+		"../../durable-objects/*/workers/rpc.ts",
+		"../../durable-objects/ping-do/workers/ping-do.ts"
 	],
-	"exclude": ["../../durable-objects/**/*"],
 	"compilerOptions": {
 		"composite": true,
 		"strict": true,

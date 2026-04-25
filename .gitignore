@@ -2,9 +2,10 @@
 node_modules/
 *.tsbuildinfo
 
-# Cloudflare
+# Cloudflare / Alchemy
 .mf
 .wrangler
+.alchemy/
 apps/web/wrangler-dev.jsonc
 apps/web/wrangler-prod.jsonc
 durable-objects/**/wrangler-dev.jsonc

@@ -1,0 +1,24 @@
+{
+	"$schema": "../../node_modules/turbo/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"typegen:local": {
+			"inputs": ["src/**/*.ts", "tsconfig.json", "package.json", "$TURBO_ROOT$/tsconfig.base.json"],
+			"outputs": []
+		},
+		"typegen:prod": {
+			"inputs": ["src/**/*.ts", "tsconfig.json", "package.json", "$TURBO_ROOT$/tsconfig.base.json"],
+			"outputs": []
+		},
+		"typecheck:local": {
+			"dependsOn": ["typegen:local"],
+			"inputs": ["src/**/*.ts", "tsconfig.json", "package.json", "$TURBO_ROOT$/tsconfig.base.json"],
+			"outputs": []
+		},
+		"typecheck:prod": {
+			"dependsOn": ["typegen:prod"],
+			"inputs": ["src/**/*.ts", "tsconfig.json", "package.json", "$TURBO_ROOT$/tsconfig.base.json"],
+			"outputs": []
+		}
+	}
+}

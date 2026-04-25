@@ -22,7 +22,7 @@ Run from repo root (turbo routes to the web app). **Without this, TypeScript imp
 ### 1. Create the Route File
 
 Create the route file in the appropriate directory under `apps/web/app/routes/`:
-- Example routes: `routes/home.tsx`, `routes/queue.tsx`
+- Example routes: `routes/home.tsx`, `routes/visitors.tsx`, `routes/chat.tsx`
 - Add new routes following the same pattern (e.g. `routes/dashboard.tsx`)
 
 ### 2. Register the Route in routes.ts
@@ -117,7 +117,7 @@ When adding new environment variables (see root AGENTS.md):
 bun run typegen
 ```
 
-The `env` object from `cloudflare:workers` is auto-generated based on what's in your wrangler config and env files.
+The `env` object from `cloudflare:workers` is typed from **`apps/web/env.d.ts`** (package Alchemy **`web`** resource + `declare module "cloudflare:workers"`). Keep it aligned with **`apps/web/alchemy.run.ts`** (and **`.env.local`** at runtime).
 
 **Do not** read bindings from React Router loader/action `context` (e.g. `context.cloudflare.env`). In this project, use:
 
