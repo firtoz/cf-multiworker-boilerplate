@@ -1,7 +1,9 @@
 import alchemy from "alchemy";
 import { Worker, WorkerRef, WorkerStub } from "alchemy/cloudflare";
 import { alchemyPassword } from "cf-starter-alchemy";
-import type { PingWorkerRpc } from "ping-do/workers/rpc";
+// Keep this as a relative type import: ping-do already depends on other-worker,
+// so a workspace import here would create a Turbo package graph cycle.
+import type { PingWorkerRpc } from "../ping-do/workers/rpc";
 
 export type { OtherWorkerRpc } from "./workers/rpc";
 

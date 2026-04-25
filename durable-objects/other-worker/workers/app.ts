@@ -1,8 +1,15 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { Hono } from "hono";
+import type { PingWorkerRpc } from "../../ping-do/workers/rpc";
 import type { CloudflareEnv } from "../env";
 
-const app = new Hono<{ Bindings: CloudflareEnv }>();
+// Narrow the Hono route bindings to the service surface it uses. Passing the
+// full Alchemy-inferred CloudflareEnv through Hono can trip deep RPC inference.
+type WorkerBindings = Omit<CloudflareEnv, "PING"> & {
+	PING: Service<PingWorkerRpc>;
+};
+
+const app = new Hono<{ Bindings: WorkerBindings }>();
 
 /**
  * Other worker calls the ping **service** (WorkerEntrypoint), not the Ping DO.
