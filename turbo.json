@@ -35,7 +35,6 @@
 		},
 		"dev:preflight": {
 			"cache": false,
-			"interactive": true,
 			"outputLogs": "full"
 		},
 		"dev": {

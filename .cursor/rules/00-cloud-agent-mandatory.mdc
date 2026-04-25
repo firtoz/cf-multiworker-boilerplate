@@ -2,11 +2,11 @@
 description: Necesssary for cloud agents
 alwaysApply: false
 ---
-# 🚨 CLOUD AGENT MANDATORY STARTUP - READ THIS FIRST 🚨
+# Cloud agent mandatory startup - read this first
 
 **STOP! Before doing ANYTHING else, read this entire file.**
 
-## Automatic Setup via environment.json
+## Automatic setup via environment.json
 
 The environment is configured to run setup automatically via `.cursor/environment.json`:
 
@@ -18,7 +18,7 @@ The environment is configured to run setup automatically via `.cursor/environmen
 
 This runs on VM startup, installing bun and all dependencies automatically.
 
-## If Setup Didn't Run Automatically
+## If setup didn't run automatically
 
 If you're in a session where setup didn't run, manually execute:
 
@@ -28,7 +28,7 @@ bash ./.cursor/setup-agent.sh
 source ~/.bashrc
 ```
 
-## Verify Setup
+## Verify setup
 
 Check that setup worked:
 
@@ -37,7 +37,7 @@ which bun      # Should show /home/ubuntu/.bun/bin/bun
 bun --version  # Should show version number
 ```
 
-## Working Directory Convention
+## Working directory convention
 
 **ALWAYS run commands from `/workspace` (repo root).**
 
@@ -57,7 +57,7 @@ bun run build --cwd apps/web
 
 Turbo will figure out which packages need to run and in what order.
 
-## Package Installation Convention
+## Package installation convention
 
 **ALWAYS install latest version** unless a specific version is required.
 
@@ -75,7 +75,7 @@ bun add @some/package@latest --cwd apps/web
 # Don't manually edit package.json to add dependencies with hardcoded versions
 ```
 
-## Self-Improvement Protocol
+## Self-improvement protocol
 
 After completing any task, if you encountered issues with:
 - Missing environment setup
@@ -90,7 +90,7 @@ After completing any task, if you encountered issues with:
 
 Add learnings so the next agent doesn't face the same issues.
 
-## Checklist Before Starting Work
+## Checklist before starting work
 
 - [ ] Verify bun works: `which bun && bun --version`
 - [ ] Currently in repo root: `pwd` shows `/workspace`
@@ -98,7 +98,7 @@ Add learnings so the next agent doesn't face the same issues.
 
 Setup should run automatically via `environment.json`, but verify before proceeding.
 
-## Completing Your Work (Cloud Agents)
+## Completing your work (Cloud Agents)
 
 **You MUST run `git add`, `git commit`, and `git push` before ending your response when you have made code changes.** Do not leave changes only in the working tree. Do not end your turn without pushing.
 
@@ -111,7 +111,7 @@ git push
 - Use the existing branch (e.g. `cursor/...`) — do not push to `main` directly
 - See [.cursor/rules/git-workflow.mdc](.cursor/rules/git-workflow.mdc) for full workflow (PRs, branch naming)
 
-## Checklist Before Ending Your Response
+## Checklist before ending your response
 
 - [ ] If you made code changes: `git add`, `git commit`, `git push` (do not skip)
 - [ ] Lint and typecheck passed

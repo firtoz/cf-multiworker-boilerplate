@@ -2,7 +2,7 @@
 description: Necessary for cloud agents
 alwaysApply: false
 ---
-# Git Completion Reminder (Cloud Agents)
+# Git completion reminder (Cloud Agents)
 
 **Before ending your response:** If you made code changes, you MUST run:
 

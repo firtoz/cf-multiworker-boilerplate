@@ -1,4 +1,4 @@
-# Agent Instructions - Web App
+# Agent instructions - web app
 
 This file contains important guidelines for AI agents working on the React Router 7 web application.
 
@@ -22,7 +22,7 @@ Do **not** use `context.cloudflare.env` (or similar) from React Router for bindi
 
 ## Routes
 
-### Adding or Editing Routes
+### Adding or editing routes
 
 **IMPORTANT:** React Router 7 uses file-based routing with generated types.
 
@@ -70,7 +70,7 @@ When you want to add or edit routes:
 - **Loaders:** return `Promise<MaybeError<YourData>>` using `success` / `fail` from `@firtoz/maybe-error`. In the component, branch on `loaderData.success` then use `loaderData.result`.
 - **Actions:** `formAction` handlers already return `Promise<MaybeError<...>>`; keep using `success()` / `fail()` in the handler.
 
-## General Guidelines
+## General guidelines
 
 Follow the root [AGENTS.md](../../AGENTS.md) skill index and [cf-starter-workflow](../../.cursor/skills/cf-starter-workflow/SKILL.md) for:
 - Linting and completion checklist

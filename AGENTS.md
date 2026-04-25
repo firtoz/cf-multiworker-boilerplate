@@ -1,4 +1,4 @@
-# Agent Instructions
+# Agent instructions
 
 Short index for AI agents. **Details live in Cursor skills** so this file stays maintainable.
 

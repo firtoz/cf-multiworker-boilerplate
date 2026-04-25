@@ -2,18 +2,18 @@
 description: For non-cloud agents
 alwaysApply: false
 ---
-# Dev Server Policy
+# Dev server policy
 
-**NEVER run dev servers or long-running watch processes.**
+**NEVER run dev servers or long-running watch processes unless the user explicitly asks for it.**
 
-## What NOT to Run
+## What not to run without an explicit user request
 
 - `bun dev`, `npm run dev`, `yarn dev`
 - `npm start`, `yarn start`
 - Watch commands (`--watch`, `nodemon`, etc.)
 - Any long-running development processes
 
-## What IS Okay to Run
+## What is okay to run
 
 - Build commands: `bun run build`, `npm run build`
 - Type checking: `bun run typecheck` (repo root; packages use `tsgo --noEmit`)
@@ -23,7 +23,7 @@ alwaysApply: false
 - Code generation: `bun run db:generate`, `typegen`
 - One-off scripts and utilities
 
-## When Dev Server is Needed
+## When dev server is needed but was not explicitly requested
 
 Instead of running the dev server, tell the user:
 

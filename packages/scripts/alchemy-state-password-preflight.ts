@@ -21,13 +21,17 @@ function isInteractive() {
 	if (process.env["CI"] === "true") {
 		return false;
 	}
+	if (process.env["ALCHEMY_STATE_PASSWORD_INTERACTIVE"] === "1") {
+		return Boolean(process.stdin.isTTY && process.stdout.isTTY);
+	}
 	if (process.env["ALCHEMY_STATE_PASSWORD_NO_PROMPT"] === "1") {
 		return false;
 	}
 	if (process.argv.includes("--yes") || process.argv.includes("-y")) {
 		return false;
 	}
-	return Boolean(process.stdin.isTTY && process.stdout.isTTY);
+	// Turbo runs this as a dependency of persistent dev tasks; keep that path non-interactive.
+	return false;
 }
 
 function readRootEnvValue(repoRoot: string, key: string) {
@@ -205,10 +209,10 @@ export async function runAlchemyStatePasswordPreflight(repoRoot: string) {
 		console.error(
 			"  Usual cause: a new random password in .env.local while .alchemy/ was written with the old one.",
 		);
-		console.error(
-			"  Fix: use the old password, or back up and delete the .alchemy/ directory, then run `bun run dev` again.",
-		);
-		console.error("  In a TTY, this preflight can offer a wipe or a one-off password try.");
+		console.error("  Fix one of these, then run `bun run dev` again:");
+		console.error("    1. Put the old ALCHEMY_PASSWORD back in .env.local.");
+		console.error("    2. Back up and delete .alchemy/ to reset local Alchemy state.");
+		console.error("    3. Run `bun run --cwd packages/scripts dev:preflight:interactive` for prompts.");
 		console.error("  Skip: SKIP_ALCHEMY_STATE_PASSWORD_CHECK=1  (not recommended)\n");
 	};
 

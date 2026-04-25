@@ -2,11 +2,11 @@
 description: Necessary for cloud agents
 alwaysApply: false
 ---
-# Cloud Agent Setup
+# Cloud agent setup
 
 > **📌 IMPORTANT:** See `00-cloud-agent-mandatory.mdc` for the critical startup checklist.
 
-## Automatic Setup
+## Automatic setup
 
 Setup runs automatically via `.cursor/environment.json`:
 
@@ -18,7 +18,7 @@ Setup runs automatically via `.cursor/environment.json`:
 
 This configuration tells Cursor Cloud Agents to run the setup script on VM startup.
 
-## What Gets Installed
+## What gets installed
 
 The setup script (`.cursor/setup-agent.sh`) handles:
 1. **Installing bun** - Downloads and installs latest bun to `~/.bun/bin/`
@@ -26,7 +26,7 @@ The setup script (`.cursor/setup-agent.sh`) handles:
 3. **Installing dependencies** - Runs `bun install --frozen-lockfile` from workspace root
 4. **Verification** - Confirms everything is ready
 
-## environment.json Configuration
+## environment.json configuration
 
 The `environment.json` file configures Cloud Agent runtime settings:
 
@@ -43,7 +43,7 @@ The `environment.json` file configures Cloud Agent runtime settings:
 
 See [Cursor Cloud Agent docs](https://cursor.com/docs/cloud-agent#the-environmentjson-spec) for full specification.
 
-## If Setup Failed
+## If setup failed
 
 If you find yourself in a session where setup didn't run:
 
@@ -53,7 +53,7 @@ bash ./.cursor/setup-agent.sh
 source ~/.bashrc
 ```
 
-## Working Directory Convention
+## Working directory convention
 
 **Always run commands from `/workspace` (repo root).**
 
@@ -73,7 +73,7 @@ bun run build
 
 No need for `--cwd` or `--filter` flags - turbo figures it out.
 
-## Package Installation Convention
+## Package installation convention
 
 **Always install latest versions** unless a specific version is explicitly required:
 
@@ -90,7 +90,7 @@ bun add @some/package@latest --cwd apps/web
 
 Let the package manager resolve to the latest compatible version.
 
-## Common Commands Reference
+## Common commands reference
 
 All commands run from `/workspace` root - turbo handles the rest:
 
@@ -110,7 +110,7 @@ bun run typegen
 
 See `package.json` in workspace root for all available scripts.
 
-## Self-Improvement Protocol
+## Self-improvement protocol
 
 **If you encounter any setup issues, documentation gaps, or repeated mistakes:**
 

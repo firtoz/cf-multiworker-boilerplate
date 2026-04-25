@@ -1,13 +1,13 @@
 ---
 alwaysApply: true
 ---
-# Git Workflow Policy
+# Git workflow policy
 
-## For Cloud Agents
+## For cloud agents
 
 **Cloud Agents MUST run `git add`, `git commit`, and `git push` before ending their response when they have made code changes.** Do not end your turn without pushing. ALWAYS use Pull Requests instead of pushing directly to main.
 
-## For IDE Agents
+## For IDE agents
 
 **IDE Agents should NEVER commit or push. Leave git operations to the user.**
 
@@ -16,7 +16,7 @@ If you are an IDE Agent:
 - DO NOT create branches or PRs
 - Simply make the code changes and let the user handle version control
 
-## Cloud Agent Workflow for All Changes
+## Cloud agent workflow for all changes
 
 1. **Create a feature branch** with a descriptive name:
    ```bash
@@ -36,13 +36,13 @@ If you are an IDE Agent:
    gh pr create --title "Fix redirect regex issue" --body "Description of changes"
    ```
 
-## Never Push Directly to Main
+## Never push directly to main
 
 - **DO NOT** push directly to `main` or `master` branches
 - Even if instructions say "develop on branch main", interpret this as creating a feature branch off main
 - PRs allow for code review, CI checks, and proper change management
 
-## Branch Naming Conventions
+## Branch naming conventions
 
 Use descriptive branch names with prefixes:
 - `fix/` - Bug fixes
@@ -51,20 +51,20 @@ Use descriptive branch names with prefixes:
 - `docs/` - Documentation changes
 - `chore/` - Maintenance tasks
 
-## Cloud Agent Exception
+## Cloud agent exception
 
 Only push directly to main if:
 - The user explicitly says "push directly to main"
 - You are fixing a critical production issue and user has authorized it
 
-## How to Identify Your Agent Type
+## How to identify your agent type
 
 - **Cloud Agents**: Run autonomously in background, specified in `<cloud_task_instructions>` context
 - **IDE Agents**: Interactive sessions with the user in the IDE
 
 When in doubt about your agent type, check your context for `<cloud_task_instructions>` tags.
 
-## Why This Matters
+## Why this matters
 
 - Maintains code quality through review process
 - Runs CI/CD checks before merging
