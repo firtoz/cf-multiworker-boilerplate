@@ -64,7 +64,7 @@ Real keys: **`.env.local`** (dev), **`.env.production`** (prod/CI). **`.env.exam
 
 Access in app code: `import { env } from "cloudflare:workers"` only.
 
-**Deploy / secrets:** `bun run deploy` → `turbo run deploy`. `alchemyPassword` in [cf-starter-alchemy](../../../packages/cf-starter-alchemy) requires **`ALCHEMY_PASSWORD`** (and the web app needs **`SESSION_SECRET`**). Run **`bun run setup`** in a terminal for a confirmation prompt, or **`bun run setup -- --yes`** / **`bun packages/scripts/setup-env.ts --yes`** in automation. [Alchemy — encryption password](https://alchemy.run/concepts/secret/#encryption-password), [Getting Started](https://alchemy.run/getting-started/) for `CLOUDFLARE_API_TOKEN`.
+**Deploy / secrets:** `bun run deploy` → **`turbo run deploy --filter=cf-starter-web`** (pulls dependent worker deploys). `alchemyPassword` in [cf-starter-alchemy](../../../packages/cf-starter-alchemy) requires **`ALCHEMY_PASSWORD`** (and the web app needs **`SESSION_SECRET`**). Run **`bun run setup`** in a terminal for a confirmation prompt, or **`bun run setup -- --yes`** / **`bun packages/scripts/setup-env.ts --yes`** in automation. [Alchemy — encryption password](https://alchemy.run/concepts/secret/#encryption-password), [Getting Started](https://alchemy.run/getting-started/) for `CLOUDFLARE_API_TOKEN`.
 
 - **Local dev** — `bun run dev` runs a filtered `turbo run dev` (web + worker apps), each with `alchemy dev --app …` per [Alchemy monorepo](https://alchemy.run/guides/turborepo/).
 
@@ -73,7 +73,7 @@ Access in app code: `import { env } from "cloudflare:workers"` only.
 - [ ] Touched routes, `alchemy.run.ts`, `env.d.ts`, or env → `bun run typegen` (and prod pair if needed).
 - [ ] `bun run lint` passes.
 - [ ] `bun run typecheck` passes.
-- [ ] Cloud Agent: `git add`, `git commit`, `git push` (do not skip) when the session expects it. [.cursor/rules/00-cloud-agent-mandatory.mdc](../../rules/00-cloud-agent-mandatory.mdc)
+- [ ] **Cloud agents** (if your session is a cloud task): when you changed code, **`git add` / `git commit` / `git push` before you finish** — do not leave changes only in the working tree. [.cursor/rules/00-cloud-agent-mandatory.mdc](../../rules/00-cloud-agent-mandatory.mdc). **IDE / local chat agents** usually do not commit: [.cursor/rules/git-workflow.mdc](../../rules/git-workflow.mdc).
 
 ## Related
 

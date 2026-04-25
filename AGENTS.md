@@ -1,6 +1,6 @@
 # Agent instructions
 
-Short index for AI agents. **Details live in Cursor skills** so this file stays maintainable.
+Short index for AI agents. **Details live in Cursor skills** (`.cursor/skills/*.md` — project-specific playbooks for this monorepo, not generic marketing) so this file stays maintainable.
 
 ## Read first (by task)
 
@@ -16,10 +16,15 @@ Short index for AI agents. **Details live in Cursor skills** so this file stays 
 | React Router routes, `RoutePath`, loaders | [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) |
 | `formAction`, `useDynamicSubmitter` | [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md) |
 | Rename / rebrand after using the template | [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md) |
+| React components: one per file, route wrappers | [.cursor/skills/component-organization/SKILL.md](.cursor/skills/component-organization/SKILL.md) |
+| React patterns (callbacks, module constants) | [.cursor/skills/react-patterns/SKILL.md](.cursor/skills/react-patterns/SKILL.md) |
+| Authoring or updating skills | [.cursor/skills/creating-skills/SKILL.md](.cursor/skills/creating-skills/SKILL.md) |
 
 **Always-on reminder (workers, env, routes):** [.cursor/rules/cf-workers-patterns.mdc](.cursor/rules/cf-workers-patterns.mdc)
 
 **When to offer project-init** (forks vs upstream starter kit): [.cursor/rules/project-init.mdc](.cursor/rules/project-init.mdc)
+
+**Dev server policy (agents):** do not start long-running dev unless the user asked — [.cursor/rules/dev-server.mdc](.cursor/rules/dev-server.mdc)
 
 ## Cloud agents
 

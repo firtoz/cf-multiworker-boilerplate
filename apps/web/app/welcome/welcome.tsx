@@ -6,6 +6,8 @@ import reactRouterIcon from "~/assets/react-router.svg?width=44&as=metadata";
 import turborepoIcon from "~/assets/turborepo.svg?width=18&as=metadata";
 import zodLogoIcon from "~/assets/zod-logo.png?width=18&as=metadata";
 import { cn } from "~/lib/cn";
+import alchemyLogoDark from "./alchemy-logo-dark.svg?width=72&as=metadata";
+import alchemyLogoLight from "./alchemy-logo-light.svg?width=72&as=metadata";
 
 // Icon styling constants
 const ICON_CONTAINER_SIZE = 40; // 40px container
@@ -21,13 +23,14 @@ const iconContainerClassName = cn(
 type ResourceInfo = {
 	href: string;
 	text: string;
-	icon: OutputMetadata;
+	icon: OutputMetadata | { light: OutputMetadata; dark: OutputMetadata };
 	iconWidth?: number;
 };
 
 // Resource icon component with consistent styling
 function ResourceIcon({ info }: { info: ResourceInfo }) {
-	const iconData = info.icon;
+	const iconData = "light" in info.icon ? info.icon.light : info.icon;
+	const darkIconData = "dark" in info.icon ? info.icon.dark : null;
 
 	// Use custom width or default, then calculate height based on aspect ratio
 	const displayWidth = info.iconWidth ?? DEFAULT_ICON_WIDTH;
@@ -51,7 +54,17 @@ function ResourceIcon({ info }: { info: ResourceInfo }) {
 						alt={`${info.text} Documentation`}
 						width={displayWidth}
 						height={displayHeight}
+						className={darkIconData ? "dark:hidden" : undefined}
 					/>
+					{darkIconData && (
+						<img
+							src={darkIconData.src}
+							alt={`${info.text} Documentation`}
+							width={displayWidth}
+							height={displayHeight}
+							className="hidden dark:block"
+						/>
+					)}
 				</div>
 				<span className="wrap-break-word hyphens-auto">{info.text}</span>
 			</a>
@@ -140,6 +153,13 @@ const resources: ResourceInfo[] = [
 		text: "React Router",
 		icon: reactRouterIcon,
 		iconWidth: 44,
+	},
+	// Deployment & Infrastructure
+	{
+		href: "https://alchemy.run/",
+		text: "Alchemy",
+		icon: { light: alchemyLogoDark, dark: alchemyLogoLight },
+		iconWidth: 72,
 	},
 	// Monorepo Tools
 	{

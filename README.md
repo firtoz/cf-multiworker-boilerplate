@@ -27,7 +27,17 @@ Production-proven Turborepo monorepo starter kit for full-stack Cloudflare Worke
   </a>
 </p>
 
-## Why Use This?
+### Where to read next
+
+| Doc | What it is |
+| --- | --- |
+| [README.md](README.md) (this file) | Monorepo quick start, first-time Alchemy/Cloudflare, `bun run dev` / deploy, product-building path |
+| [apps/web/README.md](apps/web/README.md) | Web app: routes, bindings, typegen, web-only tasks |
+| [AGENTS.md](AGENTS.md) | Short index of rules and **[.cursor/skills/](.cursor/skills/)** (implementation playbooks for this stack, not generic tutorials) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute: PRs, quality checks, dependency notes |
+| [.cursor/README.md](.cursor/README.md) | Cursor rules layout and cloud-agent entry |
+
+## Why use this?
 
 Building on Cloudflare's edge platform is powerful but complex. This starter kit solves the hard parts so you can focus on your app:
 
@@ -43,7 +53,7 @@ Building on Cloudflare's edge platform is powerful but complex. This starter kit
 - Turborepo generator to scaffold new Durable Objects with package-local `alchemy.run.ts`
 - **`env.d.ts`** per worker package: Alchemy `Env` inferred from exported package worker resources
 
-## Quick Start
+## Quick start
 
 ### Use This Template
 
@@ -110,7 +120,7 @@ which runs **`turbo run deploy --filter=cf-starter-web`** (pulls in dependent wo
 
 Use **[AGENTS.md](AGENTS.md)** at the repo root (short index to skills) and the **[.cursor/skills/](.cursor/skills/)** entries it links (gotchas, workflow, env, Turbo, workers). For the web app only, [apps/web/AGENTS.md](apps/web/AGENTS.md).
 
-## Project Structure
+## Project structure
 
 ```
 ├── apps/
@@ -131,7 +141,7 @@ Use **[AGENTS.md](AGENTS.md)** at the repo root (short index to skills) and the 
 
 For deeper conventions (env files, `^task` dependencies, caching), see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md), [.cursor/skills/cf-workers-env-local/SKILL.md](.cursor/skills/cf-workers-env-local/SKILL.md), and [.cursor/skills/turborepo/SKILL.md](.cursor/skills/turborepo/SKILL.md).
 
-## Key Features
+## Key features
 
 ### 1. Type-Safe Durable Object Calls
 
@@ -180,7 +190,7 @@ Full package and Hono checklists: [cf-durable-object-package](.cursor/skills/cf-
 
 After schema changes, run **`bun run db:generate`** so SQL lands in **`packages/db/drizzle/`**. The web package Alchemy app owns the **`D1Database`** for local dev and production deploy. The **`d1:migrate:*`** package scripts are informational.
 
-## Continuous Integration
+## Continuous integration
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pushes and PRs to **`main`**:
 
@@ -220,7 +230,7 @@ Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-w
 - `bunx turbo gen durable-object` — Scaffold a new Durable Object package
 - `bun run db:generate` — Regenerate D1 / Drizzle SQL from `packages/db` schema (writes `packages/db/drizzle/`)
 
-## Best Practices & Optimizations
+## Best practices and optimizations
 
 This starter kit follows modern 2026 best practices:
 
@@ -265,7 +275,7 @@ If you use pre-commit hooks in your fork, wire them to `bun run lint` / `typeche
 
 ## Contributing
 
-Bug reports, doc fixes, and improvements that keep the template honest for day-to-day use are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and quality checks before you open a PR.
+Bug reports, doc fixes, and improvements that keep the template honest for day-to-day use are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for PR expectations and quality checks (setup and stack details stay in this README).
 
 ## License
 

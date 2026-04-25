@@ -2,14 +2,6 @@
 description: Necessary for cloud agents
 alwaysApply: false
 ---
-# Git completion reminder (Cloud Agents)
+# Git: commit and push (cloud agents)
 
-**Before ending your response:** If you made code changes, you MUST run:
-
-```bash
-git add <changed-files>
-git commit -m "descriptive message"
-git push
-```
-
-Do not skip this. Do not end your turn with uncommitted or unpushed changes.
+For the full policy (PRs, branches, **IDE vs cloud**), read [git-workflow.mdc](git-workflow.mdc). The mandatory checklists and commands are in [00-cloud-agent-mandatory.mdc](00-cloud-agent-mandatory.mdc).

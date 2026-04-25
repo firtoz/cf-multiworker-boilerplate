@@ -4,48 +4,11 @@ alwaysApply: false
 ---
 # Cloud agent setup
 
-> **📌 IMPORTANT:** See `00-cloud-agent-mandatory.mdc` for the critical startup checklist.
+Start with the startup checklist in [00-cloud-agent-mandatory.mdc](00-cloud-agent-mandatory.mdc). This file adds detail, troubleshooting, and command reference only.
 
-## Automatic setup
-
-Setup runs automatically via `.cursor/environment.json`:
-
-```json
-{
-  "install": "bash ./.cursor/setup-agent.sh"
-}
-```
-
-This configuration tells Cursor Cloud Agents to run the setup script on VM startup.
-
-## What gets installed
-
-The setup script (`.cursor/setup-agent.sh`) handles:
-1. **Installing bun** - Downloads and installs latest bun to `~/.bun/bin/`
-2. **Updating PATH** - Adds bun to `~/.bashrc`
-3. **Installing dependencies** - Runs `bun install --frozen-lockfile` from workspace root
-4. **Verification** - Confirms everything is ready
-
-## environment.json configuration
-
-The `environment.json` file configures Cloud Agent runtime settings:
-
-```json
-{
-  "snapshot": "POPULATED_FROM_SETTINGS",
-  "install": "bash ./.cursor/setup-agent.sh"
-}
-```
-
-**Key fields:**
-- `snapshot`: Managed by Cursor settings (don't change)
-- `install`: Command to run on VM startup after pulling latest changes
-
-See [Cursor Cloud Agent docs](https://cursor.com/docs/cloud-agent#the-environmentjson-spec) for full specification.
+`environment.json` in this repo is minimal (see [`.cursor/environment.json`](../environment.json) — `install` runs `bash ./.cursor/setup-agent.sh` on the agent VM). Cursor may merge other fields; see [Cursor environment docs](https://cursor.com/docs/cloud-agent#the-environmentjson-spec).
 
 ## If setup failed
-
-If you find yourself in a session where setup didn't run:
 
 ```bash
 cd /workspace
@@ -53,93 +16,54 @@ bash ./.cursor/setup-agent.sh
 source ~/.bashrc
 ```
 
-## Working directory convention
+## Working from repo root
 
-**Always run commands from `/workspace` (repo root).**
+**Run `bun run build` / `bun run typecheck` / `bun run lint` / `bun run typegen` from the repo root** (`/workspace` on cloud agents) so Turbo sees the monorepo graph. Do not `cd` into `apps/web` (or use `--cwd`) for those root scripts.
 
-This is a turborepo monorepo. Turbo automatically handles workspace dependencies and build order.
+For **adding a dependency to one package**, use root **`bun add ... --filter apps/web`** or **`bun add ... --cwd apps/web`** — that is the normal exception.
 
 ```bash
-# ✅ CORRECT - Run from repo root (turbo handles everything)
 cd /workspace
-bun run build        # Turbo builds all packages in correct order
-bun run typecheck    # Turbo typechecks all packages
-bun run lint         # Turbo lints all packages
-
-# ❌ WRONG - Changing into subdirectory
-cd /workspace/apps/web
 bun run build
-```
-
-No need for `--cwd` or `--filter` flags - turbo figures it out.
-
-## Package installation convention
-
-**Always install latest versions** unless a specific version is explicitly required:
-
-```bash
-# ✅ CORRECT - Install latest from repo root
-cd /workspace
-bun add @some/package@latest --filter apps/web
-# or if filter doesn't work:
-bun add @some/package@latest --cwd apps/web
-
-# ❌ WRONG - Hardcoding version in package.json
-# Don't manually edit package.json files to add dependencies
-```
-
-Let the package manager resolve to the latest compatible version.
-
-## Common commands reference
-
-All commands run from `/workspace` root - turbo handles the rest:
-
-```bash
-# Build (all packages in correct order)
-bun run build
-
-# Type checking (all packages)
 bun run typecheck
-
-# Linting (all packages)
 bun run lint
+bun add @some/package@latest --filter apps/web
+```
 
-# Type generation (Cloudflare bindings + React Router routes)
+## Common commands (repo root)
+
+```bash
+bun run build
+bun run typecheck
+bun run lint
 bun run typegen
 ```
 
-See `package.json` in workspace root for all available scripts.
+See root `package.json` for the full script list.
 
-## Self-improvement protocol
+## Self-improvement
 
-**If you encounter any setup issues, documentation gaps, or repeated mistakes:**
-
-1. **Fix the documentation** - Update relevant files in `.cursor/rules/`
-2. **Improve the setup script** - Make `.cursor/setup-agent.sh` more robust
-3. **Add to mandatory guide** - Update `00-cloud-agent-mandatory.mdc` with learnings
-4. **Commit your improvements** - Include documentation updates in your PR
-
-This ensures future agents don't face the same issues.
+If setup or docs are wrong, update `.cursor/rules/`, `00-cloud-agent-mandatory.mdc`, or `.cursor/setup-agent.sh` and include fixes in the same PR as code when possible.
 
 ## Troubleshooting
 
 ### "command not found: bun"
+
 ```bash
-# Solution: Source bashrc to load PATH
 source ~/.bashrc
-which bun  # Should show /home/ubuntu/.bun/bin/bun
+which bun
 ```
 
-### Build failures with missing packages
+### Build failures (missing packages)
+
 ```bash
-# Solution: Re-run install from workspace root
 cd /workspace
 bun install --frozen-lockfile
 ```
 
-### "No such file or directory" errors
+### Wrong directory
+
 ```bash
-# Solution: Verify you're in workspace root
-pwd  # Should show /workspace
+pwd
 cd /workspace
 ```

@@ -1,139 +1,60 @@
-# Contributing Guide
+# Contributing
 
-Thank you for contributing to this project! This guide will help you get started.
+Thanks for helping improve this starter. This file is **contribution process and PR checks** only.
 
-## Development Setup
+**Setup, first-time Alchemy/Cloudflare, `bun run dev`, and deploy** live in the root **[README.md](README.md)**. **Web app routes and bindings** in **[apps/web/README.md](apps/web/README.md)**. **Index of rules and skills** in **[AGENTS.md](AGENTS.md)**.
 
-1. **Install Bun** (if not already installed):
-   ```bash
-   curl -fsSL https://bun.sh/install | bash
-   ```
+## Local setup (summary)
 
-2. **Clone and install dependencies** — clone the repository, `cd` into the working tree, then:
+1. Install [Bun](https://bun.sh/) and clone the repo.
+2. From the repo root: `bun install` then `bun run setup` (seeds `SESSION_SECRET` and `ALCHEMY_PASSWORD` into `.env.local` — see README for non-interactive/CI).
+3. Complete first-time Alchemy/Cloudflare steps from the README before relying on `bun run dev` or deploy.
+4. **Bun version:** match repo **`packageManager`** in root [package.json](package.json) and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (CI is the source of truth for drift).
 
-   ```bash
-   bun install
-   ```
+## Code quality (before a PR)
 
-3. **Environment** — after **`bun install`**, run **`bun run setup`** from the repo root to create or complete **`.env.local`** with **`SESSION_SECRET`** and **`ALCHEMY_PASSWORD`** (no in-repo defaults). For deploy-shaped files on disk, **`bun run setup:prod`**. **`.env.example`** is documentation only.
-4. **Production deploy from your machine** — create **`.env.production`** (or maintain CI secrets), set a stable **`ALCHEMY_PASSWORD`**, then run **`bun run deploy`**. See root **README**, **[AGENTS.md](AGENTS.md)** (index), and **[.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)**.
+- **TypeScript:** strict, avoid `any`, prefer `satisfies` where it helps.
+- **Lint/format:** [Biome](https://biomejs.dev/) — `bun run lint` (repo root; may rewrite; re-run as needed). Root README describes `check --write` behavior.
+- **Commits:** Conventional style is fine (`feat:`, `fix:`, `docs:`, etc.).
 
-5. **Start development server**:
-   ```bash
-   bun run dev
-   ```
+## What to run before you open a PR
 
-## Code Quality Standards
-
-### TypeScript
-- Use **strict mode** with additional safety checks enabled
-- Avoid `any` types - use `unknown` or proper types
-- Prefer type inference over explicit types when obvious
-- Use `satisfies` for better type checking
-
-### Code Style
-- We use **Biome** for linting and formatting
-- Run `bun run lint` before committing
-- Format on save is enabled in VS Code
-- No console.log in production code (use proper logging)
-
-### Commits
-- Use semantic commit messages:
-  - `feat:` for new features
-  - `fix:` for bug fixes
-  - `docs:` for documentation
-  - `refactor:` for code refactoring
-  - `test:` for tests
-  - `chore:` for maintenance
-
-## Project Structure
-
-```
-├── apps/web/              # React Router 7 web app
-├── durable-objects/       # Durable Object workers
-├── packages/
-│   ├── cf-starter-alchemy/  # Shared Alchemy password helper (import in alchemy.run.ts)
-│   ├── db/                # D1 + Drizzle (cf-starter-db)
-│   ├── chat-contract/     # Shared chat / Socka types
-│   └── scripts/            # Workspace scripts package
-└── turbo/generators/     # Code generators
-```
-
-## Adding a New Durable Object
+From the **repo root**:
 
 ```bash
-bunx turbo gen durable-object
+bun run typecheck
+bun run lint
+bun run build
 ```
 
-Follow the prompts and the generator will:
-- Create the DO structure
-- Create package-local `alchemy.run.ts`
-- Configure TypeScript
-- Add Biome config
+Optionally `bun run dev` to exercise the app locally.
 
-After generation:
-1. Implement routes/RPC on the generated class’s public **`readonly app`** in **`workers/app.ts`**.
-2. If the web app consumes the DO, export the provider resource from the package **`./alchemy`** export, import it in **`apps/web/alchemy.run.ts`**, and add a **`workspace:*`** dependency in **`apps/web/package.json`** if Turbo should run that package’s checks before web.
-3. Run **`bun run typegen`** and **`bun run typecheck`** from the repo root.
+## Adding a Durable Object or worker package
 
-Root **`bun run deploy`** uses Turbo to deploy package Alchemy apps in dependency order.
+The generator and post-steps (root `dev` filter, web bindings, `turbo` destroy, `bun run typegen`) are documented in the README under **“Add New Durable Objects”** and **“After `turbo gen durable-object`”**, and in [.cursor/skills/cf-durable-object-package/SKILL.md](.cursor/skills/cf-durable-object-package/SKILL.md) / [.cursor/skills/cf-web-alchemy-bindings/SKILL.md](.cursor/skills/cf-web-alchemy-bindings/SKILL.md).
 
-## Testing
+## Dependency changes
 
-Before submitting a PR:
+- Prefer `bun add` from the repo root; scope to one app with `--filter` or `--cwd` (see [cf-starter-workflow](.cursor/skills/cf-starter-workflow/SKILL.md)).
+- `bun run outdated`, `bun run update:interactive`, and `bun pm audit` (or your registry workflow) when upgrading.
+- **Forks** may add Renovate, Dependabot, or similar; the template does not require one.
 
-1. **Type check**: `bun run typecheck`
-2. **Lint**: `bun run lint`
-3. **Build**: `bun run build`
-4. **Test locally**: `bun run dev`
+## Deploy and destroy (contributors)
 
-## Dependency Management
+- **`bun run deploy`** — Runs **`turbo run deploy --filter=cf-starter-web`** so the web app and its dependent worker packages deploy in order. Each package uses **`alchemy deploy --app <package-id>`**. Needs production creds and a stable **`ALCHEMY_PASSWORD`** (see README and Alchemy state docs).
+- **`bun run destroy`** — **`turbo run destroy`**; order follows package `destroy` config (web before dependents where set).
 
-- **Adding dependencies**: Use `bun add <package>`
-- **Updating dependencies**: Use `bun run update:interactive`
-- **Security**: Run `bun pm audit` or your registry’s audit workflow when upgrading deps
-- **Check outdated**: Use `bun run outdated`
+## Pull requests
 
-### Dependency Guidelines
-- Prefer well-maintained packages with active communities
-- Check bundle size impact before adding new dependencies
-- Use workspace protocol (`workspace:*`) for internal packages
-- Keep dependencies up to date with Renovate bot
+1. Branch off `main` (e.g. `feat/…`, `fix/…`, `docs/…`).
+2. Make changes; keep the diff focused.
+3. Run typecheck, lint, and build (above).
+4. Push and open a PR; wait for CI.
 
-## Deploy (from a contributor machine)
+## Questions
 
-- **`bun run deploy`** — Runs **`turbo run deploy`**; deployable packages call **`alchemy deploy --app <package-id>`**. Requires production credentials and a stable **`ALCHEMY_PASSWORD`**.
-- **`bun run destroy`** — Runs **`turbo run destroy`**. Turbo marks destroy/deploy uncached.
-
-## Performance considerations
-
-### Bundle size
-- Monitor bundle size with the visualizer: `build/stats.html`
-- Lazy load heavy components
-- Use dynamic imports for large libraries
-
-### Cloudflare Workers
-- Keep Workers under 1MB after compression
-- Use Durable Objects for stateful operations
-- Leverage Smart Placement for optimal routing
-- Set appropriate CPU limits to catch runaway code
-
-## Pull Request Process
-
-1. **Create a feature branch**: `git checkout -b feat/my-feature`
-2. **Make your changes** following the code quality standards
-3. **Test thoroughly** using the commands above
-4. **Commit with semantic messages**
-5. **Push and create a PR** with a clear description
-6. **Wait for CI** to pass (lint, typecheck, build, etc.)
-7. **Address review feedback** if any
-
-## Questions?
-
-- Check existing issues and discussions
-- Review the main README.md
-- Ask in discussions for general questions
+- [Issues](https://github.com/firtoz/cf-multiworker-starter-kit/issues) and [README](README.md).
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree your contributions are licensed under the [MIT License](README.md#license) used by this project.

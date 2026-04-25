@@ -1,10 +1,10 @@
 ---
-description: Necesssary for cloud agents
+description: Necessary for cloud agents
 alwaysApply: false
 ---
 # Cloud agent mandatory startup - read this first
 
-**STOP! Before doing ANYTHING else, read this entire file.**
+Read this file first on a cloud agent VM. It is short on purpose.
 
 ## Automatic setup via environment.json
 

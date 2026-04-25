@@ -4,7 +4,7 @@ alwaysApply: false
 ---
 # Dev server policy
 
-**NEVER run dev servers or long-running watch processes unless the user explicitly asks for it.**
+**Do not** start dev servers or long-running watch processes unless the user explicitly asks (e.g. “run dev”, “verify in the browser”). If they do, use the project’s **`bun run dev`** from the repo root and stop or ask before leaving a server running forever.
 
 ## What not to run without an explicit user request
 
