@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
@@ -8,7 +9,14 @@ import { imagetools } from "vite-imagetools";
 import devtoolsJson from "vite-plugin-devtools-json";
 
 export default defineConfig((configEnv) => {
-	const { mode } = configEnv;
+	const { command, mode } = configEnv;
+	const alchemyConfigPath = fileURLToPath(
+		new URL(".alchemy/local/wrangler.jsonc", import.meta.url),
+	);
+	// CI build runs before Alchemy has generated its local Wrangler config. In that
+	// path, keep Workers' virtual module external and let runtime resolve it.
+	const shouldLoadAlchemy =
+		command === "serve" || (process.env["CI"] !== "true" && existsSync(alchemyConfigPath));
 
 	return {
 		define: {
@@ -19,7 +27,7 @@ export default defineConfig((configEnv) => {
 		},
 		plugins: [
 			devtoolsJson(),
-			alchemy() as PluginOption,
+			shouldLoadAlchemy ? (alchemy() as PluginOption) : null,
 			tailwindcss(),
 			reactRouter(),
 			imagetools({
@@ -36,6 +44,11 @@ export default defineConfig((configEnv) => {
 		build: {
 			cssCodeSplit: true,
 			minify: "esbuild",
+			rollupOptions: shouldLoadAlchemy
+				? undefined
+				: {
+						external: ["cloudflare:workers"],
+					},
 			target: "esnext",
 			sourcemap: false,
 		},

@@ -1,6 +1,7 @@
 /**
  * Required whenever `alchemy()` uses `{ password: … }` — encrypts `alchemy.secret()` in Alchemy state.
  * Set `ALCHEMY_PASSWORD` in repo-root **`.env.local`** (dev) or **`.env.production`** (deploy / CI), or your secret store in CI.
+ * Package scripts keep those state files separate with `--stage local` and `--stage prod`, so the passwords do not need to match.
  *
  * @see https://alchemy.run/concepts/secret/#encryption-password
  */
