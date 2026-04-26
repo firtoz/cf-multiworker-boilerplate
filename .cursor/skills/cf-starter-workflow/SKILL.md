@@ -47,6 +47,8 @@ Whenever you change Drizzle schema:
 
 For **production** parity: `turbo run typegen:prod` then `turbo run typecheck:prod` if prod env differs.
 
+**Typecheck and lint are not always “done” for user-facing work.** For **UI**, **routes**, **canvas/pointer**, or **realtime** features, also run or document **smoke** checks (render the right route, no obvious breakage), and prefer **in-browser** verification (e.g. Cursor **cursor-ide-browser** MCP, or project E2E if present). At minimum for visual/product changes: see the app in a browser, **capture screenshots** of key surfaces, and for interaction-heavy flows use **automation** (click/type/pointer) — `fetch` to an action alone does not prove the UI works. See [.cursor/rules/dev-server.mdc](../../rules/dev-server.mdc): do not start `bun run dev` unless the user asked or you need it to verify.
+
 **Cloudflare `Env`:** Comes from each package’s `env.d.ts` and the worker resource exported from that package’s `alchemy.run.ts` (web uses `WebBindingResources` + `Bindings.Runtime<… & { ASSETS }>`; see [apps/web/env.d.ts](../../../apps/web/env.d.ts), [apps/web/alchemy.run.ts](../../../apps/web/alchemy.run.ts)).
 
 ## Package installation
@@ -111,10 +113,12 @@ Access in app code: `import { env } from "cloudflare:workers"` only.
 - [ ] Touched routes, `alchemy.run.ts`, `env.d.ts`, or env → `bun run typegen` (and prod pair if needed).
 - [ ] `bun run lint` passes.
 - [ ] `bun run typecheck` passes.
+- [ ] If the change is **user-facing** (UI, navigation, forms, **canvas/pointer**, **WebSockets**): exercise the feature in a **browser** or automation when feasible; for canvas/realtime, see [cf-socka-realtime/SKILL.md](../cf-socka-realtime/SKILL.md) pre-merge checklist.
 - [ ] **Cloud agents** (if your session is a cloud task): when you changed code, **`git add` / `git commit` / `git push` before you finish** — do not leave changes only in the working tree. [.cursor/rules/00-cloud-agent-mandatory.mdc](../../rules/00-cloud-agent-mandatory.mdc). **IDE / local chat agents** usually do not commit: [.cursor/rules/git-workflow.mdc](../../rules/git-workflow.mdc).
 
 ## Related
 
+- [cf-socka-realtime/SKILL.md](../cf-socka-realtime/SKILL.md) — realtime WebSocket + canvas/pointer and pre-merge checks.
 - [cf-starter-gotchas](../cf-starter-gotchas/SKILL.md) — numbered gotchas and edge cases.
 - [project-init](../project-init/SKILL.md) — rename workers/docs after forking the template.
 - [packages/scripts/dev-preflight.ts](../../../packages/scripts/dev-preflight.ts) — `scripts#dev:preflight` checks wrangler/miniflare alignment (Turbo `dev` dependency).

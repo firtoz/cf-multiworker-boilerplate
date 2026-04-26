@@ -210,3 +210,7 @@ This organization provides:
 4. Ask: "Is this specific to a page?" → `components/[feature]/[page]/`
 
 Always create a new file for each component, even if it's small. Small, focused files are better than large, multi-purpose files.
+
+## Generated images, mockups, and “asset pack” rasters
+
+AI-generated or imported **layout mockups** and **reference sheets** are for **visual reference** — not automatic UI chrome. Prefer **real DOM**, **CSS**, and **accessible** text/controls for buttons, forms, labels, and panels. Use **raster** assets sparingly: backgrounds, subtle accents, posters/cards, decorative textures. Avoid stretching a generated PNG of fake UI (buttons, panels) as the primary control surface without **visual** testing in a real browser. Realtime and canvas-specific patterns: [cf-socka-realtime/SKILL.md](../cf-socka-realtime/SKILL.md).

@@ -12,7 +12,7 @@ description: Add or change a Durable Object worker package under durable-objects
 
 ## Steps
 
-1. **Package layout** — At minimum: `alchemy.run.ts`, `env.d.ts`, `workers/app.ts`, `package.json` with `"exports": { "./alchemy": "./alchemy.run.ts" }`, `tsconfig.json`. Reference: [durable-objects/ping-do](durable-objects/ping-do) (Hono + DO + WorkerEntrypoint) or [durable-objects/chatroom-do](durable-objects/chatroom-do) (DO-focused).
+1. **Package layout** — At minimum: `alchemy.run.ts`, `env.d.ts`, `workers/app.ts`, `package.json` with `"exports": { "./alchemy": "./alchemy.run.ts" }`, `tsconfig.json`. Reference: [durable-objects/ping-do](durable-objects/ping-do) (Hono + DO + WorkerEntrypoint) or [durable-objects/chatroom-do](durable-objects/chatroom-do) (Socka + DO SQLite, shared contract in [packages/chat-contract](../../../packages/chat-contract)). For **WebSocket RPC + server push** on a DO, prefer that Socka + contract pattern over raw `WebSocket` JSON; full playbook: [cf-socka-realtime/SKILL.md](../cf-socka-realtime/SKILL.md).
 
 2. **`alchemy.run.ts`** — `await alchemy("<app-id>", { password: alchemyPassword })` with `import { alchemyPassword } from "cf-starter-alchemy"` (see [cf-starter-alchemy](../../../packages/cf-starter-alchemy)). Add `"cf-starter-alchemy": "workspace:*"` to this package’s `devDependencies`. Export `DurableObjectNamespace<YourDoRpc>` (use type from `./workers/rpc` or `./workers/your-do.ts` as in repo), then `Worker(..., { entrypoint: new URL("./workers/app.ts", import.meta.url).pathname, bindings: { YourDo, ... }, adopt: true, ... })`. Stable `name:` strings matter for cross-script `WorkerRef`.
 
@@ -39,5 +39,5 @@ If this new DO should be reachable from the web app, complete these follow-up ed
 2. Root `turbo.json`: add `<your-package>#destroy` depending on `cf-starter-web#destroy`.
 3. `apps/web/package.json`: add `"<your-package>": "workspace:*"` and run `bun install`.
 4. `apps/web/alchemy.run.ts`: import from `"<your-package>/alchemy"` and bind the namespace/worker into `ReactRouter`.
-5. WebSocket only: handle the worker upgrade path in `apps/web/workers/app.ts` before React Router, keep the client prefix identical, avoid Vite HMR paths, and forward to the DO path `/websocket`.
+5. **WebSocket / Socka:** handle the worker upgrade path in `apps/web/workers/app.ts` before React Router, keep the client URL prefix and worker handler prefix identical, avoid Vite HMR paths, and forward to the DO path `/websocket`. If using **`@firtoz/socka`**, align with [cf-socka-realtime/SKILL.md](../cf-socka-realtime/SKILL.md) (contract package, `SockaWebSocketDO`, `useSockaSession`, route-safe `wss://` from `window` in client-only code).
 6. Verify from repo root: `bun run typegen`, `bun run typecheck`, `bun run lint`.

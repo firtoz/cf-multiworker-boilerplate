@@ -76,3 +76,4 @@ Follow the root [AGENTS.md](../../AGENTS.md) skill index and [cf-starter-workflo
 - Linting and completion checklist
 - Environment variable management ([cf-workers-env-local](../../.cursor/skills/cf-workers-env-local/SKILL.md))
 - Alchemy / worker package conventions ([cf-starter-gotchas](../../.cursor/skills/cf-starter-gotchas/SKILL.md) and the `cf-` skills linked there)
+- **WebSocket / `/api/ws` / chat:** [cf-socka-realtime](../../.cursor/skills/cf-socka-realtime/SKILL.md) and [cf-realtime-websockets](../../.cursor/rules/cf-realtime-websockets.mdc) (Socka, SSR-safe URLs, `workers/app.ts` forwarding)

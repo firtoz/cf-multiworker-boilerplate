@@ -164,6 +164,8 @@ bun run dev
 
 The generator scaffolds `durable-objects/<name>/` with a package-local `alchemy.run.ts`, `env.d.ts`, `workers/rpc.ts` (portable `DurableObjectNamespace` RPC type), and `workers/app.ts` using `new Hono<{ Bindings: CloudflareEnv }>()`. Implement routes on the DO’s public `app` and consume them with `honoDoFetcherWithName` from the web app when you add HTTP access.
 
+**Socka + Durable Object SQLite (WebSocket RPC and push):** The starter’s reference implementation is **`durable-objects/chatroom-do`**, **`packages/chat-contract`** (`defineSocka`), the **`/api/ws/...`** forward in **`apps/web/workers/app.ts`**, and the client URL helper in **`apps/web/app/lib/chat-ws-url.ts`**. Copy and rename that pattern for new rooms rather than hand-rolling a JSON `WebSocket` protocol. See [.cursor/skills/cf-socka-realtime/SKILL.md](.cursor/skills/cf-socka-realtime/SKILL.md).
+
 #### After `turbo gen durable-object`
 
 The generator does not wire the monorepo for you. For each new package:

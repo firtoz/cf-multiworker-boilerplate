@@ -1,0 +1,22 @@
+---
+description: Socka-first Durable Object WebSockets, SSR-safe client URLs, no fake localhost. Use for durable-objects/*, apps/web, WebSocket forwarding, or @firtoz/socka.
+alwaysApply: false
+---
+# Realtime WebSockets (Durable Objects + web)
+
+- **Default stack:** If a feature needs WebSocket RPC or server push on Workers, use **`@firtoz/socka`**: a shared contract with `defineSocka` (see `packages/chat-contract`), a DO extending **`SockaWebSocketDO`**, the client with **`useSockaSession`**, and typed calls/pushes. Do **not** hand-author ad-hoc JSON message protocols over raw `WebSocket` unless the user explicitly asks for raw WebSockets.
+
+- **Bad pattern (avoid unless explicitly requested):**
+
+```ts
+// Avoid unless the user explicitly wants a raw WebSocket protocol.
+ws.send(JSON.stringify({ t: "op", op }));
+```
+
+- **No fake host fallbacks:** Do **not** use `localhost`, `127.0.0.1`, dummy service URLs, or placeholder `ws://…` values as **runtime** defaults to satisfy React hook signatures. If a value only exists in the browser, split the tree (e.g. child that mounts on the client) or render a **loading shell** until the real URL exists.
+
+- **SSR-safe WebSocket URL:** Never read `window` / `window.location` during SSR or in render for URLs used by hooks. Build `wss://` / `ws://` from `new URL(window.location.href)` in **client-only** code (`useEffect`, event handlers, or a client-only child). See [apps/web/app/lib/chat-ws-url.ts](apps/web/app/lib/chat-ws-url.ts) and the skill below.
+
+- **Details, draft vs commit, canvas checklists, fire-and-forget `.catch`:** [.cursor/skills/cf-socka-realtime/SKILL.md](.cursor/skills/cf-socka-realtime/SKILL.md)
+
+- **See also:** [.cursor/rules/cf-workers-patterns.mdc](.cursor/rules/cf-workers-patterns.mdc) for workers/env/routes.

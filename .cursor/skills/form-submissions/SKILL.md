@@ -135,6 +135,16 @@ React Router index actions require an explicit `?index` target for external clie
 
 Avoid teaching new app features to post plain forms to index routes. If an endpoint must be called externally, prefer a non-index resource route such as `/sessions/new`. If a home/index route intentionally has an action for plain forms, add a nearby comment and explicit `action="/?index"`.
 
+## Programmatic navigation after an action (internal flows)
+
+`formAction` + `useDynamicSubmitter` work best for **in-app** flows when the action returns **structured** data the UI can use:
+
+- Prefer **`return success({ ... })`** (or a typed code/slug) and **navigate in the component** with the router (e.g. `href(...)` from `@firtoz/router-toolkit` or your app’s `useNavigate` pattern) after `await submitter.submitJson(...)` resolves and `data.success` is true.
+- Use **`throw redirect(…)`** when you want a full **server-driven** redirect response (e.g. external URL, or when you truly need a `Location` response). Redirects in actions are handled on the **fetcher/submitter** code path, which differs from a full **document** navigation; for SPA-style “create then go to detail,” **`success` + client navigate** is often clearer.
+- For **internal** create/join/settings flows, default to **controlled state + `submitJson` + `success` + explicit client navigation**; reserve raw `<form method="post">` for cases that need native form semantics.
+
+See also [routing/SKILL.md](../routing/SKILL.md) for `RoutePath` and patterns.
+
 ## Benefits
 
 This approach provides:

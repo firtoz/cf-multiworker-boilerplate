@@ -12,6 +12,7 @@ Short index for AI agents. **Details live in Cursor skills** (`.cursor/skills/*.
 | Turbo tasks, `^`, cache, `inputs` | [.cursor/skills/turborepo/SKILL.md](.cursor/skills/turborepo/SKILL.md) |
 | Web ↔ worker bindings, `apps/web/alchemy.run.ts` | [.cursor/skills/cf-web-alchemy-bindings/SKILL.md](.cursor/skills/cf-web-alchemy-bindings/SKILL.md) |
 | Durable Object package layout, Hono, `workers/rpc` | [.cursor/skills/cf-durable-object-package/SKILL.md](.cursor/skills/cf-durable-object-package/SKILL.md) |
+| Socka WebSockets, DO realtime, SSR-safe `wss://`, whiteboard/canvas patterns | [.cursor/skills/cf-socka-realtime/SKILL.md](.cursor/skills/cf-socka-realtime/SKILL.md) |
 | `WorkerRef`, cross-worker types, root `dev`/`destroy` | [.cursor/skills/cf-worker-rpc-turbo/SKILL.md](.cursor/skills/cf-worker-rpc-turbo/SKILL.md) |
 | React Router routes, `RoutePath`, loaders | [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) |
 | `formAction`, `useDynamicSubmitter` | [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md) |

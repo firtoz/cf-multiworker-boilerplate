@@ -56,6 +56,10 @@ Prefer **typed success/error** from [`@firtoz/maybe-error`](https://www.npmjs.co
 
 See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) and [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).
 
+## Realtime WebSockets (optional)
+
+For **`@firtoz/socka`**, Durable Object WebSocket RPC, and SSR-safe client URL patterns, see [.cursor/rules/cf-realtime-websockets.mdc](.cursor/rules/cf-realtime-websockets.mdc) and [.cursor/skills/cf-socka-realtime/SKILL.md](.cursor/skills/cf-socka-realtime/SKILL.md).
+
 ## More context
 
 Longer lists: [.cursor/skills/cf-starter-gotchas/SKILL.md](.cursor/skills/cf-starter-gotchas/SKILL.md), [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md). Index: [AGENTS.md](../../AGENTS.md).
