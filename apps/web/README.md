@@ -63,9 +63,23 @@ export default function MyFeature({ loaderData }: Route.ComponentProps) {
 
 See [.cursor/skills/routing/SKILL.md](../../.cursor/skills/routing/SKILL.md).
 
-### 2. Add a form (and POST to a non-index route)
+### 2. Add a form (internal app flows vs external clients)
 
-Use `formAction` from `@firtoz/router-toolkit` and return `success(...)` / `fail(...)` from `@firtoz/maybe-error`. Keep POST actions on a non-index route unless you intentionally handle React Router’s `/?index` behavior. See [.cursor/skills/form-submissions/SKILL.md](../../.cursor/skills/form-submissions/SKILL.md).
+For internal React UI submissions, prefer `formAction`, `useDynamicSubmitter`, and `await submitter.submitJson(...)`. Do not reach for plain HTML forms unless you intentionally want browser-native form behavior.
+
+```tsx
+type RouteMod = typeof import("./my-feature");
+const submitter = useDynamicSubmitter<RouteMod>("/my-feature");
+await submitter.submitJson({ name });
+```
+
+For external clients, terminal smoke tests, or plain HTML forms that POST to an **index route**, React Router requires the `?index` target:
+
+- Internal app flow: `useDynamicSubmitter<RouteMod>("/some-route").submitJson(...)`
+- Plain form to index route: `action="/?index"`
+- Terminal test: `POST /?index`, not `POST /`
+
+Avoid teaching new app features to POST plain forms to index routes. Prefer a non-index resource route such as `/sessions/new` for create/join endpoints that external clients must call. See [.cursor/skills/form-submissions/SKILL.md](../../.cursor/skills/form-submissions/SKILL.md).
 
 ### 3. Wire a new DO or worker into the web app
 
@@ -76,14 +90,50 @@ Do not duplicate the monorepo checklist here. After **`bunx turbo gen durable-ob
 
 Example: call a DO’s Hono surface with `honoDoFetcherWithName(env.PingDo, "demo")` (see existing routes such as `ping-do`).
 
-### 4. Rename the project
+### 4. Add a WebSocket-backed route
+
+Handle Worker upgrade/forwarding paths before React Router in `workers/app.ts`, and keep the client URL prefix exactly aligned with the worker prefix. Do not intercept Vite HMR WebSockets; the Cloudflare Vite plugin already ignores upgrades with Vite HMR protocols.
+
+```ts
+const MY_WS_PREFIX = "/api/my-feature/ws/";
+
+if (url.pathname.startsWith(MY_WS_PREFIX)) {
+	const id = sanitizeMyFeatureId(url.pathname.slice(MY_WS_PREFIX.length));
+	const stub = this.env.MyFeatureDo.getByName(id);
+	const forward = new URL(request.url);
+	forward.pathname = "/websocket";
+	return stub.fetch(new Request(forward.toString(), request));
+}
+```
+
+Conventions:
+
+- Worker upgrade paths run before `requestHandler(...)`.
+- Client URL builders and worker prefixes must match exactly.
+- The Durable Object receives forwarded path `/websocket`.
+- If the DO requires auth between workers, add/verify internal headers before forwarding.
+
+### 5. Respect the SSR/browser boundary
+
+React Router routes render on the server. Do not access `window`, `document`, `WebSocket`, `canvas`, `localStorage`, or DOM APIs during module scope, loaders/actions, component render, or SSR-running `useMemo`.
+
+Safe places:
+
+- `useEffect`
+- Event handlers
+- Client-only wrappers
+- Guarded browser-only code
+
+WebSocket URL helpers may use `window.location`, but only call them from `useEffect` or client-only handlers. If helper output is needed earlier, pass an origin from a client-only context instead.
+
+### 6. Rename the project
 
 1. Update package names and user-facing copy.
 2. Choose stable worker names in each package’s `alchemy.run.ts` when another worker refers to it by service binding.
 3. Update `package.json` → `name` field.
 4. Run `bun run typegen` from root.
 
-### 5. Add environment variables
+### 7. Add environment variables
 
 **Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`ALCHEMY_PASSWORD`** and **`CHATROOM_INTERNAL_SECRET`** if missing), or add values to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
 ```bash

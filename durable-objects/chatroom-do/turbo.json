@@ -3,10 +3,14 @@
 	"extends": ["//"],
 	"tasks": {
 		"dev": {
-			"dependsOn": ["scripts#dev:preflight", "typegen:local"],
+			"dependsOn": ["scripts#dev:preflight", "db:generate", "typegen:local"],
 			"inputs": ["workers/**/*.ts", "src/**/*.ts", "$TURBO_ROOT$/.env.local", "package.json"],
 			"persistent": true,
 			"cache": false
+		},
+		"db:generate": {
+			"inputs": ["drizzle.config.ts", "src/schema.ts"],
+			"outputs": ["drizzle/**"]
 		},
 		"lint": {
 			"dependsOn": ["typecheck:local"],
@@ -18,7 +22,7 @@
 			"outputs": []
 		},
 		"typecheck:local": {
-			"dependsOn": ["typegen:local"],
+			"dependsOn": ["db:generate", "typegen:local"],
 			"inputs": [
 				"workers/**/*.ts",
 				"src/**/*.ts",
@@ -31,7 +35,7 @@
 			"outputs": []
 		},
 		"typecheck:prod": {
-			"dependsOn": ["typegen:prod"],
+			"dependsOn": ["db:generate", "typegen:prod"],
 			"inputs": [
 				"workers/**/*.ts",
 				"src/**/*.ts",
@@ -68,7 +72,7 @@
 			"outputs": []
 		},
 		"deploy": {
-			"dependsOn": ["typecheck:prod", "cf-starter-chat-contract#typecheck:prod"],
+			"dependsOn": ["db:generate", "typecheck:prod", "cf-starter-chat-contract#typecheck:prod"],
 			"cache": true,
 			"inputs": [
 				"alchemy.run.ts",

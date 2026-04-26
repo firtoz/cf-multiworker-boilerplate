@@ -6,7 +6,7 @@
 		"./alchemy": "./alchemy.run.ts"
 	},
 	"scripts": {
-		"db:generate": "drizzle-kit generate",
+		"db:generate": "drizzle-kit generate && bun ../../packages/scripts/build-do-migrations.ts ./drizzle",
 		"deploy": "CF_STARTER_ALCHEMY_MODE=deploy bun --env-file ../../.env.production alchemy deploy --app chatroom-do --stage prod",
 		"destroy": "CF_STARTER_ALCHEMY_MODE=destroy bun --env-file ../../.env.production alchemy destroy --app chatroom-do --stage prod",
 		"dev": "CF_STARTER_ALCHEMY_MODE=dev bun --env-file ../../.env.local alchemy dev --app chatroom-do --stage local",

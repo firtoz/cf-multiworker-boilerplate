@@ -3,7 +3,7 @@
 	"extends": ["//"],
 	"tasks": {
 		"typegen:local": {
-			"dependsOn": ["^typecheck:local", "rr-typegen"],
+			"dependsOn": ["^typecheck:local", "^db:generate", "rr-typegen"],
 			"inputs": [
 				"app/**/*.ts",
 				"app/**/*.tsx",
@@ -21,7 +21,7 @@
 			"outputs": [".react-router/**"]
 		},
 		"typegen:prod": {
-			"dependsOn": ["^typecheck:prod", "rr-typegen"],
+			"dependsOn": ["^typecheck:prod", "^db:generate", "rr-typegen"],
 			"inputs": [
 				"app/**/*.ts",
 				"app/**/*.tsx",

@@ -22,6 +22,8 @@ Short index for AI agents. **Details live in Cursor skills** (`.cursor/skills/*.
 
 **Always-on reminder (workers, env, routes):** [.cursor/rules/cf-workers-patterns.mdc](.cursor/rules/cf-workers-patterns.mdc)
 
+**Generated artifacts policy:** [.cursor/rules/generated-artifacts.mdc](.cursor/rules/generated-artifacts.mdc). Never hand-author Drizzle migration SQL, Drizzle `meta/*.json`, React Router `+types`, lockfiles, or `.alchemy/` output. Edit the source of truth and run the generator.
+
 **When to offer project-init** (forks vs upstream starter kit): [.cursor/rules/project-init.mdc](.cursor/rules/project-init.mdc)
 
 **Dev server policy (agents):** do not start long-running dev unless the user asked — [.cursor/rules/dev-server.mdc](.cursor/rules/dev-server.mdc)
@@ -41,7 +43,8 @@ Setup is normally applied via `.cursor/environment.json`.
 ## One-liner defaults
 
 - Bindings in app code: `import { env } from "cloudflare:workers"` (not React Router `context.cloudflare.env`).
-- Maintenance loop: `bun run typegen` → `bun run typecheck` → `bun run lint` from the **repo root** when routes, Alchemy, or env change. Full checklist: [cf-starter-workflow](.cursor/skills/cf-starter-workflow/SKILL.md).
+- Drizzle migrations: edit `packages/db/src/schema.ts` or `durable-objects/<name>/src/schema.ts`, then run `bun run db:generate` or the package-local `db:generate`. Do not write SQL/meta snapshots by hand.
+- Maintenance loop: run the narrowest useful check frequently (`bun run typegen` after routes/env/Alchemy, `bun run typecheck` after TypeScript/API edits, `bun run lint` before finishing) from the **repo root**. Full checklist: [cf-starter-workflow](.cursor/skills/cf-starter-workflow/SKILL.md).
 
 ## Creating new skills
 

@@ -84,6 +84,38 @@ Deferred values (promises for `<Await>`) can live inside the success payload: `s
 - Prefer `formAction({ ... })` — the handler already returns `Promise<MaybeError<...>>` with validation errors folded in.
 - For actions that are not `formAction`, still return `success` / `fail` the same way for consistent typing with `useFetcher` / toolkit helpers.
 
+## Index route actions: internal app vs external clients
+
+For internal React UI submissions, prefer `formAction` + `useDynamicSubmitter` and route path exports. Do not reach for plain HTML forms unless you intentionally want browser-native behavior.
+
+For external clients, terminal smoke tests, or plain HTML forms that post to an index route, remember React Router index actions require the `?index` target:
+
+- Internal app flow: `useDynamicSubmitter<RouteMod>("/some-route").submitJson(...)`
+- Plain form to index route: `action="/?index"`
+- Terminal test: `POST /?index`, not `POST /`
+
+Avoid teaching new app features to post plain forms to index routes. If an endpoint must be called externally, prefer a non-index resource route such as `/sessions/new`.
+
+## SSR and browser-only APIs
+
+React Router routes render on the server. Do not access browser globals during render or in code that can run on the server.
+
+Unsafe:
+
+- Module scope
+- Loader/action code
+- Component render path
+- `useMemo` during SSR if it touches browser globals
+
+Safe places:
+
+- `useEffect`
+- Event handlers
+- `ClientOnly` wrappers
+- Guarded browser-only code
+
+Browser-bound APIs include `window`, `document`, `WebSocket`, `canvas`, `localStorage`, and DOM APIs. WebSocket helpers may use `window.location`, but call them only from `useEffect` / client-only handlers, or pass an origin explicitly from client-only code.
+
 ## Href and links (use `href` from react-router)
 
 Import `href` from `react-router` and use it for all `<Link to>` values. Do not hardcode paths or concatenate strings.

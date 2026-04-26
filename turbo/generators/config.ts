@@ -33,6 +33,25 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 				message: "What is the description of this Durable Object?",
 				default: "A new Durable Object implementation",
 			},
+			{
+				type: "confirm",
+				name: "usesSqlite",
+				message: "Will this Durable Object use SQLite/Drizzle migrations?",
+				default: false,
+			},
+			{
+				type: "confirm",
+				name: "wireWeb",
+				message: "Should it be consumed from the web app?",
+				default: true,
+			},
+			{
+				type: "confirm",
+				name: "usesWebSocket",
+				message: "Will the web app forward WebSocket upgrades to this Durable Object?",
+				default: false,
+				when: (answers) => Boolean((answers as { wireWeb?: boolean }).wireWeb),
+			},
 		],
 		actions: [
 			{
@@ -74,6 +93,37 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 					}
 					return `Failed to install dependencies: ${error}`;
 				}
+			},
+			(answers) => {
+				const data = answers as {
+					name: string;
+					usesSqlite?: boolean;
+					wireWeb?: boolean;
+					usesWebSocket?: boolean;
+				};
+				const kebabName = plop.getHelper("kebabCase")(data.name);
+				const notes = [
+					`Next steps for durable-objects/${kebabName}:`,
+					`- Root package.json dev: add --filter=${kebabName} if it should run with bun run dev.`,
+					`- Root turbo.json: add "${kebabName}#destroy" with dependsOn ["cf-starter-web#destroy"] if web binds to it.`,
+				];
+				if (data.usesSqlite) {
+					notes.push(
+						"- SQLite selected: add src/schema.ts and drizzle.config.ts, then run the package-local db:generate script. Do not hand-edit drizzle SQL/meta output.",
+					);
+				}
+				if (data.wireWeb) {
+					notes.push(
+						`- apps/web/package.json: add "${kebabName}": "workspace:*" and run bun install.`,
+						`- apps/web/alchemy.run.ts: import from "${kebabName}/alchemy" and bind the worker/namespace into ReactRouter.`,
+					);
+				}
+				if (data.usesWebSocket) {
+					notes.push(
+						"- WebSocket selected: add an apps/web/workers/app.ts prefix handler before React Router, keep the client prefix identical, and forward to /websocket on the DO.",
+					);
+				}
+				return notes.join("\n");
 			},
 		],
 	});

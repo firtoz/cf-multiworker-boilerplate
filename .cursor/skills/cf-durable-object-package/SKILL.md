@@ -16,15 +16,28 @@ description: Add or change a Durable Object worker package under durable-objects
 
 2. **`alchemy.run.ts`** — `await alchemy("<app-id>", { password: alchemyPassword })` with `import { alchemyPassword } from "cf-starter-alchemy"` (see [cf-starter-alchemy](../../../packages/cf-starter-alchemy)). Add `"cf-starter-alchemy": "workspace:*"` to this package’s `devDependencies`. Export `DurableObjectNamespace<YourDoRpc>` (use type from `./workers/rpc` or `./workers/your-do.ts` as in repo), then `Worker(..., { entrypoint: new URL("./workers/app.ts", import.meta.url).pathname, bindings: { YourDo, ... }, adopt: true, ... })`. Stable `name:` strings matter for cross-script `WorkerRef`.
 
-3. **`env.d.ts`** — `export type CloudflareEnv = (typeof <yourExportedWorker>)["Env"]`. `declare global { type Env = CloudflareEnv }` and `declare module "cloudflare:workers"` `Env` merge (match [durable-objects/ping-do/env.d.ts](durable-objects/ping-do/env.d.ts)).
+3. **SQLite / Drizzle (if this DO persists data)** — Source of truth is package-local `src/schema.ts`. Add `drizzle.config.ts` pointing at that schema, add package-local `"db:generate": "drizzle-kit generate && bun ../../packages/scripts/build-do-migrations.ts ./drizzle"`, and run that script to create `drizzle/*.sql`, `drizzle/meta/*.json`, and `drizzle/migrations.ts`. **Never hand-author or edit Drizzle SQL or meta snapshots.** Commit generated output only after it came from Drizzle. For Durable Object SQLite, `drizzle/migrations.ts` is generated runtime glue for `drizzle-orm/durable-sqlite/migrator`; do not copy SQL into it by hand.
 
-4. **Hono** — In `workers/app.ts`: `import type { CloudflareEnv } from "../env"`, `const app = new Hono<{ Bindings: CloudflareEnv }>()` (same as [durable-objects/other-worker/workers/app.ts](durable-objects/other-worker/workers/app.ts)).
+4. **`env.d.ts`** — `export type CloudflareEnv = (typeof <yourExportedWorker>)["Env"]`. `declare global { type Env = CloudflareEnv }` and `declare module "cloudflare:workers"` `Env` merge (match [durable-objects/ping-do/env.d.ts](durable-objects/ping-do/env.d.ts)).
 
-5. **Scripts** — Prefer `alchemy dev --app <kebab-id>` in `package.json` `dev` (not raw `wrangler dev` for this monorepo’s flow). Align `deploy` / `destroy` with `--app` id.
+5. **Hono** — In `workers/app.ts`: `import type { CloudflareEnv } from "../env"`, `const app = new Hono<{ Bindings: CloudflareEnv }>()` (same as [durable-objects/other-worker/workers/app.ts](durable-objects/other-worker/workers/app.ts)).
 
-6. **After edits** — From repo root: `bun run typegen` and `bun run typecheck` (or package-local `typecheck:local`).
+6. **Scripts** — Prefer `alchemy dev --app <kebab-id>` in `package.json` `dev` (not raw `wrangler dev` for this monorepo’s flow). Align `deploy` / `destroy` with `--app` id. SQLite packages should also expose package-local `db:generate`.
+
+7. **After edits** — From repo root: `bun run typegen` and `bun run typecheck` (or package-local `typecheck:local`). If schema changed, run package-local `db:generate` first.
 
 ## Next (outside this skill)
 
 - Wire the web app: [cf-web-alchemy-bindings](../cf-web-alchemy-bindings/SKILL.md).
 - `workers/rpc.ts`, `WorkerRef`, root `dev` / `destroy`: [cf-worker-rpc-turbo](../cf-worker-rpc-turbo/SKILL.md).
+
+## Optional web / WebSocket checklist
+
+If this new DO should be reachable from the web app, complete these follow-up edits:
+
+1. Root `package.json` `dev`: add `--filter=<your-package>`.
+2. Root `turbo.json`: add `<your-package>#destroy` depending on `cf-starter-web#destroy`.
+3. `apps/web/package.json`: add `"<your-package>": "workspace:*"` and run `bun install`.
+4. `apps/web/alchemy.run.ts`: import from `"<your-package>/alchemy"` and bind the namespace/worker into `ReactRouter`.
+5. WebSocket only: handle the worker upgrade path in `apps/web/workers/app.ts` before React Router, keep the client prefix identical, avoid Vite HMR paths, and forward to the DO path `/websocket`.
+6. Verify from repo root: `bun run typegen`, `bun run typecheck`, `bun run lint`.

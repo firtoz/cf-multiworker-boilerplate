@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+---
+# Generated artifacts policy
+
+Agents must not manually author generated files. If generated output needs to change, edit the source-of-truth file and run the generator. If the generator fails, fix the source or generator instead of fabricating output.
+
+## Safe to hand-edit
+
+- TypeScript source files
+- Drizzle schema source files:
+  - Root D1: `packages/db/src/schema.ts`
+  - Durable Object SQLite: `durable-objects/<name>/src/schema.ts`
+- React Router route config and route modules
+- Alchemy config (`alchemy.run.ts`)
+- Documentation, rules, and skills
+
+## Do not hand-edit
+
+- React Router generated `+types`
+- Drizzle migration SQL (`**/drizzle/*.sql`)
+- Drizzle meta snapshots (`**/drizzle/meta/*.json`, including `_journal.json`)
+- Lockfiles except through the package manager
+- `.alchemy/`
+
+## Drizzle migrations
+
+Do not manually create or edit Drizzle migration SQL or Drizzle meta snapshot files. Edit the schema source of truth, then run the package's Drizzle generator.
+
+Correct:
+
+1. Edit `packages/db/src/schema.ts` or `durable-objects/<name>/src/schema.ts`.
+2. Run `bun run db:generate`, or the package-local `db:generate`.
+3. Commit the generated SQL/meta output.
+
+Incorrect:
+
+- Manually writing `packages/db/drizzle/0001_*.sql`
+- Manually editing `drizzle/meta/_journal.json`
+- Manually fabricating Drizzle snapshot JSON

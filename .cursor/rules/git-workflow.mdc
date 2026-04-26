@@ -24,7 +24,7 @@ If you are an IDE Agent:
    git checkout -b feature/add-comments-system
    ```
 
-2. **Make your changes and commit** with clear messages
+2. **Make your changes and verify them** with frequent local checks. Run the narrowest useful check after each meaningful sub-step (`typegen` after route/env/Alchemy changes, `db:generate` after schema changes, `typecheck` after TypeScript/API edits, `lint` before finishing). Commit after a stable verified checkpoint, not before every test command.
 
 3. **Push to the feature branch**:
    ```bash

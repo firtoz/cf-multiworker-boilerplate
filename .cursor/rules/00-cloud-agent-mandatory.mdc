@@ -102,6 +102,8 @@ Setup should run automatically via `environment.json`, but verify before proceed
 
 **You MUST run `git add`, `git commit`, and `git push` before ending your response when you have made code changes.** Do not leave changes only in the working tree. Do not end your turn without pushing.
 
+Run fast local checks during implementation before committing: `bun run typegen` after route/env/Alchemy changes, `bun run db:generate` after Drizzle schema changes, `bun run typecheck` after TypeScript/API edits, and `bun run lint` before finishing. Commit after a stable verified checkpoint, then push/update the PR.
+
 ```bash
 git add <changed-files>
 git commit -m "descriptive message"
