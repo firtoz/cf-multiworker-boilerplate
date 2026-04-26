@@ -1,3 +1,4 @@
+import type { InferSockaPushHandlers } from "@firtoz/socka";
 import { useSockaSession } from "@firtoz/socka/react";
 import { type ChatMessageRow, chatContract } from "cf-starter-chat-contract";
 import type { FocusEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -7,16 +8,6 @@ import { BackToHomeLink } from "~/components/shared/BackToHomeLink";
 import { buildChatWsUrl, sanitizeChatRoomId } from "~/lib/chat-ws-url";
 
 type PresenceLine = { userId: string; displayName: string };
-type ChatSend = {
-	listHistory(input: { limit: number }): Promise<{ messages: ChatMessageRow[] }>;
-	listPresence(input: Record<string, never>): Promise<{
-		selfUserId: string;
-		users: { userId: string; displayName: string }[];
-	}>;
-	setDisplayName(input: { displayName: string }): Promise<{ ok: true }>;
-	sendMessage(input: { text: string }): Promise<{ ok: true }>;
-	clearHistory(input: Record<string, never>): Promise<{ ok: true }>;
-};
 
 /** Treat as pinned when within a few CSS px of the true bottom (avoids subpixel / rounding drift). */
 const BOTTOM_STICKY_PX = 4;
@@ -73,7 +64,7 @@ export function ChatClient() {
 		[],
 	);
 
-	const pushHandlers = useMemo(
+	const pushHandlers = useMemo<InferSockaPushHandlers<typeof chatContract>>(
 		() => ({
 			roomMessage: (m: ChatMessageRow) => {
 				setMessages((prev) => [...prev, m]);
@@ -99,9 +90,7 @@ export function ChatClient() {
 		[],
 	);
 
-	const { ready, send } = useSockaSession(chatContract as never, { url: wsUrl, pushHandlers }, [
-		wsUrl,
-	]) as unknown as { ready: boolean; send: ChatSend };
+	const { ready, send } = useSockaSession(chatContract, { url: wsUrl, pushHandlers }, [wsUrl]);
 
 	const updateStuckToBottom = useCallback(() => {
 		const el = messageListRef.current;

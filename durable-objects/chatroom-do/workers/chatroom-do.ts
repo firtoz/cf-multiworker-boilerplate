@@ -22,8 +22,7 @@ function sortPresence(users: { userId: string; displayName: string }[]) {
 }
 
 type ChatroomDb = DrizzleSqliteDODatabase<typeof schema>;
-// biome-ignore lint/suspicious/noExplicitAny: Socka's public constraint rejects contracts with pushes; keep this cast at the library boundary.
-type ChatroomSession = SockaDoSession<any, SessionData, Env>;
+type ChatroomSession = SockaDoSession<typeof chatContract, SessionData, Env>;
 
 export class ChatroomDo extends SockaWebSocketDO<ChatroomSession, Env> {
 	readonly app = this.getBaseApp();
@@ -58,8 +57,7 @@ export class ChatroomDo extends SockaWebSocketDO<ChatroomSession, Env> {
 		return super.fetch(request);
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: see ChatroomSession; handlers below keep their payload casts local.
-	private buildConfig(): SockaDoSessionConfig<any, SessionData, Env> {
+	private buildConfig(): SockaDoSessionConfig<typeof chatContract, SessionData, Env> {
 		return {
 			contract: chatContract,
 			wireFormat: "json",
