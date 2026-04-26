@@ -85,7 +85,7 @@ Example: call a DO’s Hono surface with `honoDoFetcherWithName(env.PingDo, "dem
 
 ### 5. Add environment variables
 
-**Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`ALCHEMY_PASSWORD`** if missing), or add values to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
+**Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`ALCHEMY_PASSWORD`** and **`CHATROOM_INTERNAL_SECRET`** if missing), or add values to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
 ```bash
 MY_SECRET=dev-value
 ```

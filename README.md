@@ -74,14 +74,14 @@ bun install
 bun run setup
 ```
 
-In a **normal terminal**, **`bun run setup`** asks to confirm before appending a random **`ALCHEMY_PASSWORD`** to repo-root **`.env.local`**. Pipes, **`CI=true`**, and **`bun run setup -- --yes`** skip the prompt and write immediately (used by CI and agent bootstrap). For production-style env on disk, use **`bun run setup:prod`** (same interactive / **`--yes`** rules for **`.env.production`**).
+In a **normal terminal**, **`bun run setup`** asks to confirm before appending random **`ALCHEMY_PASSWORD`** and **`CHATROOM_INTERNAL_SECRET`** values to repo-root **`.env.local`**. Pipes, **`CI=true`**, and **`bun run setup -- --yes`** skip the prompt and write immediately (used by CI and agent bootstrap). For production-style env on disk, use **`bun run setup:prod`** (same interactive / **`--yes`** rules for **`.env.production`**).
 
 **First-time Alchemy + Cloudflare (everyone on a new machine):**
 
 1. **`bun alchemy configure`** — Create the **default** profile and connect **Cloudflare** (OAuth is fine; at “Customize scopes?” **No** is the usual choice).
 2. **`bun alchemy login`** — Refreshes OAuth tokens when needed.
-3. **`.env.local`** — After **`bun run setup`**, **`ALCHEMY_PASSWORD`** exists; optional **`CLOUDFLARE_API_TOKEN`** and **`CLOUDFLARE_ACCOUNT_ID`** if you do not use the profile; see [Alchemy’s Cloudflare auth guide](https://alchemy.run/guides/cloudflare/). See [`.env.example`](.env.example) for all keys.
-4. **`ALCHEMY_PASSWORD`** — **Required**; no in-repo default. [`cf-starter-alchemy`](packages/cf-starter-alchemy) reads it for Alchemy state encryption. [encryption password](https://alchemy.run/concepts/secret/#encryption-password).
+3. **`.env.local`** — After **`bun run setup`**, **`ALCHEMY_PASSWORD`** and **`CHATROOM_INTERNAL_SECRET`** exist; optional **`CLOUDFLARE_API_TOKEN`** and **`CLOUDFLARE_ACCOUNT_ID`** if you do not use the profile; see [Alchemy’s Cloudflare auth guide](https://alchemy.run/guides/cloudflare/). See [`.env.example`](.env.example) for all keys.
+4. **Secrets** — **Required**; no in-repo defaults. [`cf-starter-alchemy`](packages/cf-starter-alchemy) reads **`ALCHEMY_PASSWORD`** for Alchemy state encryption. The web and chatroom workers both bind **`CHATROOM_INTERNAL_SECRET`** through `alchemy.secret(...)`; the web worker forwards it on `/api/ws/*`, and the chatroom DO rejects `/websocket` when it does not match.
 
 `alchemy dev` / `react-router` load repo-root **`.env.local`** via `bun --env-file` in each package’s **`dev`** script.
 
@@ -94,7 +94,7 @@ bun run dev
 
 Open the URL Vite/Alchemy prints (usually `http://localhost:5173`; if that port is busy it picks the next, e.g. `5174`). `bun run dev` uses a [filtered `turbo run dev`](https://alchemy.run/guides/turborepo/) so **`cf-starter-web`** and each durable-object package run **`alchemy dev --app …`** in parallel (TUI panes), not Wrangler.
 
-If you see **no Cloudflare credentials**, run **`bun alchemy configure`** / **`bun alchemy login`** or add **`CLOUDFLARE_API_TOKEN`** to **`.env.local`**. If Alchemy says the state password is missing, run **`bun run setup`** or set **`ALCHEMY_PASSWORD`** by hand in **`.env.local`**.
+If you see **no Cloudflare credentials**, run **`bun alchemy configure`** / **`bun alchemy login`** or add **`CLOUDFLARE_API_TOKEN`** to **`.env.local`**. If Alchemy says a secret is missing, run **`bun run setup`** or set **`ALCHEMY_PASSWORD`** / **`CHATROOM_INTERNAL_SECRET`** by hand in **`.env.local`**.
 
 ### Production deploy
 
@@ -104,7 +104,7 @@ From the repo root:
 bun run deploy
 ```
 
-which runs **`turbo run deploy --filter=cf-starter-web`** (pulls in dependent worker **`deploy`** tasks). Each package runs **`alchemy deploy --app <package-id>`**. Use repo-root **`.env.production`** (or CI secrets) for **`CLOUDFLARE_*`**, **`ALCHEMY_PASSWORD`**, etc., as in **`.env.example`**. Read [Alchemy State](https://alchemy.run/concepts/state/) before wiring shared CI.
+which runs **`turbo run deploy --filter=cf-starter-web`** (pulls in dependent worker **`deploy`** tasks). Each package runs **`alchemy deploy --app <package-id>`**. Use repo-root **`.env.production`** (or CI secrets) for **`CLOUDFLARE_*`**, **`ALCHEMY_PASSWORD`**, **`CHATROOM_INTERNAL_SECRET`**, etc., as in **`.env.example`**. Read [Alchemy State](https://alchemy.run/concepts/state/) before wiring shared CI.
 
 **After forking:** Rebrand docs/UI and choose stable worker names in each package’s **`alchemy.run.ts`** before first deploy — see [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md).
 
@@ -185,7 +185,7 @@ Full package and Hono checklists: [cf-durable-object-package](.cursor/skills/cf-
 ### Environment variables
 
 - **`.env.example`** (committed) — **Documentation** for humans/agents; Alchemy and other tools use real gitignored env files, not this file wholesale.
-- **`.env.local`** (gitignored) — Loaded by **`bun run setup`** and by package **`dev`** scripts via **`bun --env-file`**. Set **`ALCHEMY_PASSWORD`** and optional **`CLOUDFLARE_*`** (see [Quick Start](#install--run)).
+- **`.env.local`** (gitignored) — Loaded by **`bun run setup`** and by package **`dev`** scripts via **`bun --env-file`**. Set **`ALCHEMY_PASSWORD`**, **`CHATROOM_INTERNAL_SECRET`**, and optional **`CLOUDFLARE_*`** (see [Quick Start](#install--run)).
 - **`.env.production`** (gitignored) — Use for **`bun run deploy`** / CI when you want prod-shaped values in a file.
 
 After schema changes, run **`bun run db:generate`** so SQL lands in **`packages/db/drizzle/`**. The web package Alchemy app owns the **`D1Database`** for local dev and production deploy. The **`d1:migrate:*`** package scripts are informational.
@@ -202,7 +202,7 @@ Uses Bun with a frozen lockfile and Turborepo for parallel/cached tasks.
 
 ## Deployment
 
-Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-web`**. Each package in the graph runs **`alchemy deploy --app <package-id>`**. Use **`bun alchemy configure`** / **`bun alchemy login`** or **`CLOUDFLARE_API_TOKEN`** (and **`CLOUDFLARE_ACCOUNT_ID`** when needed) as in [Alchemy’s Cloudflare guide](https://alchemy.run/guides/cloudflare/). Set **`ALCHEMY_PASSWORD`** for real deployments and shared state so encrypted secrets in Alchemy state stay meaningful. See [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md) and [State](https://alchemy.run/concepts/state/) for CI.
+Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-web`**. Each package in the graph runs **`alchemy deploy --app <package-id>`**. Use **`bun alchemy configure`** / **`bun alchemy login`** or **`CLOUDFLARE_API_TOKEN`** (and **`CLOUDFLARE_ACCOUNT_ID`** when needed) as in [Alchemy’s Cloudflare guide](https://alchemy.run/guides/cloudflare/). Set **`ALCHEMY_PASSWORD`** for real deployments and shared state so encrypted secrets in Alchemy state stay meaningful; set **`CHATROOM_INTERNAL_SECRET`** to the same stable value for both web and chatroom apps. See [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md) and [State](https://alchemy.run/concepts/state/) for CI.
 
 ## Scripts
 

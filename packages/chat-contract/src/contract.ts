@@ -1,6 +1,8 @@
 import { defineSocka } from "@firtoz/socka/core";
 import * as z from "zod";
 
+export const CHATROOM_INTERNAL_SECRET_HEADER = "x-cf-starter-chatroom-secret";
+
 export const messageRow = z.object({
 	id: z.string(),
 	ts: z.number(),

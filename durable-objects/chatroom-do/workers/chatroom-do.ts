@@ -1,5 +1,9 @@
 import { SockaDoSession, type SockaDoSessionConfig, SockaWebSocketDO } from "@firtoz/socka/do";
-import { type ChatMessageRow, chatContract } from "cf-starter-chat-contract";
+import {
+	CHATROOM_INTERNAL_SECRET_HEADER,
+	type ChatMessageRow,
+	chatContract,
+} from "cf-starter-chat-contract";
 import { desc } from "drizzle-orm";
 import { type DrizzleSqliteDODatabase, drizzle } from "drizzle-orm/durable-sqlite";
 import { migrate } from "drizzle-orm/durable-sqlite/migrator";
@@ -41,6 +45,17 @@ export class ChatroomDo extends SockaWebSocketDO<ChatroomSession, Env> {
 			throw new Error("Chatroom DO database not ready");
 		}
 		return this.db;
+	}
+
+	override fetch(request: Request): Response | Promise<Response> {
+		const url = new URL(request.url);
+		if (
+			url.pathname === "/websocket" &&
+			request.headers.get(CHATROOM_INTERNAL_SECRET_HEADER) !== this.env.CHATROOM_INTERNAL_SECRET
+		) {
+			return new Response("Unauthorized chatroom websocket", { status: 401 });
+		}
+		return super.fetch(request);
 	}
 
 	// biome-ignore lint/suspicious/noExplicitAny: see ChatroomSession; handlers below keep their payload casts local.

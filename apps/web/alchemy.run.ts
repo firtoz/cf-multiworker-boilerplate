@@ -1,6 +1,6 @@
 import alchemy from "alchemy";
 import { D1Database, ReactRouter } from "alchemy/cloudflare";
-import { alchemyPassword } from "cf-starter-alchemy";
+import { alchemyPassword, requireEnv } from "cf-starter-alchemy";
 import { chatroomWorker } from "chatroom-do/alchemy";
 import { otherWorker } from "other-worker/alchemy";
 import { pingWorker } from "ping-do/alchemy";
@@ -11,6 +11,11 @@ const db = await D1Database("main-db", {
 	adopt: true,
 	migrationsDir: new URL("../../packages/db/drizzle", import.meta.url).pathname,
 });
+const chatroomInternalSecretRaw = requireEnv(
+	"CHATROOM_INTERNAL_SECRET",
+	"Shared secret used when the web worker forwards /api/ws/* to the chatroom DO",
+);
+const chatroomInternalSecret = alchemy.secret(chatroomInternalSecretRaw);
 const ChatroomDo = chatroomWorker.bindings.ChatroomDo;
 const PingDo = pingWorker.bindings.PingDo;
 
@@ -23,6 +28,7 @@ export const web = await ReactRouter("cf-starter-web", {
 	adopt: true,
 	bindings: {
 		DB: db,
+		CHATROOM_INTERNAL_SECRET: chatroomInternalSecret,
 		ChatroomDo,
 		PingDo,
 		PING: pingWorker,

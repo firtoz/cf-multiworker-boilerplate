@@ -1,8 +1,13 @@
 import alchemy from "alchemy";
 import { DurableObjectNamespace, Worker } from "alchemy/cloudflare";
-import { alchemyPassword } from "cf-starter-alchemy";
+import { alchemyPassword, requireEnv } from "cf-starter-alchemy";
 
 const app = await alchemy("chatroom-do", { password: alchemyPassword });
+const chatroomInternalSecretRaw = requireEnv(
+	"CHATROOM_INTERNAL_SECRET",
+	"Shared secret used when the web worker forwards /api/ws/* to the chatroom DO",
+);
+const chatroomInternalSecret = alchemy.secret(chatroomInternalSecretRaw);
 
 export const ChatroomDo = await DurableObjectNamespace<Rpc.DurableObjectBranded>(
 	"chatroom-do-ChatroomDo-class",
@@ -19,6 +24,7 @@ export const chatroomWorker = await Worker("chatroom-do", {
 	placement: { mode: "smart" },
 	adopt: true,
 	bindings: {
+		CHATROOM_INTERNAL_SECRET: chatroomInternalSecret,
 		ChatroomDo,
 	},
 });

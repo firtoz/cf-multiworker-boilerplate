@@ -406,7 +406,7 @@ bun run build --verbose
 ### Root turbo.json
 - Global settings: `globalDependencies`, `ui`, task defaults
 - Tasks: `build`, `build:local`, `build:prod`, `typecheck`, `typegen`, `rr-typegen`, `dev`, `lint`, `clean`, `db:generate`, `d1:migrate:local`, `d1:migrate:remote` (output log defaults only — no deploy graph)
-- `globalEnv`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CI`, `ALCHEMY_PASSWORD`, `STAGE`
+- `globalEnv`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CI`, `ALCHEMY_PASSWORD`, `CHATROOM_INTERNAL_SECRET`, `STAGE`
 
 ### apps/web/turbo.json
 - **`typegen:local` / `typegen:prod`** — `dependsOn`: `^typecheck`, **`rr-typegen`**; **inputs** include app sources, Vite / React Router config, package **`alchemy.run.ts`**, **`env.d.ts`**

@@ -10,14 +10,18 @@ const flagEdit = argv.includes("--edit");
 const forceNonInteractive = argv.includes("--yes") || argv.includes("-y");
 const file = join(root, isProd ? ".env.production" : ".env.local");
 
-type SecretKey = "ALCHEMY_PASSWORD";
-const ALL_KEYS: readonly SecretKey[] = ["ALCHEMY_PASSWORD"];
+const ALL_KEYS = ["ALCHEMY_PASSWORD", "CHATROOM_INTERNAL_SECRET"] as const;
+type SecretKey = (typeof ALL_KEYS)[number];
 
 /** Shown in prompts and notes — not the raw var name. */
 const KEY_COPY: Readonly<Record<SecretKey, { title: string; line: string }>> = {
 	ALCHEMY_PASSWORD: {
 		title: "Alchemy password",
 		line: "Encrypts Alchemy state on disk / in CI",
+	},
+	CHATROOM_INTERNAL_SECRET: {
+		title: "Chatroom internal secret",
+		line: "Authorizes the web worker when it forwards WebSocket upgrades to the chatroom DO",
 	},
 };
 
@@ -245,11 +249,14 @@ async function main() {
 	/* ----- all keys present → update or nothing ----- */
 	if (!interactive) {
 		if (flagEdit && forceNonInteractive) {
-			const fresh = { ALCHEMY_PASSWORD: gen() } as const;
+			const fresh = Object.fromEntries(ALL_KEYS.map((k) => [k, gen()])) as Record<
+				SecretKey,
+				string
+			>;
 			const out = upsertEnvLines(body, fresh);
 			writeFileSync(file, out, "utf8");
 			console.log(
-				`[setup] --edit --yes: rotated ${ALL_KEYS.join(" and ")} with a new random value in ${file}.${alchemyPasswordStateHint()}`,
+				`[setup] --edit --yes: rotated ${ALL_KEYS.join(" and ")} with new random values in ${file}.${alchemyPasswordStateHint()}`,
 			);
 			return;
 		}

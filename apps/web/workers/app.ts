@@ -1,4 +1,5 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
+import { CHATROOM_INTERNAL_SECRET_HEADER } from "cf-starter-chat-contract";
 import { createRequestHandler } from "react-router";
 import type { CloudflareEnv } from "../env.d.ts";
 
@@ -61,7 +62,10 @@ export default class WebAppWorker extends WorkerEntrypoint<CloudflareEnv> {
 			const stub = this.env.ChatroomDo.getByName(room);
 			const forward = new URL(request.url);
 			forward.pathname = "/websocket";
-			return stub.fetch(new Request(forward.toString(), request));
+			const headers = new Headers(request.headers);
+			headers.set(CHATROOM_INTERNAL_SECRET_HEADER, this.env.CHATROOM_INTERNAL_SECRET);
+			const forwardRequest = new Request(forward.toString(), { headers, method: request.method });
+			return stub.fetch(forwardRequest);
 		}
 		return requestHandler(request, {
 			cloudflare: { env: this.env, ctx: this.ctx },
