@@ -17,7 +17,7 @@ export function meta(_args: Route.MetaArgs) {
 type PingBody = { pong: boolean; id: string };
 
 export async function loader(_args: Route.LoaderArgs): Promise<MaybeError<PingBody>> {
-	const api = honoDoFetcherWithName(env.PingDo, "demo");
+	using api = honoDoFetcherWithName(env.PingDo, "demo");
 	const res = await api.get({ url: "/ping" });
 	if (!res.ok) {
 		return fail(`PingDo HTTP ${res.status}`);
