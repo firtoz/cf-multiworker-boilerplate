@@ -7,6 +7,8 @@ description: Form submission patterns using useDynamicSubmitter, await submitJso
 
 Always use **`await submitter.submitJson(...)`** (or `await submitter.submit(...)`) instead of React Router's `<Form>` for programmatic submissions. In **v9**, the object from `useDynamicSubmitter` is **stable** and does **not** expose reactive `state` / `data` — use **local `useState`** (or `useDynamicSubmitterFetcher`, see below) for UI that depends on loading or last result.
 
+For internal React UI submissions, prefer `formAction` + `useDynamicSubmitter`. Do not reach for plain HTML forms unless you intentionally want browser-native form behavior.
+
 ## Loaders use `MaybeError` too
 
 Match actions: **loaders** should return `Promise<MaybeError<LoaderData>>` with `success` / `fail`, not a bare object. That keeps `loaderData` typed the same way as submitter/fetcher results and avoids ambiguous error shapes. See [.cursor/skills/routing/SKILL.md](../routing/SKILL.md).
@@ -122,6 +124,16 @@ Use **`useDynamicSubmitterFetcher(submitter)`** when you need **reactive** `fetc
 - ✅ Export `route`, `formSchema`, and wrap `action` with `formAction()`
 - ✅ Return `success()` from action handlers for successful operations
 - ✅ `throw` (don't return) redirects and responses
+
+## Index route actions
+
+React Router index actions require an explicit `?index` target for external clients, terminal tests, non-router-aware callers, and plain HTML forms.
+
+- Internal app flow: `useDynamicSubmitter<RouteMod>("/some-route").submitJson(...)`
+- Plain form to an index route: `action="/?index"`
+- Terminal smoke test: `POST /?index`, not `POST /`
+
+Avoid teaching new app features to post plain forms to index routes. If an endpoint must be called externally, prefer a non-index resource route such as `/sessions/new`. If a home/index route intentionally has an action for plain forms, add a nearby comment and explicit `action="/?index"`.
 
 ## Benefits
 

@@ -30,7 +30,7 @@
 	"scripts": {
 		"setup": "bun run --cwd packages/scripts setup",
 		"setup:prod": "bun run --cwd packages/scripts setup:prod",
-		"dev": "turbo run dev --filter=cf-starter-web --filter=chatroom-do --filter=ping-do --filter=other-worker",
+		"dev": "turbo run dev --filter=cf-starter-web --filter=cf-starter-db --filter=chatroom-do --filter=ping-do --filter=other-worker",
 		"deploy": "turbo run deploy --filter=cf-starter-web",
 		"destroy": "turbo run destroy",
 		"build": "turbo run build:local",
@@ -43,6 +43,7 @@
 		"typegen": "turbo run typegen:local",
 		"typegen:local": "turbo run typegen:local",
 		"typegen:prod": "turbo run typegen:prod",
+		"check:drizzle-generated": "bun run --cwd packages/scripts check:drizzle-generated",
 		"outdated": "bun outdated --recursive",
 		"update:interactive": "bun update --latest --ir",
 		"clean": "turbo clean && rm -rf node_modules **/node_modules",

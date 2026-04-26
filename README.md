@@ -113,7 +113,7 @@ which runs **`turbo run deploy --filter=cf-starter-web`** (pulls in dependent wo
 1. **Personalize** — rename the root package/app copy, update user-facing copy, and pick stable script names in package `alchemy.run.ts` files before your first production deploy.
 2. **Add stateful features** — run `bunx turbo gen durable-object`, implement logic on the Durable Object’s Hono `app`, then run `bun run dev`. After generating a new package, complete [After `turbo gen durable-object`](#after-turbo-gendurable-object) (root `dev` filter, web bindings, rpc).
 3. **Consume from web** — add the provider as a workspace dependency, import its `./alchemy` worker resource in `apps/web/alchemy.run.ts`, pass resources into `ReactRouter(…, { bindings })`, then use `import { env } from "cloudflare:workers"` in worker code (see [.cursor/skills/cf-starter-gotchas/SKILL.md](.cursor/skills/cf-starter-gotchas/SKILL.md)).
-4. **Add data** — update `packages/db/src/schema.ts`, run `bun run db:generate`, and let the web package Alchemy app manage D1.
+4. **Add data** — update `packages/db/src/schema.ts`, run `bun run db:generate`, and let the web package Alchemy app manage D1. Do not hand-write Drizzle migration SQL or meta snapshots.
 5. **Ship** — set `.env.production` / CI secrets, set a stable `ALCHEMY_PASSWORD`, run `bun run typecheck`, `bun run lint`, `bun run build`, then `bun run deploy`.
 
 ### Conventions (humans & AI coding agents)
@@ -188,7 +188,9 @@ Full package and Hono checklists: [cf-durable-object-package](.cursor/skills/cf-
 - **`.env.local`** (gitignored) — Loaded by **`bun run setup`** and by package **`dev`** scripts via **`bun --env-file`**. Set **`ALCHEMY_PASSWORD`**, **`CHATROOM_INTERNAL_SECRET`**, and optional **`CLOUDFLARE_*`** (see [Quick Start](#install--run)).
 - **`.env.production`** (gitignored) — Use for **`bun run deploy`** / CI when you want prod-shaped values in a file.
 
-After schema changes, run **`bun run db:generate`** so SQL lands in **`packages/db/drizzle/`**. The web package Alchemy app owns the **`D1Database`** for local dev and production deploy. The **`d1:migrate:*`** package scripts are informational.
+The D1 schema source of truth is **`packages/db/src/schema.ts`**. Do not manually create or edit Drizzle migration SQL, **`drizzle/meta/_journal.json`**, or snapshot JSON. Change the schema, then run **`bun run db:generate`** so generated SQL/meta lands in **`packages/db/drizzle/`**.
+
+The **`cf-starter-db`** package owns **`D1Database`** in **`packages/db/alchemy.run.ts`** (**`migrationsDir`** → **`packages/db/drizzle`**). **`apps/web/alchemy.run.ts`** imports **`mainDb`** from **`cf-starter-db/alchemy`**. Remote migrations run when you deploy that app (**`alchemy deploy --app cf-starter-db`**, included in **`bun run deploy`** via Turbo **`^deploy`**). **`d1:migrate:local`** prints the dev flow; **`d1:migrate:remote`** runs the same Alchemy deploy as **`cf-starter-db`** **`deploy`**. Do not add runtime `CREATE TABLE` fallbacks in loaders/actions; if local dev reports `no such table`, check that **`db:generate`** produced a migration, restart dev, and reset local Alchemy/D1 state only as a troubleshooting step.
 
 ## Continuous integration
 
@@ -214,7 +216,8 @@ Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-w
 - `bun run typegen` / `typegen:local` — React Router route types (+ workspace `typegen` chain)
 - `bun run typegen:prod` — Prod env inputs for web `typegen:prod`
 - `bun run lint` — Biome (`check --write`)
-- `bun run d1:migrate:local` / `d1:migrate:remote` — No-ops that print how Alchemy applies D1 migrations
+- `bun run d1:migrate:local` — Prints how local D1 migrations apply during **`bun run dev`**
+- `bun run d1:migrate:remote` — **`alchemy deploy --app cf-starter-db`** (remote D1 + migrations)
 
 ### Deployment
 - `bun run deploy` — `turbo run deploy --filter=cf-starter-web` (web app + `^deploy` graph)
@@ -228,7 +231,12 @@ Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-w
 
 ### Code generation
 - `bunx turbo gen durable-object` — Scaffold a new Durable Object package
-- `bun run db:generate` — Regenerate D1 / Drizzle SQL from `packages/db` schema (writes `packages/db/drizzle/`)
+- `bun run db:generate` — Regenerate D1 / Drizzle SQL from `packages/db` schema using the `d1-http` driver (writes `packages/db/drizzle/`)
+- `bun run check:drizzle-generated` — Warn when generated Drizzle artifacts changed without nearby schema/generator inputs
+
+### Generated artifacts
+
+Safe to hand-edit: TypeScript source, schema source files, route config/modules, Alchemy config, and docs. Generated output should come from tools: React Router `+types`, Drizzle SQL/meta snapshots, Durable Object migration wrappers such as `drizzle/migrations.js`, lockfile changes, and `.alchemy/` state. If generated output needs to change, edit the source of truth and run the generator.
 
 ## Best practices and optimizations
 

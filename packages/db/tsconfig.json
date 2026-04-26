@@ -8,5 +8,5 @@
 		"noEmit": true,
 		"types": ["@cloudflare/workers-types/2023-07-01"]
 	},
-	"include": ["src/**/*.ts", "drizzle.config.ts"]
+	"include": ["src/**/*.ts", "drizzle.config.ts", "alchemy.run.ts"]
 }

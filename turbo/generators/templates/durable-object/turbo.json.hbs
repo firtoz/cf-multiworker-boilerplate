@@ -4,23 +4,25 @@
 	"tasks": {
 		"dev": {
 			"dependsOn": ["typegen:local"],
-			"inputs": ["workers/**/*.ts", "alchemy.run.ts", "$TURBO_ROOT$/.env.local", "package.json"],
+			"inputs": ["workers/**/*.ts", "src/**/*.ts", "alchemy.run.ts", "$TURBO_ROOT$/.env.local", "package.json"],
 			"persistent": true,
 			"cache": false
 		},
 		"lint": {
 			"dependsOn": ["typecheck:local"],
-			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
+			"inputs": ["workers/**/*.ts", "src/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
 			"outputs": []
 		},
 		"lint:format": {
-			"inputs": ["workers/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
+			"inputs": ["workers/**/*.ts", "src/**/*.ts", "tsconfig.json", "tsconfig.cloudflare.json", "biome.json"],
 			"outputs": []
 		},
 		"typecheck:local": {
-			"dependsOn": ["typegen:local"],
+			"dependsOn": ["db:generate", "typegen:local"],
 			"inputs": [
 				"workers/**/*.ts",
+				"src/**/*.ts",
+				"drizzle/**",
 				"alchemy.run.ts",
 				"tsconfig.json",
 				"tsconfig.cloudflare.json",
@@ -31,9 +33,11 @@
 			"outputs": []
 		},
 		"typecheck:prod": {
-			"dependsOn": ["typegen:prod"],
+			"dependsOn": ["db:generate", "typegen:prod"],
 			"inputs": [
 				"workers/**/*.ts",
+				"src/**/*.ts",
+				"drizzle/**",
 				"alchemy.run.ts",
 				"tsconfig.json",
 				"tsconfig.cloudflare.json",
@@ -47,6 +51,7 @@
 			"dependsOn": ["^typegen:local"],
 			"inputs": [
 				"workers/**/*.ts",
+				"src/**/*.ts",
 				"alchemy.run.ts",
 				"$TURBO_ROOT$/.env.local",
 				"package.json",
@@ -58,6 +63,7 @@
 			"dependsOn": ["^typegen:prod"],
 			"inputs": [
 				"workers/**/*.ts",
+				"src/**/*.ts",
 				"alchemy.run.ts",
 				"$TURBO_ROOT$/.env.production",
 				"package.json",
@@ -66,9 +72,13 @@
 			"outputs": []
 		},
 		"deploy": {
-			"dependsOn": ["typecheck:prod"],
+			"dependsOn": ["db:generate", "typecheck:prod"],
 			"cache": false,
 			"outputs": []
+		},
+		"db:generate": {
+			"inputs": ["drizzle.config.ts", "src/**/*.ts"],
+			"outputs": ["drizzle/**"]
 		},
 		"destroy": {
 			"cache": false,

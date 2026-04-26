@@ -15,6 +15,7 @@ Thanks for helping improve this starter. This file is **contribution process and
 
 - **TypeScript:** strict, avoid `any`, prefer `satisfies` where it helps.
 - **Lint/format:** [Biome](https://biomejs.dev/) — `bun run lint` (repo root; may rewrite; re-run as needed). Root README describes `check --write` behavior.
+- **Generated artifacts:** Do not hand-author React Router `+types`, Drizzle SQL, Drizzle `meta/*.json`, Drizzle migration wrappers, lockfiles, or `.alchemy/` state. For schema changes, edit `packages/db/src/schema.ts` or a package-local `src/schema.ts`, run `bun run db:generate` or the package-local `db:generate`, then commit the generated output. CI runs `bun run check:drizzle-generated` to warn on migration-only diffs.
 - **Commits:** Conventional style is fine (`feat:`, `fix:`, `docs:`, etc.).
 
 ## What to run before you open a PR

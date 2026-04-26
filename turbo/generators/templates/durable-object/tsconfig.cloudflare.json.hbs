@@ -1,6 +1,6 @@
 {
 	"extends": "../../tsconfig.base.json",
-	"include": ["workers/**/*", "alchemy.run.ts", "env.d.ts"],
+	"include": ["workers/**/*", "src/**/*", "drizzle/**/*", "alchemy.run.ts", "env.d.ts"],
 	"compilerOptions": {
 		"composite": true,
 		"lib": ["ES2022"],
@@ -9,6 +9,7 @@
 		"moduleResolution": "bundler",
 		"rootDirs": ["."],
 		"esModuleInterop": true,
-		"resolveJsonModule": true
+		"resolveJsonModule": true,
+		"allowArbitraryExtensions": true
 	}
 }

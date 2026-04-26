@@ -7,6 +7,9 @@
 		"./workers/rpc": "./workers/rpc.ts"
 	},
 	"scripts": {
+{{#if usesSqlite}}
+		"db:generate": "drizzle-kit generate",
+{{/if}}
 		"deploy": "CF_STARTER_ALCHEMY_MODE=deploy bun --env-file ../../.env.production alchemy deploy --app {{ kebabCase name }}",
 		"destroy": "CF_STARTER_ALCHEMY_MODE=destroy bun --env-file ../../.env.production alchemy destroy --app {{ kebabCase name }}",
 		"dev": "CF_STARTER_ALCHEMY_MODE=dev bun --env-file ../../.env.local alchemy dev --app {{ kebabCase name }}",
@@ -25,10 +28,16 @@
 		"@biomejs/biome": "catalog:",
 		"@types/node": "catalog:",
 		"alchemy": "catalog:",
+{{#if usesSqlite}}
+		"drizzle-kit": "^0.31.4",
+{{/if}}
 		"typescript": "catalog:"
 	},
 	"dependencies": {
 		"@firtoz/hono-fetcher": "catalog:",
+{{#if usesSqlite}}
+		"drizzle-orm": "^0.45.2",
+{{/if}}
 		"hono": "catalog:"
 	}
 }

@@ -35,7 +35,7 @@ Each package **`alchemy.run.ts`** defines script names, Durable Objects, service
 
 **Cross-script DO caveat:** Consumers import provider resources from package **`./alchemy`** exports. Migrations belong on the worker script that **defines** the class (`sqlite: true` on that **`DurableObjectNamespace`** where applicable).
 
-**D1:** `D1Database("main-db", { migrationsDir: … })` in **`apps/web/alchemy.run.ts`** points at **`packages/db/drizzle`**. After schema changes, run **`bun run db:generate`**; deploy uses **`bun run deploy`** / Turbo per Alchemy’s D1 flow.
+**D1:** `D1Database("main-db", { migrationsDir: … })` lives in **`packages/db/alchemy.run.ts`** (**`cf-starter-db`** app); **`apps/web/alchemy.run.ts`** imports **`mainDb`** from **`cf-starter-db/alchemy`**. After schema changes, run **`bun run db:generate`**; **`bun run deploy`** runs **`cf-starter-db`** deploy (migrations) before web via Turbo **`^deploy`**.
 
 After edits: **`bun run typegen`** from the repo root. `env.d.ts` follows exported package worker resources.
 

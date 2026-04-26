@@ -2,12 +2,26 @@
 	"$schema": "../../node_modules/turbo/schema.json",
 	"extends": ["//"],
 	"tasks": {
+		"dev": {
+			"dependsOn": ["scripts#dev:preflight", "db:generate", "typegen:local"],
+			"inputs": [
+				"alchemy.run.ts",
+				"src/**/*.ts",
+				"drizzle/**",
+				"$TURBO_ROOT$/.env.local",
+				"package.json"
+			],
+			"persistent": true,
+			"cache": false
+		},
 		"db:generate": {
 			"inputs": ["drizzle.config.ts", "src/**/*.ts"],
 			"outputs": ["drizzle/**"]
 		},
 		"typegen:local": {
+			"dependsOn": ["db:generate"],
 			"inputs": [
+				"alchemy.run.ts",
 				"drizzle.config.ts",
 				"drizzle/**",
 				"src/**/*.ts",
@@ -18,7 +32,9 @@
 			"outputs": []
 		},
 		"typegen:prod": {
+			"dependsOn": ["db:generate"],
 			"inputs": [
+				"alchemy.run.ts",
 				"drizzle.config.ts",
 				"drizzle/**",
 				"src/**/*.ts",
@@ -31,6 +47,7 @@
 		"typecheck:local": {
 			"dependsOn": ["typegen:local"],
 			"inputs": [
+				"alchemy.run.ts",
 				"drizzle.config.ts",
 				"drizzle/**",
 				"src/**/*.ts",
@@ -43,6 +60,7 @@
 		"typecheck:prod": {
 			"dependsOn": ["typegen:prod"],
 			"inputs": [
+				"alchemy.run.ts",
 				"drizzle.config.ts",
 				"drizzle/**",
 				"src/**/*.ts",
@@ -53,8 +71,19 @@
 			"outputs": []
 		},
 		"deploy": {
-			"dependsOn": ["typecheck:prod"],
+			"dependsOn": ["typecheck:prod", "db:generate"],
 			"cache": true,
+			"inputs": [
+				"alchemy.run.ts",
+				"drizzle.config.ts",
+				"drizzle/**",
+				"src/**/*.ts",
+				"package.json"
+			],
+			"outputs": []
+		},
+		"destroy": {
+			"cache": false,
 			"outputs": []
 		},
 		"d1:migrate:local": {
@@ -63,7 +92,8 @@
 			"cache": false
 		},
 		"d1:migrate:remote": {
-			"inputs": ["drizzle.config.ts", "src/**/*.ts", "drizzle/**"],
+			"dependsOn": ["db:generate"],
+			"inputs": ["alchemy.run.ts", "drizzle.config.ts", "src/**/*.ts", "drizzle/**"],
 			"outputs": [],
 			"cache": false
 		}

@@ -7,6 +7,7 @@
 		"build:local": "node -e \"process.exit(0)\"",
 		"dev:preflight": "bun ./dev-preflight.ts",
 		"dev:preflight:interactive": "ALCHEMY_STATE_PASSWORD_INTERACTIVE=1 bun ./dev-preflight.ts",
+		"check:drizzle-generated": "bun ./check-drizzle-generated.ts",
 		"setup": "bun ./setup-env.ts",
 		"setup:prod": "bun ./setup-env.ts --prod"
 	},
