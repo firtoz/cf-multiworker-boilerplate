@@ -35,6 +35,10 @@ These trip up new contributors and agents most often. For commands and checklist
 
 14. **New Durable Object / worker package** — Use `import type { CloudflareEnv }` and `new Hono<{ Bindings: CloudflareEnv }>()` in DO workers so `c.env` is typed. Shared RPC types in `workers/rpc.ts` (no `import` from `../env` there); add `package.json#exports` `"./workers/rpc"` when needed. `WorkerRef` / cross-worker: one `workspace:*` direction; the other side uses a relative `../<pkg>/workers/rpc` import to avoid Turbo cycles. New Alchemy apps: root [package.json](../../../package.json) `dev` filter, [turbo.json](../../../turbo.json) `<pkg>#destroy` with `dependsOn: ["cf-starter-web#destroy"]`. **Do not** add another package’s `workers/app.ts` to [tsconfig.cloudflare.json](../../../apps/web/tsconfig.cloudflare.json) `include`—it can break `cf-starter-web`’s `Env`. Step-by-step: [cf-durable-object-package/SKILL.md](../cf-durable-object-package/SKILL.md), [cf-web-alchemy-bindings/SKILL.md](../cf-web-alchemy-bindings/SKILL.md), [cf-worker-rpc-turbo/SKILL.md](../cf-worker-rpc-turbo/SKILL.md).
 
+15. **Durable Object RPC `using` in local dev** — `@firtoz/hono-fetcher` types real DO HTTP results as disposable when Workers RPC attaches `[Symbol.dispose]`, but Vite SSR / some Miniflare paths may return plain `Response` objects. If `using res = await api.get(...)` throws `Symbol(Symbol.dispose) is not a function`, use `const res = await api.get(...)` in that local route or guard disposer calls. `using api = honoDoFetcherWithName(...)` is safer because the library guards missing stub disposers.
+
+16. **Alchemy dev stale web process state** — If `bun run dev` prints `webUrl: "http://localhost:5173/"` but port 5173 is closed after a web crash, check generated Alchemy state. Remove `.alchemy/pids/cf-starter-web.pid.json` and `.alchemy/web/local/cf-starter-web.json`, ensure `.alchemy/logs/cf-starter-web.log` exists (create an empty file if needed), then restart `bun run dev`. Do not commit `.alchemy/` files.
+
 ## Also load
 
 - [.cursor/rules/cf-workers-patterns.mdc](../../rules/cf-workers-patterns.mdc) — short always-on reminder for workers, env, routes.
