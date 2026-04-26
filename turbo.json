@@ -65,6 +65,11 @@
 			"cache": false,
 			"outputLogs": "new-only"
 		},
+		"cf-starter-db#destroy": {
+			"dependsOn": ["cf-starter-web#destroy"],
+			"cache": false,
+			"outputLogs": "new-only"
+		},
 		"lint": {
 			"outputLogs": "new-only"
 		},

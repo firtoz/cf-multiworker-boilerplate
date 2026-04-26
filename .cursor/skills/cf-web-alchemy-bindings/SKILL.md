@@ -16,7 +16,7 @@ description: Wire cf-starter-web to durable-objects workers—workspace dep, alc
 
 2. **Import** — [apps/web/alchemy.run.ts](apps/web/alchemy.run.ts): `import { … } from "<package-name>/alchemy"`.
 
-3. **Bindings** — Pass each binding into `ReactRouter("…", { bindings: { …, MyDo: myWorker.bindings.MyDo, … } })` using the names your [workers/app.ts](apps/web/workers/app.ts) reads from `this.env` (e.g. `this.env.PingDo`).
+3. **Bindings** — Pass each binding into `ReactRouter("…", { bindings: { …, MyDo: myWorker.bindings.MyDo, … } })` using the names your [workers/app.ts](apps/web/workers/app.ts) reads from `this.env` (e.g. `this.env.PingDo`). **D1:** import `mainDb` from `cf-starter-db/alchemy` and set `DB: mainDb` (D1 is defined in [packages/db/alchemy.run.ts](../../packages/db/alchemy.run.ts), not inlined in web).
 
 4. **In route code** — Prefer `import { env } from "cloudflare:workers"` for bindings, not React Router `context` ([cf-starter-gotchas](../cf-starter-gotchas/SKILL.md), [cf-workers-patterns.mdc](../../rules/cf-workers-patterns.mdc)).
 

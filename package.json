@@ -30,7 +30,7 @@
 	"scripts": {
 		"setup": "bun run --cwd packages/scripts setup",
 		"setup:prod": "bun run --cwd packages/scripts setup:prod",
-		"dev": "turbo run dev --filter=cf-starter-web --filter=chatroom-do --filter=ping-do --filter=other-worker",
+		"dev": "turbo run dev --filter=cf-starter-web --filter=cf-starter-db --filter=chatroom-do --filter=ping-do --filter=other-worker",
 		"deploy": "turbo run deploy --filter=cf-starter-web",
 		"destroy": "turbo run destroy",
 		"build": "turbo run build:local",

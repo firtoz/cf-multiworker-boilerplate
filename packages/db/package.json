@@ -6,14 +6,17 @@
 		".": {
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
-		}
+		},
+		"./alchemy": "./alchemy.run.ts"
 	},
 	"scripts": {
 		"db:generate": "drizzle-kit generate",
 		"db:studio": "drizzle-kit studio",
-		"d1:migrate:local": "node -e \"console.log('Local D1 is managed by the web package Alchemy app during: bun run dev.'); process.exit(0)\"",
-		"d1:migrate:remote": "node -e \"console.log('Remote D1 migrations are applied by Alchemy when you deploy the web package: bun run deploy.'); process.exit(0)\"",
-		"deploy": "node -e \"process.exit(0)\"",
+		"d1:migrate:local": "node -e \"console.log('Local D1: run bun run dev — web loads cf-starter-db/alchemy and Alchemy applies packages/db/drizzle to the local D1 binding.'); process.exit(0)\"",
+		"d1:migrate:remote": "CF_STARTER_ALCHEMY_MODE=deploy bun --env-file ../../.env.production alchemy deploy --app cf-starter-db --stage prod",
+		"deploy": "CF_STARTER_ALCHEMY_MODE=deploy bun --env-file ../../.env.production alchemy deploy --app cf-starter-db --stage prod",
+		"destroy": "CF_STARTER_ALCHEMY_MODE=destroy bun --env-file ../../.env.production alchemy destroy --app cf-starter-db --stage prod",
+		"dev": "CF_STARTER_ALCHEMY_MODE=dev bun --env-file ../../.env.local alchemy dev --app cf-starter-db --stage local",
 		"typegen:local": "tsgo --noEmit -p .",
 		"typegen:prod": "tsgo --noEmit -p .",
 		"typecheck:local": "tsgo --noEmit -p .",
@@ -24,7 +27,10 @@
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20260425.1",
+		"@types/node": "catalog:",
 		"@typescript/native-preview": "catalog:",
+		"alchemy": "catalog:",
+		"cf-starter-alchemy": "workspace:*",
 		"drizzle-kit": "^0.31.4",
 		"typescript": "catalog:"
 	}

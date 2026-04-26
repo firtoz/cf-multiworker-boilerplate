@@ -134,7 +134,10 @@
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20260425.1",
+        "@types/node": "catalog:",
         "@typescript/native-preview": "catalog:",
+        "alchemy": "catalog:",
+        "cf-starter-alchemy": "workspace:*",
         "drizzle-kit": "^0.31.4",
         "typescript": "catalog:",
       },

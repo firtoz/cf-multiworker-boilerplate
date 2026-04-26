@@ -73,14 +73,14 @@ After D1 schema changes:
 
 1. Run `bun run db:generate`.
 2. Run `bun run dev` or `bun run deploy`.
-3. Turbo/Alchemy should apply the generated migrations through `D1Database.migrationsDir` in `apps/web/alchemy.run.ts` (`packages/db/drizzle`).
+3. Turbo/Alchemy applies migrations through `packages/db/alchemy.run.ts` (`D1Database.migrationsDir` → `packages/db/drizzle`). The web app binds `mainDb` from `cf-starter-db/alchemy`.
 
-`bun run d1:migrate:local` and `bun run d1:migrate:remote` are informational in this starter; the web package Alchemy app owns local and remote D1 migration application.
+`bun run d1:migrate:local` explains the dev flow. `bun run d1:migrate:remote` runs `alchemy deploy --app cf-starter-db` (same as that package’s `deploy`).
 
 If local dev still reports `no such table`:
 
 - Check that `bun run db:generate` produced or preserved the expected migration.
-- Check that `apps/web/alchemy.run.ts` points `D1Database.migrationsDir` at `packages/db/drizzle`.
+- Check that `packages/db/alchemy.run.ts` still points `D1Database.migrationsDir` at `packages/db/drizzle`.
 - Restart `bun run dev`.
 - If generated local state is stale, stop dev and remove the relevant local `.alchemy/` app state before restarting. Do not commit `.alchemy/`.
 
@@ -104,7 +104,7 @@ Access in app code: `import { env } from "cloudflare:workers"` only.
 
 **Deploy / secrets:** `bun run deploy` → **`turbo run deploy --filter=cf-starter-web`** (pulls dependent worker deploys). `alchemyPassword` in [cf-starter-alchemy](../../../packages/cf-starter-alchemy) requires **`ALCHEMY_PASSWORD`**; the chatroom secret example requires **`CHATROOM_INTERNAL_SECRET`**. Run **`bun run setup`** in a terminal for a confirmation prompt, or **`bun run setup -- --yes`** / **`bun packages/scripts/setup-env.ts --yes`** in automation. [Alchemy — encryption password](https://alchemy.run/concepts/secret/#encryption-password), [Getting Started](https://alchemy.run/getting-started/) for `CLOUDFLARE_API_TOKEN`.
 
-- **Local dev** — `bun run dev` runs a filtered `turbo run dev` (web + worker apps), each with `alchemy dev --app …` per [Alchemy monorepo](https://alchemy.run/guides/turborepo/). When verifying setup, exercise `/`, `/visitors`, `/ping-do`, and `/chat`; this covers React Router SSR, D1, cross-script DO bindings, and chat WebSockets. If web prints `webUrl` but port 5173 is closed after a crash, remove the stale generated `.alchemy/pids/cf-starter-web.pid.json`; if you also remove `.alchemy/logs/cf-starter-web.log`, recreate it before restarting because Alchemy's idempotent log follower expects the file to exist.
+- **Local dev** — `bun run dev` runs a filtered `turbo run dev` (web + **`cf-starter-db`** + worker apps), each with `alchemy dev --app …` per [Alchemy monorepo](https://alchemy.run/guides/turborepo/). When verifying setup, exercise `/`, `/visitors`, `/ping-do`, and `/chat`; this covers React Router SSR, D1, cross-script DO bindings, and chat WebSockets. If web prints `webUrl` but port 5173 is closed after a crash, remove the stale generated `.alchemy/pids/cf-starter-web.pid.json`; if you also remove `.alchemy/logs/cf-starter-web.log`, recreate it before restarting because Alchemy's idempotent log follower expects the file to exist.
 
 ## Completion checklist (before you stop)
 

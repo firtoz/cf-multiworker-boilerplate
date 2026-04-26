@@ -190,7 +190,7 @@ Full package and Hono checklists: [cf-durable-object-package](.cursor/skills/cf-
 
 The D1 schema source of truth is **`packages/db/src/schema.ts`**. Do not manually create or edit Drizzle migration SQL, **`drizzle/meta/_journal.json`**, or snapshot JSON. Change the schema, then run **`bun run db:generate`** so generated SQL/meta lands in **`packages/db/drizzle/`**.
 
-The web package Alchemy app owns the **`D1Database`** for local dev and production deploy, with **`apps/web/alchemy.run.ts`** pointing **`D1Database.migrationsDir`** at **`packages/db/drizzle`**. The **`d1:migrate:*`** package scripts are informational. Do not add runtime `CREATE TABLE` fallbacks in loaders/actions; if local dev reports `no such table`, check that `db:generate` produced a migration, verify `migrationsDir`, restart dev, and reset local generated Alchemy/D1 state only as a troubleshooting step.
+The **`cf-starter-db`** package owns **`D1Database`** in **`packages/db/alchemy.run.ts`** (**`migrationsDir`** → **`packages/db/drizzle`**). **`apps/web/alchemy.run.ts`** imports **`mainDb`** from **`cf-starter-db/alchemy`**. Remote migrations run when you deploy that app (**`alchemy deploy --app cf-starter-db`**, included in **`bun run deploy`** via Turbo **`^deploy`**). **`d1:migrate:local`** prints the dev flow; **`d1:migrate:remote`** runs the same Alchemy deploy as **`cf-starter-db`** **`deploy`**. Do not add runtime `CREATE TABLE` fallbacks in loaders/actions; if local dev reports `no such table`, check that **`db:generate`** produced a migration, restart dev, and reset local Alchemy/D1 state only as a troubleshooting step.
 
 ## Continuous integration
 
@@ -216,7 +216,8 @@ Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-w
 - `bun run typegen` / `typegen:local` — React Router route types (+ workspace `typegen` chain)
 - `bun run typegen:prod` — Prod env inputs for web `typegen:prod`
 - `bun run lint` — Biome (`check --write`)
-- `bun run d1:migrate:local` / `d1:migrate:remote` — No-ops that print how Alchemy applies D1 migrations
+- `bun run d1:migrate:local` — Prints how local D1 migrations apply during **`bun run dev`**
+- `bun run d1:migrate:remote` — **`alchemy deploy --app cf-starter-db`** (remote D1 + migrations)
 
 ### Deployment
 - `bun run deploy` — `turbo run deploy --filter=cf-starter-web` (web app + `^deploy` graph)
