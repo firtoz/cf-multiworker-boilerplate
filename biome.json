@@ -15,7 +15,10 @@
 			"!**/.cache",
 			"!**/*.css",
 			"!**/*.scss",
-			"!**/env.d.ts"
+			"!**/env.d.ts",
+			"!**/drizzle/*.sql",
+			"!**/drizzle/meta/**",
+			"!**/drizzle/migrations.js"
 		]
 	},
 	"formatter": {

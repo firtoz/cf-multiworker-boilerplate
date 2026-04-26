@@ -25,7 +25,7 @@
 		"@firtoz/hono-fetcher": "catalog:",
 		"@firtoz/maybe-error": "^1.6.1",
 		"@firtoz/router-toolkit": "^9.0.1",
-		"@firtoz/socka": "^3.0.2",
+		"@firtoz/socka": "catalog:",
 		"cf-starter-alchemy": "workspace:*",
 		"cf-starter-chat-contract": "workspace:*",
 		"cf-starter-db": "workspace:*",

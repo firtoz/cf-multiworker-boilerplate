@@ -9,7 +9,7 @@
 		}
 	},
 	"dependencies": {
-		"@firtoz/socka": "^3.0.2",
+		"@firtoz/socka": "catalog:",
 		"zod": "catalog:"
 	},
 	"scripts": {
