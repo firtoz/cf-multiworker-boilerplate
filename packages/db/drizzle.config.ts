@@ -5,4 +5,5 @@ export default defineConfig({
 	schema: "./src/schema.ts",
 	out: "./drizzle",
 	dialect: "sqlite",
+	driver: "d1-http",
 });

@@ -29,7 +29,9 @@ function packageRoot(file: string): string | null {
 }
 
 function isGeneratedDrizzle(file: string): boolean {
-	return /^(packages\/[^/]+|durable-objects\/[^/]+)\/drizzle\/(?:[^/]+\.sql|migrations\.ts|meta\/.+\.json)$/.test(file);
+	return /^(packages\/[^/]+|durable-objects\/[^/]+)\/drizzle\/(?:[^/]+\.(?:sql|js)|meta\/.+\.json)$/.test(
+		file,
+	);
 }
 
 function isSchemaOrGeneratorInput(file: string, root: string): boolean {
@@ -53,7 +55,7 @@ for (const root of roots) {
 	}
 	const message = [
 		`Drizzle generated artifacts changed under ${root}/drizzle without a matching schema or generator input change.`,
-		"Do not hand-author migration SQL, meta snapshots, or DO migrations.ts.",
+		"Do not hand-author migration SQL, meta snapshots, or DO migration wrappers.",
 		`Generated files: ${generatedInRoot.join(", ")}`,
 	].join(" ");
 	if (process.env["GITHUB_ACTIONS"] === "true") {

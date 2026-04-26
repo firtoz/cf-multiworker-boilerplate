@@ -230,12 +230,12 @@ Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-w
 
 ### Code generation
 - `bunx turbo gen durable-object` — Scaffold a new Durable Object package
-- `bun run db:generate` — Regenerate D1 / Drizzle SQL from `packages/db` schema (writes `packages/db/drizzle/`)
+- `bun run db:generate` — Regenerate D1 / Drizzle SQL from `packages/db` schema using the `d1-http` driver (writes `packages/db/drizzle/`)
 - `bun run check:drizzle-generated` — Warn when generated Drizzle artifacts changed without nearby schema/generator inputs
 
 ### Generated artifacts
 
-Safe to hand-edit: TypeScript source, schema source files, route config/modules, Alchemy config, and docs. Generated output should come from tools: React Router `+types`, Drizzle SQL/meta snapshots, Durable Object `drizzle/migrations.ts`, lockfile changes, and `.alchemy/` state. If generated output needs to change, edit the source of truth and run the generator.
+Safe to hand-edit: TypeScript source, schema source files, route config/modules, Alchemy config, and docs. Generated output should come from tools: React Router `+types`, Drizzle SQL/meta snapshots, Durable Object migration wrappers such as `drizzle/migrations.js`, lockfile changes, and `.alchemy/` state. If generated output needs to change, edit the source of truth and run the generator.
 
 ## Best practices and optimizations
 

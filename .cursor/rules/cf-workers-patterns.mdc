@@ -44,7 +44,7 @@ CI runs these; running locally catches the same failures early.
   - D1: `packages/db/src/schema.ts`
   - DO SQLite: `durable-objects/<name>/src/schema.ts`
 - Generate migrations with `bun run db:generate` (root D1) or the package-local `db:generate`.
-- Do not hand-edit `drizzle/*.sql`, `drizzle/meta/_journal.json`, or Drizzle snapshot JSON. PR review should flag migration SQL/meta changes that were not generated from schema changes.
+- Do not hand-edit `drizzle/*.sql`, `drizzle/meta/_journal.json`, Drizzle snapshot JSON, or driver-specific migration wrappers such as Durable Object `drizzle/migrations.js`. PR review should flag migration output changes that were not generated from schema changes.
 - Never add runtime `CREATE TABLE` fallbacks in app loaders/actions to compensate for missed migrations; fix the schema/generator/Alchemy migration path instead.
 
 ## Loaders and actions: `Promise<MaybeError<...>>`

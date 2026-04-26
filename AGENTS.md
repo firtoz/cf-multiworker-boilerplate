@@ -43,7 +43,7 @@ Setup is normally applied via `.cursor/environment.json`.
 ## One-liner defaults
 
 - Bindings in app code: `import { env } from "cloudflare:workers"` (not React Router `context.cloudflare.env`).
-- Drizzle migrations: edit `packages/db/src/schema.ts` or `durable-objects/<name>/src/schema.ts`, then run `bun run db:generate` or the package-local `db:generate`. Do not write SQL/meta snapshots by hand.
+- Drizzle migrations: edit `packages/db/src/schema.ts` or `durable-objects/<name>/src/schema.ts`, then run `bun run db:generate` or the package-local `db:generate`. Use the correct Drizzle driver (`d1-http` for D1, `durable-sqlite` for DO SQLite). Do not write SQL/meta snapshots or migration wrappers by hand.
 - Maintenance loop: run the narrowest useful check frequently (`bun run typegen` after routes/env/Alchemy, `bun run typecheck` after TypeScript/API edits, `bun run lint` before finishing) from the **repo root**. Full checklist: [cf-starter-workflow](.cursor/skills/cf-starter-workflow/SKILL.md).
 
 ## Creating new skills

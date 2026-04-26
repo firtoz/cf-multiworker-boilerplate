@@ -8,7 +8,7 @@
 	},
 	"scripts": {
 {{#if usesSqlite}}
-		"db:generate": "drizzle-kit generate && bun ../../packages/scripts/build-do-migrations.ts ./drizzle",
+		"db:generate": "drizzle-kit generate",
 {{/if}}
 		"deploy": "CF_STARTER_ALCHEMY_MODE=deploy bun --env-file ../../.env.production alchemy deploy --app {{ kebabCase name }}",
 		"destroy": "CF_STARTER_ALCHEMY_MODE=destroy bun --env-file ../../.env.production alchemy destroy --app {{ kebabCase name }}",

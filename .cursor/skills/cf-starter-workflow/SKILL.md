@@ -20,13 +20,14 @@ Avoid `cd apps/web && …` for those unless you are debugging a single package i
 
 ## Generated artifacts and Drizzle migrations
 
-Generated files are output, not source of truth. Do not manually author React Router `+types`, Drizzle SQL migrations, Drizzle `meta/*.json` snapshots, lockfiles, or `.alchemy/` state. Change the source file and run the generator/package manager instead.
+Generated files are output, not source of truth. Do not manually author React Router `+types`, Drizzle SQL migrations, Drizzle `meta/*.json` snapshots, Drizzle driver-specific migration wrappers, lockfiles, or `.alchemy/` state. Change the source file and run the generator/package manager instead.
 
 For Drizzle:
 
 1. Edit `packages/db/src/schema.ts` for root D1, or `durable-objects/<name>/src/schema.ts` for package-local Durable Object SQLite.
-2. Run `bun run db:generate` for root D1, or the DO package's `db:generate` script when present.
-3. Commit the generated SQL/meta output. PR review should flag hand-written migration SQL or fabricated snapshot JSON unless the change explicitly says it is repairing generated history.
+2. Ensure the package `drizzle.config.ts` uses the right driver (`driver: "d1-http"` for D1, `driver: "durable-sqlite"` for DO SQLite).
+3. Run `bun run db:generate` for root D1, or the DO package's `db:generate` script when present.
+4. Commit the generated SQL/meta output. PR review should flag hand-written migration SQL or fabricated snapshot JSON unless the change explicitly says it is repairing generated history.
 
 ## Typegen, typecheck, and lint cadence
 

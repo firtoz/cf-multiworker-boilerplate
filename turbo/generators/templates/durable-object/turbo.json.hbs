@@ -18,11 +18,11 @@
 			"outputs": []
 		},
 		"typecheck:local": {
-			"dependsOn": ["typegen:local"],
+			"dependsOn": ["db:generate", "typegen:local"],
 			"inputs": [
 				"workers/**/*.ts",
 				"src/**/*.ts",
-				"drizzle/migrations.ts",
+				"drizzle/**",
 				"alchemy.run.ts",
 				"tsconfig.json",
 				"tsconfig.cloudflare.json",
@@ -33,11 +33,11 @@
 			"outputs": []
 		},
 		"typecheck:prod": {
-			"dependsOn": ["typegen:prod"],
+			"dependsOn": ["db:generate", "typegen:prod"],
 			"inputs": [
 				"workers/**/*.ts",
 				"src/**/*.ts",
-				"drizzle/migrations.ts",
+				"drizzle/**",
 				"alchemy.run.ts",
 				"tsconfig.json",
 				"tsconfig.cloudflare.json",
@@ -72,7 +72,7 @@
 			"outputs": []
 		},
 		"deploy": {
-			"dependsOn": ["typecheck:prod"],
+			"dependsOn": ["db:generate", "typecheck:prod"],
 			"cache": false,
 			"outputs": []
 		},

@@ -20,6 +20,7 @@ Agents must not manually author generated files. If generated output needs to ch
 - React Router generated `+types`
 - Drizzle migration SQL (`**/drizzle/*.sql`)
 - Drizzle meta snapshots (`**/drizzle/meta/*.json`, including `_journal.json`)
+- Drizzle driver-specific migration wrappers (for example Durable Object `drizzle/migrations.js`)
 - Lockfiles except through the package manager
 - `.alchemy/`
 
@@ -31,7 +32,7 @@ Correct:
 
 1. Edit `packages/db/src/schema.ts` or `durable-objects/<name>/src/schema.ts`.
 2. Run `bun run db:generate`, or the package-local `db:generate`.
-3. Commit the generated SQL/meta output.
+3. Commit the generated SQL/meta output and any driver-specific wrapper Drizzle emits.
 
 Incorrect:
 
