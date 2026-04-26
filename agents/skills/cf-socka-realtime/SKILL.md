@@ -10,7 +10,7 @@ description: Socka + Durable Object WebSockets—defineSocka, SockaWebSocketDO, 
 - Adding or changing WebSocket RPC, server push, or per-room Durable Object state in this monorepo.
 - Canvas / whiteboard / collaborative tools (patterns below are documentation; implement to product needs).
 
-**Rule of thumb:** Prefer **`@firtoz/socka`** and a **shared contract package**; do not hand-roll `{ t: "…" }` JSON protocols unless the user explicitly wants raw WebSockets. See [.cursor/rules/cf-realtime-websockets.mdc](../../rules/cf-realtime-websockets.mdc).
+**Rule of thumb:** Prefer **`@firtoz/socka`** and a **shared contract package**; do not hand-roll `{ t: "…" }` JSON protocols unless the user explicitly wants raw WebSockets. See [cf-realtime-websockets.mdc](../../rules/cf-realtime-websockets.mdc).
 
 ## Canonical reference in this repo
 

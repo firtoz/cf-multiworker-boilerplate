@@ -28,6 +28,7 @@
 		"miniflare": "4.20260421.0"
 	},
 	"scripts": {
+		"agents:link": "bash agents/install-symlinks.sh",
 		"setup": "bun run --cwd packages/scripts setup",
 		"setup:prod": "bun run --cwd packages/scripts setup:prod",
 		"dev": "turbo run dev --filter=cf-starter-web --filter=cf-starter-db --filter=chatroom-do --filter=ping-do --filter=other-worker",

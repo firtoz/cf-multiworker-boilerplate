@@ -7,7 +7,7 @@ description: Fork and template gotchas (env import, routes, typegen, forms, D1, 
 
 These trip up new contributors and agents most often. For commands and checklists, see [cf-starter-workflow](../cf-starter-workflow/SKILL.md).
 
-1. **Worker bindings and env** — Import the typed `env` from the Workers virtual module, not from React Router context: `import { env } from "cloudflare:workers"`. **Do not** use `context.cloudflare.env` (or similar) for Cloudflare bindings in this stack. More: [.cursor/rules/cf-workers-patterns.mdc](../../rules/cf-workers-patterns.mdc).
+1. **Worker bindings and env** — Import the typed `env` from the Workers virtual module, not from React Router context: `import { env } from "cloudflare:workers"`. **Do not** use `context.cloudflare.env` (or similar) for Cloudflare bindings in this stack. More: [cf-workers-patterns.mdc](../../rules/cf-workers-patterns.mdc).
 
 2. **Generated artifacts** — Do not manually author generated files. For Drizzle, edit `packages/db/src/schema.ts` or `durable-objects/<name>/src/schema.ts`, ensure the package `drizzle.config.ts` uses the right driver (`d1-http` for D1, `durable-sqlite` for DO SQLite), then run `bun run db:generate` or the package-local `db:generate`. Treat `drizzle/*.sql`, `drizzle/meta/*.json`, driver-specific migration wrappers, React Router `+types`, lockfiles, and `.alchemy/` as generated output. PR review should flag hand-written Drizzle output unless explicitly requested.
 
@@ -47,6 +47,6 @@ These trip up new contributors and agents most often. For commands and checklist
 
 ## Also load
 
-- [.cursor/rules/cf-workers-patterns.mdc](../../rules/cf-workers-patterns.mdc) — short always-on reminder for workers, env, routes.
-- [.cursor/rules/cf-realtime-websockets.mdc](../../rules/cf-realtime-websockets.mdc) — Socka default, no fake WebSocket hosts (when working on `durable-objects/*`, `apps/web`, or `/api/ws`).
+- [cf-workers-patterns.mdc](../../rules/cf-workers-patterns.mdc) — short always-on reminder for workers, env, routes.
+- [cf-realtime-websockets.mdc](../../rules/cf-realtime-websockets.mdc) — Socka default, no fake WebSocket hosts (when working on `durable-objects/*`, `apps/web`, or `/api/ws`).
 - [cf-socka-realtime/SKILL.md](../cf-socka-realtime/SKILL.md) — end-to-end Socka + DO + web checklist.

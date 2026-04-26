@@ -86,7 +86,7 @@ After completing any task, if you encountered issues with:
 **You MUST update the relevant documentation:**
 - This file (`00-cloud-agent-mandatory.mdc`)
 - Setup script (`.cursor/setup-agent.sh`)
-- Other rule files in `.cursor/rules/`
+- Other rule files in `agents/rules/` (canonical; `.cursor/rules` is a symlink)
 
 Add learnings so the next agent doesn't face the same issues.
 
@@ -111,7 +111,7 @@ git push
 ```
 
 - Use the existing branch (e.g. `cursor/...`) — do not push to `main` directly
-- See [.cursor/rules/git-workflow.mdc](.cursor/rules/git-workflow.mdc) for full workflow (PRs, branch naming)
+- See [git-workflow.mdc](git-workflow.mdc) for full workflow (PRs, branch naming)
 
 ## Checklist before ending your response
 

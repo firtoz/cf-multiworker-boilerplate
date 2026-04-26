@@ -65,7 +65,7 @@ import { type RoutePath } from "@firtoz/router-toolkit";
 export const route: RoutePath<"/dashboard"> = "/dashboard";
 ```
 
-Omitting this is a common mistake after cloning; forms and typed submitters depend on it. See [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).
+Omitting this is a common mistake after cloning; forms and typed submitters depend on it. See [form-submissions/SKILL.md](../form-submissions/SKILL.md).
 
 ## Loaders and actions: `Promise<MaybeError<...>>`
 

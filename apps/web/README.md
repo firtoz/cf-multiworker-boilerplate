@@ -4,7 +4,7 @@ React Router 7 application deployed on Cloudflare Workers.
 
 **Docs map:** [README.md](../../README.md) (monorepo quick start + building a product) · this file (web app only) · [AGENTS.md](../../AGENTS.md) (index to rules/skills) · [CONTRIBUTING.md](../../CONTRIBUTING.md) (contribution/PRs).
 
-**Skills** under [.cursor/skills/](../../.cursor/skills/) are project-specific playbooks, not marketing docs.
+**Skills** under [agents/skills/](../../agents/skills/) are project-specific playbooks, not marketing docs.
 
 ## Dependencies
 
@@ -61,7 +61,7 @@ export default function MyFeature({ loaderData }: Route.ComponentProps) {
 }
 ```
 
-See [.cursor/skills/routing/SKILL.md](../../.cursor/skills/routing/SKILL.md).
+See [agents/skills/routing/SKILL.md](../../agents/skills/routing/SKILL.md).
 
 ### 2. Add a form (internal app flows vs external clients)
 
@@ -79,14 +79,14 @@ For external clients, terminal smoke tests, or plain HTML forms that POST to an 
 - Plain form to index route: `action="/?index"`
 - Terminal test: `POST /?index`, not `POST /`
 
-Avoid teaching new app features to POST plain forms to index routes. Prefer a non-index resource route such as `/sessions/new` for create/join endpoints that external clients must call. See [.cursor/skills/form-submissions/SKILL.md](../../.cursor/skills/form-submissions/SKILL.md).
+Avoid teaching new app features to POST plain forms to index routes. Prefer a non-index resource route such as `/sessions/new` for create/join endpoints that external clients must call. See [agents/skills/form-submissions/SKILL.md](../../agents/skills/form-submissions/SKILL.md).
 
 ### 3. Wire a new DO or worker into the web app
 
 Do not duplicate the monorepo checklist here. After **`bunx turbo gen durable-object`** (or copying an existing `durable-objects/*` package), follow the root [README.md](../../README.md) section **After `turbo gen durable-object`**, then:
 
-- [.cursor/skills/cf-durable-object-package/SKILL.md](../../.cursor/skills/cf-durable-object-package/SKILL.md) — package layout and `alchemy.run.ts`
-- [.cursor/skills/cf-web-alchemy-bindings/SKILL.md](../../.cursor/skills/cf-web-alchemy-bindings/SKILL.md) — `apps/web/package.json` workspace dep, `alchemy.run.ts` bindings, `bun run typegen`
+- [agents/skills/cf-durable-object-package/SKILL.md](../../agents/skills/cf-durable-object-package/SKILL.md) — package layout and `alchemy.run.ts`
+- [agents/skills/cf-web-alchemy-bindings/SKILL.md](../../agents/skills/cf-web-alchemy-bindings/SKILL.md) — `apps/web/package.json` workspace dep, `alchemy.run.ts` bindings, `bun run typegen`
 
 Example: call a DO’s Hono surface with `honoDoFetcherWithName(env.PingDo, "demo")` (see existing routes such as `ping-do`).
 
@@ -135,7 +135,7 @@ WebSocket URL helpers may use `window.location`, but only call them from `useEff
 
 ### 7. Add environment variables
 
-**Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`ALCHEMY_PASSWORD`** and **`CHATROOM_INTERNAL_SECRET`** if missing), or add values to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
+**Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`ALCHEMY_PASSWORD`** and **`CHATROOM_INTERNAL_SECRET`** if missing), or add values to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [agents/skills/cf-workers-env-local/SKILL.md](../../agents/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
 ```bash
 MY_SECRET=dev-value
 ```
@@ -180,4 +180,4 @@ From the **repo root**:
 bun run deploy
 ```
 
-This runs the Turbo deploy graph; each deployable package runs **`alchemy deploy --app <package-id>`**. See [.cursor/skills/cf-starter-workflow/SKILL.md](../../.cursor/skills/cf-starter-workflow/SKILL.md), root **`AGENTS.md`**, and root **`README.md`**.
+This runs the Turbo deploy graph; each deployable package runs **`alchemy deploy --app <package-id>`**. See [agents/skills/cf-starter-workflow/SKILL.md](../../agents/skills/cf-starter-workflow/SKILL.md), root **`AGENTS.md`**, and root **`README.md`**.

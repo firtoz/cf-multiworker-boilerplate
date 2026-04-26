@@ -33,9 +33,10 @@ Production-proven Turborepo monorepo starter kit for full-stack Cloudflare Worke
 | --- | --- |
 | [README.md](README.md) (this file) | Monorepo quick start, first-time Alchemy/Cloudflare, `bun run dev` / deploy, product-building path |
 | [apps/web/README.md](apps/web/README.md) | Web app: routes, bindings, typegen, web-only tasks |
-| [AGENTS.md](AGENTS.md) | Short index of rules and **[.cursor/skills/](.cursor/skills/)** (implementation playbooks for this stack, not generic tutorials) |
+| [AGENTS.md](AGENTS.md) | Short index of rules and **[agents/skills/](agents/skills/)** (implementation playbooks for this stack, not generic tutorials) |
+| [agents/README.md](agents/README.md) | **Canonical** AI rules and skills; symlink layout for Cursor / Claude; `bash agents/install-symlinks.sh` after clone if needed |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute: PRs, quality checks, dependency notes |
-| [.cursor/README.md](.cursor/README.md) | Cursor rules layout and cloud-agent entry |
+| [.cursor/README.md](.cursor/README.md) | Cursor-only files and symlink notes (rules/skills point at `agents/`) |
 
 ## Why use this?
 
@@ -106,28 +107,34 @@ bun run deploy
 
 which runs **`turbo run deploy --filter=cf-starter-web`** (pulls in dependent worker **`deploy`** tasks). Each package runs **`alchemy deploy --app <package-id>`**. Use repo-root **`.env.production`** (or CI secrets) for **`CLOUDFLARE_*`**, **`ALCHEMY_PASSWORD`**, **`CHATROOM_INTERNAL_SECRET`**, etc., as in **`.env.example`**. Read [Alchemy State](https://alchemy.run/concepts/state/) before wiring shared CI.
 
-**After forking:** Rebrand docs/UI and choose stable worker names in each package’s **`alchemy.run.ts`** before first deploy — see [.cursor/skills/project-init/SKILL.md](.cursor/skills/project-init/SKILL.md).
+**After forking:** Rebrand docs/UI and choose stable worker names in each package’s **`alchemy.run.ts`** before first deploy — see [agents/skills/project-init/SKILL.md](agents/skills/project-init/SKILL.md).
 
 ### Build a real product from the starter
 
 1. **Personalize** — rename the root package/app copy, update user-facing copy, and pick stable script names in package `alchemy.run.ts` files before your first production deploy.
 2. **Add stateful features** — run `bunx turbo gen durable-object`, implement logic on the Durable Object’s Hono `app`, then run `bun run dev`. After generating a new package, complete [After `turbo gen durable-object`](#after-turbo-gendurable-object) (root `dev` filter, web bindings, rpc).
-3. **Consume from web** — add the provider as a workspace dependency, import its `./alchemy` worker resource in `apps/web/alchemy.run.ts`, pass resources into `ReactRouter(…, { bindings })`, then use `import { env } from "cloudflare:workers"` in worker code (see [.cursor/skills/cf-starter-gotchas/SKILL.md](.cursor/skills/cf-starter-gotchas/SKILL.md)).
+3. **Consume from web** — add the provider as a workspace dependency, import its `./alchemy` worker resource in `apps/web/alchemy.run.ts`, pass resources into `ReactRouter(…, { bindings })`, then use `import { env } from "cloudflare:workers"` in worker code (see [agents/skills/cf-starter-gotchas/SKILL.md](agents/skills/cf-starter-gotchas/SKILL.md)).
 4. **Add data** — update `packages/db/src/schema.ts`, run `bun run db:generate`, and let the web package Alchemy app manage D1. Do not hand-write Drizzle migration SQL or meta snapshots.
 5. **Ship** — set `.env.production` / CI secrets, set a stable `ALCHEMY_PASSWORD`, run `bun run typecheck`, `bun run lint`, `bun run build`, then `bun run deploy`.
 
 ### Conventions (humans & AI coding agents)
 
-Use **[AGENTS.md](AGENTS.md)** at the repo root (short index to skills) and the **[.cursor/skills/](.cursor/skills/)** entries it links (gotchas, workflow, env, Turbo, workers). For the web app only, [apps/web/AGENTS.md](apps/web/AGENTS.md).
+Use **[AGENTS.md](AGENTS.md)** at the repo root (short index to skills) and the **[agents/skills/](agents/skills/)** entries it links (gotchas, workflow, env, Turbo, workers). For the web app only, [apps/web/AGENTS.md](apps/web/AGENTS.md).
 
 ## Project structure
 
 ```
+├── agents/                    # Canonical AI rules + skills (source of truth; see agents/README.md)
+│   ├── rules/                 # Workspace rules; .cursor/rules is a symlink here
+│   ├── skills/                # Project skills; .cursor/skills is a symlink here
+│   └── install-symlinks.sh    # Re-create symlinks (`bun run agents:link`; `-- --claude` for .claude/)
 ├── apps/
 │   └── web/                    # React Router 7 app (D1 binding for site data)
 │       ├── alchemy.run.ts      # Web Alchemy app and imported worker bindings
 │       ├── app/routes/         # Routes (home, visitors, chat, …)
 │       └── workers/app.ts      # Cloudflare Worker entry (SSR + /api/ws/* → chatroom DO)
+├── .cursor/                    # Cursor-only: environment.json, setup-agent.sh; rules/skills → ../agents/…
+├── .claude/                    # Optional: rules/skills → ../agents/… (Claude Code; after bun run agents:link --claude)
 ├── durable-objects/
 │   ├── chatroom-do/            # Multi-room WebSocket DO (Socka + DO SQLite)
 │   ├── ping-do/                # Hono DO + service-binding example
@@ -139,13 +146,13 @@ Use **[AGENTS.md](AGENTS.md)** at the repo root (short index to skills) and the 
     └── scripts/                # Workspace scripts package (e.g. build helpers)
 ```
 
-For deeper conventions (env files, `^task` dependencies, caching), see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md), [.cursor/skills/cf-workers-env-local/SKILL.md](.cursor/skills/cf-workers-env-local/SKILL.md), and [.cursor/skills/turborepo/SKILL.md](.cursor/skills/turborepo/SKILL.md).
+For deeper conventions (env files, `^task` dependencies, caching), see [agents/skills/cf-starter-workflow/SKILL.md](agents/skills/cf-starter-workflow/SKILL.md), [agents/skills/cf-workers-env-local/SKILL.md](agents/skills/cf-workers-env-local/SKILL.md), and [agents/skills/turborepo/SKILL.md](agents/skills/turborepo/SKILL.md).
 
 ## Key features
 
 ### 1. Type-Safe Durable Object Calls
 
-Bindings are declared in each package’s **`alchemy.run.ts`** and flow into **`env.d.ts`** (see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)). Use the Workers virtual module:
+Bindings are declared in each package’s **`alchemy.run.ts`** and flow into **`env.d.ts`** (see [agents/skills/cf-starter-workflow/SKILL.md](agents/skills/cf-starter-workflow/SKILL.md)). Use the Workers virtual module:
 
 ```typescript
 import { env } from "cloudflare:workers";
@@ -164,7 +171,7 @@ bun run dev
 
 The generator scaffolds `durable-objects/<name>/` with a package-local `alchemy.run.ts`, `env.d.ts`, `workers/rpc.ts` (portable `DurableObjectNamespace` RPC type), and `workers/app.ts` using `new Hono<{ Bindings: CloudflareEnv }>()`. Implement routes on the DO’s public `app` and consume them with `honoDoFetcherWithName` from the web app when you add HTTP access.
 
-**Socka + Durable Object SQLite (WebSocket RPC and push):** The starter’s reference implementation is **`durable-objects/chatroom-do`**, **`packages/chat-contract`** (`defineSocka`), the **`/api/ws/...`** forward in **`apps/web/workers/app.ts`**, and the client URL helper in **`apps/web/app/lib/chat-ws-url.ts`**. Copy and rename that pattern for new rooms rather than hand-rolling a JSON `WebSocket` protocol. See [.cursor/skills/cf-socka-realtime/SKILL.md](.cursor/skills/cf-socka-realtime/SKILL.md).
+**Socka + Durable Object SQLite (WebSocket RPC and push):** The starter’s reference implementation is **`durable-objects/chatroom-do`**, **`packages/chat-contract`** (`defineSocka`), the **`/api/ws/...`** forward in **`apps/web/workers/app.ts`**, and the client URL helper in **`apps/web/app/lib/chat-ws-url.ts`**. Copy and rename that pattern for new rooms rather than hand-rolling a JSON `WebSocket` protocol. See [agents/skills/cf-socka-realtime/SKILL.md](agents/skills/cf-socka-realtime/SKILL.md).
 
 #### After `turbo gen durable-object`
 
@@ -176,11 +183,11 @@ The generator does not wire the monorepo for you. For each new package:
 
 3. **Web** — [apps/web/package.json](apps/web/package.json) `"<your-package>": "workspace:*"`, `bun install`, then wire [apps/web/alchemy.run.ts](apps/web/alchemy.run.ts) from `"<your-package>/alchemy"`.
 
-4. **Types** — `bun run typegen` and `bun run typecheck` from the repo root. Don’t add sibling `workers/app.ts` to the web `include` to “fix” types—see [cf-starter-gotchas](.cursor/skills/cf-starter-gotchas/SKILL.md) **#14** and [cf-web-alchemy-bindings](.cursor/skills/cf-web-alchemy-bindings/SKILL.md).
+4. **Types** — `bun run typegen` and `bun run typecheck` from the repo root. Don’t add sibling `workers/app.ts` to the web `include` to “fix” types—see [cf-starter-gotchas](agents/skills/cf-starter-gotchas/SKILL.md) **#14** and [cf-web-alchemy-bindings](agents/skills/cf-web-alchemy-bindings/SKILL.md).
 
-5. **Cross-worker** — `WorkerRef` / `WorkerStub` + `workers/rpc.ts`; see [cf-starter-gotchas](.cursor/skills/cf-starter-gotchas/SKILL.md) **#14** and [cf-worker-rpc-turbo](.cursor/skills/cf-worker-rpc-turbo/SKILL.md).
+5. **Cross-worker** — `WorkerRef` / `WorkerStub` + `workers/rpc.ts`; see [cf-starter-gotchas](agents/skills/cf-starter-gotchas/SKILL.md) **#14** and [cf-worker-rpc-turbo](agents/skills/cf-worker-rpc-turbo/SKILL.md).
 
-Full package and Hono checklists: [cf-durable-object-package](.cursor/skills/cf-durable-object-package/SKILL.md).
+Full package and Hono checklists: [cf-durable-object-package](agents/skills/cf-durable-object-package/SKILL.md).
 
 ## Configuration
 
@@ -206,7 +213,7 @@ Uses Bun with a frozen lockfile and Turborepo for parallel/cached tasks.
 
 ## Deployment
 
-Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-web`**. Each package in the graph runs **`alchemy deploy --app <package-id>`**. Use **`bun alchemy configure`** / **`bun alchemy login`** or **`CLOUDFLARE_API_TOKEN`** (and **`CLOUDFLARE_ACCOUNT_ID`** when needed) as in [Alchemy’s Cloudflare guide](https://alchemy.run/guides/cloudflare/). Set **`ALCHEMY_PASSWORD`** for real deployments and shared state so encrypted secrets in Alchemy state stay meaningful; set **`CHATROOM_INTERNAL_SECRET`** to the same stable value for both web and chatroom apps. See [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md) and [State](https://alchemy.run/concepts/state/) for CI.
+Production is **`bun run deploy`** → **`turbo run deploy --filter=cf-starter-web`**. Each package in the graph runs **`alchemy deploy --app <package-id>`**. Use **`bun alchemy configure`** / **`bun alchemy login`** or **`CLOUDFLARE_API_TOKEN`** (and **`CLOUDFLARE_ACCOUNT_ID`** when needed) as in [Alchemy’s Cloudflare guide](https://alchemy.run/guides/cloudflare/). Set **`ALCHEMY_PASSWORD`** for real deployments and shared state so encrypted secrets in Alchemy state stay meaningful; set **`CHATROOM_INTERNAL_SECRET`** to the same stable value for both web and chatroom apps. See [agents/skills/cf-starter-workflow/SKILL.md](agents/skills/cf-starter-workflow/SKILL.md) and [State](https://alchemy.run/concepts/state/) for CI.
 
 ## Scripts
 
@@ -247,7 +254,7 @@ This starter kit follows modern 2026 best practices:
 ### Type safety
 - **Shared TypeScript config**: `tsconfig.base.json` across packages
 - **Strict TypeScript**: Additional checks where enabled (`noUncheckedIndexedAccess`, etc.)
-- **Types**: **`env.d.ts`** per worker package (Alchemy-derived; see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)); React Router types under `.react-router/` (gitignored)
+- **Types**: **`env.d.ts`** per worker package (Alchemy-derived; see [agents/skills/cf-starter-workflow/SKILL.md](agents/skills/cf-starter-workflow/SKILL.md)); React Router types under `.react-router/` (gitignored)
 
 ### Code quality
 - **Biome** for lint + format

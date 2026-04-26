@@ -20,10 +20,10 @@ Create a new skill when you notice:
 
 ## Skill Structure
 
-A skill is a directory containing at minimum a `SKILL.md` file:
+A skill is a directory under **`agents/skills/<skill-name>/`** containing at minimum a `SKILL.md` file:
 
 ```
-.cursor/skills/
+agents/skills/
 └── skill-name/
     ├── SKILL.md          # Required
     ├── scripts/          # Optional - executable code
@@ -279,7 +279,7 @@ Contains static resources:
 2. **Choose a name**: Use lowercase with hyphens (e.g., `api-integration`)
 3. **Write description**: Be specific, include triggers, use third person
 4. **Document the pattern**: Keep it concise, provide examples
-5. **Create the file**: Place in `.cursor/skills/skill-name/SKILL.md`
+5. **Create the file**: Place in `agents/skills/skill-name/SKILL.md` (canonical; also visible as `.cursor/skills/…` in Cursor via symlink)
 6. **Test**: Verify the skill activates correctly for relevant tasks
 
 ## Example: Creating a Git Commit Skill

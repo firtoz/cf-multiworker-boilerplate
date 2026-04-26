@@ -11,7 +11,7 @@ For internal React UI submissions, prefer `formAction` + `useDynamicSubmitter`. 
 
 ## Loaders use `MaybeError` too
 
-Match actions: **loaders** should return `Promise<MaybeError<LoaderData>>` with `success` / `fail`, not a bare object. That keeps `loaderData` typed the same way as submitter/fetcher results and avoids ambiguous error shapes. See [.cursor/skills/routing/SKILL.md](../routing/SKILL.md).
+Match actions: **loaders** should return `Promise<MaybeError<LoaderData>>` with `success` / `fail`, not a bare object. That keeps `loaderData` typed the same way as submitter/fetcher results and avoids ambiguous error shapes. See [routing/SKILL.md](../routing/SKILL.md).
 
 ## Route Setup
 

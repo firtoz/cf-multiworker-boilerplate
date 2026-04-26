@@ -18,7 +18,7 @@ If **both** are true:
 1. Root [`package.json`](package.json) still has `"name": "cf-multiworker-starter-kit"`.
 2. `origin` is missing **or** the `origin` URL does not contain `firtoz/cf-multiworker-starter-kit` (e.g. the user forked into their own GitHub account).
 
-Then the project is likely an **uncustomized fork**. Inform the user once per session (or when they ask to deploy or ship) that they should personalize worker names, package names, README, and UI copy so deploys and docs match their app. Offer to walk through it using the **project-init** skill: [`.cursor/skills/project-init/SKILL.md`](.cursor/skills/project-init/SKILL.md).
+Then the project is likely an **uncustomized fork**. Inform the user once per session (or when they ask to deploy or ship) that they should personalize worker names, package names, README, and UI copy so deploys and docs match their app. Offer to walk through it using the **project-init** skill: [`../skills/project-init/SKILL.md`](../skills/project-init/SKILL.md).
 
 Do not block unrelated tasks if the user declines; they may be iterating locally.
 

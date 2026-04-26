@@ -10,7 +10,7 @@ Skim this on every task that touches workers, env, routes, or bindings.
 - **Use** the Workers virtual module: `import { env } from "cloudflare:workers";`
 - **Do not** read bindings from React Router or loader/action context (e.g. `context.cloudflare.env`). That pattern is wrong here; types and runtime expect `cloudflare:workers`.
 
-After changing `alchemy.run.ts` bindings, `apps/web/env.d.ts` (or a durable-object `env.d.ts`), or `.env.local` / `.env.production`, run `bun run typegen` from the repo root (see [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md)).
+After changing `alchemy.run.ts` bindings, `apps/web/env.d.ts` (or a durable-object `env.d.ts`), or `.env.local` / `.env.production`, run `bun run typegen` from the repo root (see [../skills/cf-starter-workflow/SKILL.md](../skills/cf-starter-workflow/SKILL.md)).
 
 ## Package Alchemy apps
 
@@ -25,7 +25,7 @@ After changing `alchemy.run.ts` bindings, `apps/web/env.d.ts` (or a durable-obje
 - For each route file, export the pathname for type-safe toolkit usage, matching the URL registered in `app/routes.ts`:
   - `import { type RoutePath } from "@firtoz/router-toolkit";`
   - `export const route: RoutePath<"/your-path"> = "/your-path";`
-- Required for `formAction` / `useDynamicSubmitter` flows; omitting it breaks typed submissions. See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) and [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).
+- Required for `formAction` / `useDynamicSubmitter` flows; omitting it breaks typed submissions. See [../skills/routing/SKILL.md](../skills/routing/SKILL.md) and [../skills/form-submissions/SKILL.md](../skills/form-submissions/SKILL.md).
 
 ## Typegen and typecheck cadence
 
@@ -54,12 +54,12 @@ Prefer **typed success/error** from [`@firtoz/maybe-error`](https://www.npmjs.co
 - **Loaders:** `export async function loader(...): Promise<MaybeError<YourData>>` — return `success({ ... })` or `fail("...")` so `loaderData` narrows with `loaderData.success` / `loaderData.result`.
 - **Actions:** use `formAction` from `@firtoz/router-toolkit` (handler already returns `Promise<MaybeError<...>>`). For non-`formAction` actions, still return `success` / `fail` the same way.
 
-See [.cursor/skills/routing/SKILL.md](.cursor/skills/routing/SKILL.md) and [.cursor/skills/form-submissions/SKILL.md](.cursor/skills/form-submissions/SKILL.md).
+See [../skills/routing/SKILL.md](../skills/routing/SKILL.md) and [../skills/form-submissions/SKILL.md](../skills/form-submissions/SKILL.md).
 
 ## Realtime WebSockets (optional)
 
-For **`@firtoz/socka`**, Durable Object WebSocket RPC, and SSR-safe client URL patterns, see [.cursor/rules/cf-realtime-websockets.mdc](.cursor/rules/cf-realtime-websockets.mdc) and [.cursor/skills/cf-socka-realtime/SKILL.md](.cursor/skills/cf-socka-realtime/SKILL.md).
+For **`@firtoz/socka`**, Durable Object WebSocket RPC, and SSR-safe client URL patterns, see [cf-realtime-websockets.mdc](cf-realtime-websockets.mdc) and [../skills/cf-socka-realtime/SKILL.md](../skills/cf-socka-realtime/SKILL.md).
 
 ## More context
 
-Longer lists: [.cursor/skills/cf-starter-gotchas/SKILL.md](.cursor/skills/cf-starter-gotchas/SKILL.md), [.cursor/skills/cf-starter-workflow/SKILL.md](.cursor/skills/cf-starter-workflow/SKILL.md). Index: [AGENTS.md](../../AGENTS.md).
+Longer lists: [../skills/cf-starter-gotchas/SKILL.md](../skills/cf-starter-gotchas/SKILL.md), [../skills/cf-starter-workflow/SKILL.md](../skills/cf-starter-workflow/SKILL.md). Index: [AGENTS.md](../../AGENTS.md).
