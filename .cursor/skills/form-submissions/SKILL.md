@@ -100,7 +100,7 @@ export default function MyForm() {
 }
 ```
 
-**Validation and handler errors** from `formAction` arrive on the **resolved** value: `!data.success` with `data.error.type === "validation"` (see `data.error.error.properties` for zod-form-data field errors) or `data.error.type === "handler"`. Only treat the promise as failed when the **network** or router throws, not when the action returns `fail(...)`.
+**Validation and handler errors** from `formAction` arrive on the **resolved** value: `!data.success` with `data.error.type === "validation"` (field errors live under `data.error.error.properties`) or `data.error.type === "handler"`. Only treat the promise as failed when the **network** or router throws, not when the action returns `fail(...)`.
 
 ## Optional: `useDynamicSubmitterFetcher`
 

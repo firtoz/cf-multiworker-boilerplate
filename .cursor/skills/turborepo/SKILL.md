@@ -46,9 +46,9 @@ Turbo: resolves package order, parallelizes, caches. **Turbo `inputs`** (per-pac
 
 **Durable Object packages (e.g. `chatroom-do`):** do **not** set **`typegen`** to depend on **`^typecheck:local`** (cycle risk). Use **`^typegen:local`** for upstreams (e.g. **`cf-starter-chat-contract`**) instead.
 
-**D1 / migrations:** D1 is managed by the web package **`apps/web/alchemy.run.ts`** via **`D1Database`** **`migrationsDir`**. **`packages/db`** **`d1:migrate:*`** scripts are informational no-ops; **`d1:migrate:*`** Turbo tasks stay for optional manual **`wrangler d1`** workflows.
+**D1 / migrations:** D1 is managed by the web package **`apps/web/alchemy.run.ts`** via **`D1Database`** **`migrationsDir`**. **`packages/db`** **`d1:migrate:*`** scripts are informational no-ops that point back to the Alchemy flow.
 
-**Package Alchemy apps:** Each deployable package owns **`alchemy.run.ts`** and package **`dev` / `deploy` / `destroy`** use **`alchemy dev|deploy|destroy --app <package-id>`** (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/)). Root **`bun run dev`** filters Turbo to web + worker apps so library packages do not get a no-op **`dev`**. Deploy tasks are **cacheable** with explicit `inputs` / `dependsOn` in this repo; **`destroy`** stays **`cache: false`**. Optional manual **`wrangler d1`** remains for D1 if needed.
+**Package Alchemy apps:** Each deployable package owns **`alchemy.run.ts`** and package **`dev` / `deploy` / `destroy`** use **`alchemy dev|deploy|destroy --app <package-id>`** (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/)). Root **`bun run dev`** filters Turbo to web + worker apps so library packages do not get a no-op **`dev`**. Deploy tasks are **cacheable** with explicit `inputs` / `dependsOn` in this repo; **`destroy`** stays **`cache: false`**.
 
 ### 1. Task Dependencies Should Use Outputs, Not Inputs
 
@@ -406,7 +406,7 @@ bun run build --verbose
 ### Root turbo.json
 - Global settings: `globalDependencies`, `ui`, task defaults
 - Tasks: `build`, `build:local`, `build:prod`, `typecheck`, `typegen`, `rr-typegen`, `dev`, `lint`, `clean`, `db:generate`, `d1:migrate:local`, `d1:migrate:remote` (output log defaults only — no deploy graph)
-- `globalEnv`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SESSION_SECRET`, `CI`, `ALCHEMY_PASSWORD`, `STAGE`
+- `globalEnv`: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CI`, `ALCHEMY_PASSWORD`, `STAGE`
 
 ### apps/web/turbo.json
 - **`typegen:local` / `typegen:prod`** — `dependsOn`: `^typecheck`, **`rr-typegen`**; **inputs** include app sources, Vite / React Router config, package **`alchemy.run.ts`**, **`env.d.ts`**

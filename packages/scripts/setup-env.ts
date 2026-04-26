@@ -10,15 +10,11 @@ const flagEdit = argv.includes("--edit");
 const forceNonInteractive = argv.includes("--yes") || argv.includes("-y");
 const file = join(root, isProd ? ".env.production" : ".env.local");
 
-type SecretKey = "SESSION_SECRET" | "ALCHEMY_PASSWORD";
-const ALL_KEYS: readonly SecretKey[] = ["SESSION_SECRET", "ALCHEMY_PASSWORD"];
+type SecretKey = "ALCHEMY_PASSWORD";
+const ALL_KEYS: readonly SecretKey[] = ["ALCHEMY_PASSWORD"];
 
 /** Shown in prompts and notes — not the raw var name. */
 const KEY_COPY: Readonly<Record<SecretKey, { title: string; line: string }>> = {
-	SESSION_SECRET: {
-		title: "Session secret",
-		line: "Signs web sessions and cookies",
-	},
 	ALCHEMY_PASSWORD: {
 		title: "Alchemy password",
 		line: "Encrypts Alchemy state on disk / in CI",
@@ -249,11 +245,11 @@ async function main() {
 	/* ----- all keys present → update or nothing ----- */
 	if (!interactive) {
 		if (flagEdit && forceNonInteractive) {
-			const fresh = { SESSION_SECRET: gen(), ALCHEMY_PASSWORD: gen() } as const;
+			const fresh = { ALCHEMY_PASSWORD: gen() } as const;
 			const out = upsertEnvLines(body, fresh);
 			writeFileSync(file, out, "utf8");
 			console.log(
-				`[setup] --edit --yes: rotated ${ALL_KEYS.join(" and ")} with new random values in ${file}.${alchemyPasswordStateHint()}`,
+				`[setup] --edit --yes: rotated ${ALL_KEYS.join(" and ")} with a new random value in ${file}.${alchemyPasswordStateHint()}`,
 			);
 			return;
 		}
@@ -265,7 +261,7 @@ async function main() {
 		}
 		const lines: string[] = [
 			`[setup] ${file}`,
-			`[setup]   All required keys are present. Per-key menus: run in a TTY. One-shot (both random, non-interactive):`,
+			`[setup]   All required keys are present. Per-key menus: run in a TTY. One-shot random rotation (non-interactive):`,
 		];
 		for (const k of ALL_KEYS) {
 			lines.push(`[setup]   • ${KEY_COPY[k].title}  (${k})`);
@@ -286,8 +282,8 @@ async function main() {
 			options: [
 				{ value: "keep" as const, label: "Done — make no changes" },
 				{ value: "perKey" as const, label: "Go through each key (leave, random, or type)" },
-				{ value: "random" as const, label: "Regenerate both (random)" },
-				{ value: "manual" as const, label: "Type new values for both (masked)" },
+				{ value: "random" as const, label: "Regenerate required secrets (random)" },
+				{ value: "manual" as const, label: "Type new values for required secrets (masked)" },
 			],
 		});
 		if (isCancel(action) || !action || action === "keep") {
@@ -320,7 +316,7 @@ async function main() {
 			);
 			writeFileSync(file, out, "utf8");
 			outro(
-				`Regenerated both secrets  (${ALL_KEYS.join(", ")}  →  ${basename(file)}) with new random values`,
+				`Regenerated required secrets  (${ALL_KEYS.join(", ")}  →  ${basename(file)}) with new random values`,
 			);
 			return;
 		}

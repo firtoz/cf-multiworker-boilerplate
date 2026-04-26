@@ -64,7 +64,7 @@ Real keys: **`.env.local`** (dev), **`.env.production`** (prod/CI). **`.env.exam
 
 Access in app code: `import { env } from "cloudflare:workers"` only.
 
-**Deploy / secrets:** `bun run deploy` → **`turbo run deploy --filter=cf-starter-web`** (pulls dependent worker deploys). `alchemyPassword` in [cf-starter-alchemy](../../../packages/cf-starter-alchemy) requires **`ALCHEMY_PASSWORD`** (and the web app needs **`SESSION_SECRET`**). Run **`bun run setup`** in a terminal for a confirmation prompt, or **`bun run setup -- --yes`** / **`bun packages/scripts/setup-env.ts --yes`** in automation. [Alchemy — encryption password](https://alchemy.run/concepts/secret/#encryption-password), [Getting Started](https://alchemy.run/getting-started/) for `CLOUDFLARE_API_TOKEN`.
+**Deploy / secrets:** `bun run deploy` → **`turbo run deploy --filter=cf-starter-web`** (pulls dependent worker deploys). `alchemyPassword` in [cf-starter-alchemy](../../../packages/cf-starter-alchemy) requires **`ALCHEMY_PASSWORD`**. Run **`bun run setup`** in a terminal for a confirmation prompt, or **`bun run setup -- --yes`** / **`bun packages/scripts/setup-env.ts --yes`** in automation. [Alchemy — encryption password](https://alchemy.run/concepts/secret/#encryption-password), [Getting Started](https://alchemy.run/getting-started/) for `CLOUDFLARE_API_TOKEN`.
 
 - **Local dev** — `bun run dev` runs a filtered `turbo run dev` (web + worker apps), each with `alchemy dev --app …` per [Alchemy monorepo](https://alchemy.run/guides/turborepo/).
 

@@ -4,7 +4,7 @@
 	"tasks": {
 		"dev": {
 			"dependsOn": ["typegen:local"],
-			"inputs": ["workers/**/*.ts", "alchemy.run.ts", "wrangler.jsonc", "$TURBO_ROOT$/.env.local", "package.json"],
+			"inputs": ["workers/**/*.ts", "alchemy.run.ts", "$TURBO_ROOT$/.env.local", "package.json"],
 			"persistent": true,
 			"cache": false
 		},
@@ -22,7 +22,6 @@
 			"inputs": [
 				"workers/**/*.ts",
 				"alchemy.run.ts",
-				"wrangler.jsonc",
 				"tsconfig.json",
 				"tsconfig.cloudflare.json",
 				"package.json",
@@ -36,7 +35,6 @@
 			"inputs": [
 				"workers/**/*.ts",
 				"alchemy.run.ts",
-				"wrangler.jsonc",
 				"tsconfig.json",
 				"tsconfig.cloudflare.json",
 				"package.json",
@@ -50,7 +48,6 @@
 			"inputs": [
 				"workers/**/*.ts",
 				"alchemy.run.ts",
-				"wrangler.jsonc",
 				"$TURBO_ROOT$/.env.local",
 				"package.json",
 				"env.d.ts"
@@ -62,7 +59,6 @@
 			"inputs": [
 				"workers/**/*.ts",
 				"alchemy.run.ts",
-				"wrangler.jsonc",
 				"$TURBO_ROOT$/.env.production",
 				"package.json",
 				"env.d.ts"

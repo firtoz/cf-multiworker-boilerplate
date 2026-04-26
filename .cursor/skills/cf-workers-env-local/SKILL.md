@@ -20,7 +20,7 @@ description: Alchemy + env files — repo-root `.env.local` (dev) and `.env.prod
 
 3. **Infra source of truth** — Package-local **`alchemy.run.ts`** files. Changing bindings means updating the relevant package app. `env.d.ts` files use the exported package worker resource's `Env`.
 
-4. **Turbo graph** — Root **`bun run dev`** runs a **filtered** Turbo **`dev`** so only web + worker packages run **`alchemy dev --app …`** (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/)). **`bun run deploy`** / **`destroy`** use their Turbo graphs; package scripts use Alchemy CLI with **`--app`**. Optional **`wrangler.jsonc`** in a package is for config/tooling, not the primary local dev path.
+4. **Turbo graph** — Root **`bun run dev`** runs a **filtered** Turbo **`dev`** so only web + worker packages run **`alchemy dev --app …`** (see [Alchemy Turborepo](https://alchemy.run/guides/turborepo/)). **`bun run deploy`** / **`destroy`** use their Turbo graphs; package scripts use Alchemy CLI with **`--app`**. Checked-in package config belongs in **`alchemy.run.ts`**.
 
 5. **Per-package `.env.local`** — Optional; include in Turbo **`inputs`** where a package’s tasks need it (e.g. chatroom-do). Never substitute **`.env.example`** for real values.
 

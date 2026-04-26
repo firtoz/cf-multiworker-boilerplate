@@ -28,7 +28,6 @@
 		"@biomejs/biome": "catalog:",
 		"@types/node": "catalog:",
 		"alchemy": "catalog:",
-		"typescript": "catalog:",
-		"wrangler": "catalog:"
+		"typescript": "catalog:"
 	}
 }

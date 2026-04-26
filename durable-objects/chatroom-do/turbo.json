@@ -4,23 +4,17 @@
 	"tasks": {
 		"dev": {
 			"dependsOn": ["scripts#dev:preflight", "typegen:local"],
-			"inputs": [
-				"workers/**/*.ts",
-				"src/**/*.ts",
-				"wrangler.jsonc",
-				"$TURBO_ROOT$/.env.local",
-				"package.json"
-			],
+			"inputs": ["workers/**/*.ts", "src/**/*.ts", "$TURBO_ROOT$/.env.local", "package.json"],
 			"persistent": true,
 			"cache": false
 		},
 		"lint": {
 			"dependsOn": ["typecheck:local"],
-			"inputs": ["workers/**/*.ts", "src/**/*.ts", "wrangler.jsonc", "tsconfig.json", "biome.json"],
+			"inputs": ["workers/**/*.ts", "src/**/*.ts", "tsconfig.json", "biome.json"],
 			"outputs": []
 		},
 		"lint:format": {
-			"inputs": ["workers/**/*.ts", "src/**/*.ts", "wrangler.jsonc", "tsconfig.json", "biome.json"],
+			"inputs": ["workers/**/*.ts", "src/**/*.ts", "tsconfig.json", "biome.json"],
 			"outputs": []
 		},
 		"typecheck:local": {
@@ -78,7 +72,6 @@
 			"cache": true,
 			"inputs": [
 				"alchemy.run.ts",
-				"wrangler.jsonc",
 				"workers/**/*.ts",
 				"src/**/*.ts",
 				"drizzle/**",

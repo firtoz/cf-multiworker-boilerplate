@@ -7,7 +7,7 @@ Thanks for helping improve this starter. This file is **contribution process and
 ## Local setup (summary)
 
 1. Install [Bun](https://bun.sh/) and clone the repo.
-2. From the repo root: `bun install` then `bun run setup` (seeds `SESSION_SECRET` and `ALCHEMY_PASSWORD` into `.env.local` — see README for non-interactive/CI).
+2. From the repo root: `bun install` then `bun run setup` (seeds `ALCHEMY_PASSWORD` into `.env.local` — see README for non-interactive/CI).
 3. Complete first-time Alchemy/Cloudflare steps from the README before relying on `bun run dev` or deploy.
 4. **Bun version:** match repo **`packageManager`** in root [package.json](package.json) and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (CI is the source of truth for drift).
 

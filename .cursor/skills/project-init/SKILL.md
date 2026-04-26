@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: Personalizes a fork of this Cloudflare multi-worker monorepo—worker names in wrangler, package names, README, and UI—so deploys and docs are not stuck on starter kit defaults. Use when the user created a repo from the template, wants to deploy their own app, or asks to rename workers, rebrand, or remove generic starter kit copy. Skip when developing the upstream starter kit (origin URL contains firtoz/cf-multiworker-starter-kit; canonical https://github.com/firtoz/cf-multiworker-starter-kit) unless the user explicitly asks.
+description: Personalizes a fork of this Cloudflare multi-worker monorepo—Alchemy worker names, package names, README, and UI—so deploys and docs are not stuck on starter kit defaults. Use when the user created a repo from the template, wants to deploy their own app, or asks to rename workers, rebrand, or remove generic starter kit copy. Skip when developing the upstream starter kit (origin URL contains firtoz/cf-multiworker-starter-kit; canonical https://github.com/firtoz/cf-multiworker-starter-kit) unless the user explicitly asks.
 ---
 
 # Project initialization (personalize your fork)

@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { honoDoFetcherWithName } from "@firtoz/hono-fetcher";
 import { fail, type MaybeError, success } from "@firtoz/maybe-error";
 import type { RoutePath } from "@firtoz/router-toolkit";
 import { BackToHomeLink } from "~/components/shared/BackToHomeLink";
@@ -16,12 +17,12 @@ export function meta(_args: Route.MetaArgs) {
 type PingBody = { pong: boolean; id: string };
 
 export async function loader(_args: Route.LoaderArgs): Promise<MaybeError<PingBody>> {
-	const stub = env.PingDo.getByName("demo");
-	const res = await stub.fetch(new Request("http://do/ping"));
+	using api = honoDoFetcherWithName(env.PingDo, "demo");
+	using res = await api.get({ url: "/ping" });
 	if (!res.ok) {
 		return fail(`PingDo HTTP ${res.status}`);
 	}
-	const body = (await res.json()) as Partial<PingBody>;
+	const body = await res.json();
 	if (body.pong !== true || typeof body.id !== "string") {
 		return fail("Unexpected PingDo response shape");
 	}

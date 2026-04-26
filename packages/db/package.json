@@ -11,7 +11,7 @@
 	"scripts": {
 		"db:generate": "drizzle-kit generate",
 		"db:studio": "drizzle-kit studio",
-		"d1:migrate:local": "node -e \"console.log('Local D1 is managed by the web package Alchemy app during: bun run dev. Optional manual wrangler d1 workflows need an explicit wrangler config.'); process.exit(0)\"",
+		"d1:migrate:local": "node -e \"console.log('Local D1 is managed by the web package Alchemy app during: bun run dev.'); process.exit(0)\"",
 		"d1:migrate:remote": "node -e \"console.log('Remote D1 migrations are applied by Alchemy when you deploy the web package: bun run deploy.'); process.exit(0)\"",
 		"deploy": "node -e \"process.exit(0)\"",
 		"typegen:local": "tsgo --noEmit -p .",
@@ -26,7 +26,6 @@
 		"@cloudflare/workers-types": "^4.20260425.1",
 		"@typescript/native-preview": "catalog:",
 		"drizzle-kit": "^0.31.4",
-		"typescript": "catalog:",
-		"wrangler": "catalog:"
+		"typescript": "catalog:"
 	}
 }

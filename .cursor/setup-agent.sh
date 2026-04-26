@@ -55,7 +55,7 @@ fi
 echo ""
 echo "🔐 Ensuring repo-root .env.local (non-interactive seed)…"
 if ! bun packages/scripts/setup-env.ts --yes; then
-	echo "⚠️  setup-env failed (read-only disk, permissions, or I/O). Set SESSION_SECRET and ALCHEMY_PASSWORD in .env.local yourself, or: bun run setup"
+	echo "⚠️  setup-env failed (read-only disk, permissions, or I/O). Set ALCHEMY_PASSWORD in .env.local yourself, or: bun run setup"
 fi
 
 echo ""

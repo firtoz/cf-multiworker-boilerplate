@@ -65,27 +65,7 @@ See [.cursor/skills/routing/SKILL.md](../../.cursor/skills/routing/SKILL.md).
 
 ### 2. Add a form (and POST to a non-index route)
 
-```tsx
-import { fail, success } from "@firtoz/maybe-error";
-import { formAction } from "@firtoz/router-toolkit";
-import { z } from "zod";
-import { zfd } from "zod-form-data";
-
-// Define form schema
-const schema = zfd.formData({
-  name: zfd.text(z.string().min(1)),
-  count: zfd.numeric(z.number().min(1).max(100)),
-});
-
-// Handle form submission (use a non-index route for POST+formAction — see /visitors)
-export const action = formAction({
-  schema,
-  handler: async (_args, data) => {
-    void data;
-    return success({ ok: true });
-  },
-});
-```
+Use `formAction` from `@firtoz/router-toolkit` and return `success(...)` / `fail(...)` from `@firtoz/maybe-error`. Keep POST actions on a non-index route unless you intentionally handle React Router’s `/?index` behavior. See [.cursor/skills/form-submissions/SKILL.md](../../.cursor/skills/form-submissions/SKILL.md).
 
 ### 3. Wire a new DO or worker into the web app
 
@@ -105,7 +85,7 @@ Example: call a DO’s Hono surface with `honoDoFetcherWithName(env.PingDo, "dem
 
 ### 5. Add environment variables
 
-**Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`SESSION_SECRET`** and **`ALCHEMY_PASSWORD`** if missing), or add to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
+**Development:** Run root **`bun run setup`** once (creates **`.env.local`** with **`ALCHEMY_PASSWORD`** if missing), or add values to repo-root **`.env.local`** (or optional per-package **`.env.local`**), not a plain **`.env`** — see [.cursor/skills/cf-workers-env-local/SKILL.md](../../.cursor/skills/cf-workers-env-local/SKILL.md) and root **[AGENTS.md](../../AGENTS.md)** (index):
 ```bash
 MY_SECRET=dev-value
 ```
