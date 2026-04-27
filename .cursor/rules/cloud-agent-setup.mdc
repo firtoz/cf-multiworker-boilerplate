@@ -6,7 +6,7 @@ alwaysApply: false
 
 Start with the startup checklist in [00-cloud-agent-mandatory.mdc](00-cloud-agent-mandatory.mdc). This file adds detail, troubleshooting, and command reference only.
 
-`environment.json` in this repo is minimal (see [`.cursor/environment.json`](../environment.json) — `install` runs `bash ./.cursor/setup-agent.sh` on the agent VM). Cursor may merge other fields; see [Cursor environment docs](https://cursor.com/docs/cloud-agent#the-environmentjson-spec).
+This repo does not commit `.cursor/environment.json`, so Cursor Cloud Agents use the saved environment configured in Cursor. That saved environment should run `bash ./.cursor/setup-agent.sh` as the install command. If setup did not run, execute the manual fallback below. See [Cursor environment docs](https://cursor.com/docs/cloud-agent#the-environmentjson-spec).
 
 ## If setup failed
 

@@ -6,14 +6,12 @@ alwaysApply: false
 
 Read this file first on a cloud agent VM. It is short on purpose.
 
-## Automatic setup via environment.json
+## Automatic setup via Cursor saved environment
 
-The environment is configured to run setup automatically via `.cursor/environment.json`:
+This repo no longer commits `.cursor/environment.json`, so Cursor Cloud Agents use the environment saved in Cursor. Configure the saved environment install command as:
 
-```json
-{
-  "install": "bash ./.cursor/setup-agent.sh"
-}
+```bash
+bash ./.cursor/setup-agent.sh
 ```
 
 This runs on VM startup, installing bun and all dependencies automatically.
@@ -96,7 +94,7 @@ Add learnings so the next agent doesn't face the same issues.
 - [ ] Currently in repo root: `pwd` shows `/workspace`
 - [ ] If bun not found: Run setup manually (see above)
 
-Setup should run automatically via `environment.json`, but verify before proceeding.
+Setup should run automatically via the Cursor saved environment, but verify before proceeding.
 
 ## Completing your work (Cloud Agents)
 

@@ -36,7 +36,7 @@ If `bun` is missing in the agent environment:
 cd /workspace && bash ./.cursor/setup-agent.sh && source ~/.bashrc
 ```
 
-Setup is normally applied via `.cursor/environment.json`.
+Setup is normally applied by the saved Cursor Cloud Agent environment.
 
 ## One-liner defaults
 
